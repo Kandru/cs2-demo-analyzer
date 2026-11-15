@@ -477,11 +477,7 @@ func (s *state) finalizeRound(o *finalizeOpts) {
 		pregame = true
 	}
 	r.Pregame = pregame
-	regulation := 24
-	if len(s.m.Players) <= 4 {
-		regulation = 8
-	}
-	r.Overtime = !pregame && s.official >= regulation
+	r.Overtime = false // recomputed once the mode is known in finalize()
 	if pregame {
 		r.Number = 0
 	} else {
@@ -1310,7 +1306,17 @@ func (s *state) finalize() {
 		s.m.TickRate = 64
 	}
 	s.m.Duration = float64(s.lastTick) / s.m.TickRate
-	s.m.Mode = detectMode(len(s.m.Players))
+	bots := 0
+	for _, p := range s.m.Players {
+		if p.IsBot {
+			bots++
+		}
+	}
+	s.m.Mode = detectMode(len(s.m.Players), bots, s.m.ServerName)
+	reg := regulationRounds(s.m.Mode)
+	for _, r := range s.m.Rounds {
+		r.Overtime = !r.Pregame && r.Number > reg
+	}
 	s.m.ID = matchID(s.m.DemoName, s.m.Map, s.m.FileTime)
 
 	s.m.Players = sortPlayers(s.m.Players)

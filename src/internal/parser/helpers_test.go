@@ -49,6 +49,26 @@ func TestFinalizePlayerStats(t *testing.T) {
 	}
 }
 
+func TestDetectMode(t *testing.T) {
+	cases := []struct {
+		players, bots int
+		server        string
+		want          string
+	}{
+		{4, 0, "", "Wingman"},
+		{5, 1, "", "Wingman"},
+		{10, 0, "", "Competitive"},
+		{7, 0, "Counterstrike.Party Wingman", "Wingman"},
+		{7, 0, "", "Custom"},
+		{0, 0, "", "Unknown"},
+	}
+	for _, c := range cases {
+		if got := detectMode(c.players, c.bots, c.server); got != c.want {
+			t.Errorf("detectMode(%d,%d,%q)=%q want %q", c.players, c.bots, c.server, got, c.want)
+		}
+	}
+}
+
 func TestMatchIDStable(t *testing.T) {
 	ts := time.Unix(1700000000, 0)
 	a := matchID("demo.dem", "de_mirage", ts)

@@ -46,7 +46,9 @@ pass, and the anti-cheat detector is a separate pass in `internal/anticheat`.
 - A candidate round with no damage and no score movement is marked
   `Pregame` (knife round/restart), numbered `0`, and excluded from aggregates.
 - Restarts: an unfinished round is closed as pregame before the new one starts.
-- Overtime: rounds after the 24th regulation round get `Overtime=true`.
+- Overtime: rounds after regulation (24 competitive, 16 Wingman) get
+  `Overtime=true`. Mode is inferred from human player count and the server name
+  (`wingman`), falling back to Custom.
 - Demos that start mid-match show only observed rounds; scores start from the
   demo's current TeamState values.
 

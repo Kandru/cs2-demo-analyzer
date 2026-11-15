@@ -54,8 +54,8 @@ func RefreshSummary(m *model.Match) {
 		return
 	}
 	regulation := 24
-	if len(m.Players) > 0 && len(m.Players) <= 4 {
-		regulation = 8
+	if m.Mode == "Wingman" {
+		regulation = 16
 	}
 	sum := &model.Summary{
 		Rounds:           len(m.Rounds),

@@ -89,11 +89,14 @@ func buyType(equip, round int) string {
 	}
 }
 
-func detectMode(players int) string {
+func detectMode(players, bots int, server string) string {
+	humans := players - bots
 	switch {
 	case players == 0:
 		return "Unknown"
-	case players <= 4:
+	case humans > 0 && humans <= 4:
+		return "Wingman"
+	case strings.Contains(strings.ToLower(server), "wingman"):
 		return "Wingman"
 	case players == 10:
 		return "Competitive"
@@ -214,7 +217,7 @@ func percentOf(a, b int) float64 {
 func buildSummary(m *model.Match) *model.Summary {
 	sum := &model.Summary{
 		Rounds:           len(m.Rounds),
-		RegulationRounds: regulationRounds(len(m.Players)),
+		RegulationRounds: regulationRounds(m.Mode),
 	}
 	for _, r := range m.Rounds {
 		if !r.Pregame {
@@ -288,9 +291,9 @@ func buildSummary(m *model.Match) *model.Summary {
 	return sum
 }
 
-func regulationRounds(players int) int {
-	if players > 0 && players <= 4 {
-		return 8
+func regulationRounds(mode string) int {
+	if mode == "Wingman" {
+		return 16
 	}
 	return 24
 }
