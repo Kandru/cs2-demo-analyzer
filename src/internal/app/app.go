@@ -3,6 +3,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -51,6 +52,9 @@ func runAnalyze(ctx context.Context, args []string) int {
 	fs.SetOutput(io.Discard)
 	commonFlags(fs, &cfg)
 	if err := fs.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return 0
+		}
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, "run 'cs2-battlelog help' for usage")
 		return 2
@@ -123,6 +127,9 @@ func runWatch(ctx context.Context, args []string) int {
 	fs.DurationVar(&cfg.Interval, "interval", cfg.Interval, "fallback rescan interval (e.g. 10s)")
 	fs.DurationVar(&cfg.Debounce, "debounce", cfg.Debounce, "settle/debounce window before scanning (e.g. 2s)")
 	if err := fs.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return 0
+		}
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, "run 'cs2-battlelog help' for usage")
 		return 2
