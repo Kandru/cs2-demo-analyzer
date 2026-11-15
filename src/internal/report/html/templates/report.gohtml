@@ -38,7 +38,7 @@
       <div class="hero-map-text">
         <span class="eyebrow">Match report</span>
         <h1 id="match-title">{{.Match.Map}}</h1>
-        <p class="hero-sub">{{.Match.Mode}} · {{clock .Match.Duration}} · {{len .Match.Rounds}} rounds</p>
+        <p class="hero-sub">{{.Match.Mode}} · {{clock .Match.Duration}} · {{if .Summary}}{{.Summary.Rounds}}{{else}}{{len .Match.Rounds}}{{end}} rounds</p>
       </div>
       <div class="hero-badge">{{if .Summary}}{{if .Summary.WinnerName}}{{.Summary.WinnerName}} wins{{else}}Draw{{end}}{{end}}</div>
     </div>
@@ -61,6 +61,8 @@
     </div>
 
     <div class="match-meta">
+      <span><b>Demo</b> {{.Match.DemoName}}</span>
+      {{if .Match.ServerName}}<span><b>Server</b> {{.Match.ServerName}}</span>{{end}}
       <span><b>Played</b> {{.Match.FileTime.Format "Mon, 02 Jan 2006 15:04"}}</span>
       <span><b>Players</b> {{len .Match.Players}}</span>
       <span><b>Tickrate</b> {{zero .Match.TickRate}}</span>
