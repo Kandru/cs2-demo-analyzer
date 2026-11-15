@@ -38,22 +38,24 @@ type Runner struct {
 	proc Processor
 	log  *slog.Logger
 
-	mu      sync.Mutex
-	stable  map[string]*stability
-	queued  map[string]bool
-	jobs    chan string
-	wg      sync.WaitGroup
+	mu         sync.Mutex
+	stable     map[string]*stability
+	queued     map[string]bool
+	forcedOnce map[string]bool
+	jobs       chan string
+	wg         sync.WaitGroup
 }
 
 // Run blocks until ctx is cancelled.
 func Run(ctx context.Context, cfg config.Config, proc Processor, log *slog.Logger) error {
 	r := &Runner{
-		cfg:    cfg,
-		proc:   proc,
-		log:    log,
-		stable: map[string]*stability{},
-		queued: map[string]bool{},
-		jobs:   make(chan string, 128),
+		cfg:        cfg,
+		proc:       proc,
+		log:        log,
+		stable:     map[string]*stability{},
+		queued:     map[string]bool{},
+		forcedOnce: map[string]bool{},
+		jobs:       make(chan string, 128),
 	}
 	for i := 0; i < cfg.Workers; i++ {
 		r.wg.Add(1)
@@ -185,7 +187,10 @@ func (r *Runner) scan(ctx context.Context) {
 }
 
 func (r *Runner) consider(ctx context.Context, path string, info os.FileInfo) {
-	if r.proc.Skip(path, info.Size(), info.ModTime(), r.cfg.Force) {
+	r.mu.Lock()
+	force := r.cfg.Force && !r.forcedOnce[path]
+	r.mu.Unlock()
+	if r.proc.Skip(path, info.Size(), info.ModTime(), force) {
 		r.mu.Lock()
 		delete(r.stable, path)
 		r.mu.Unlock()
@@ -209,6 +214,9 @@ func (r *Runner) consider(ctx context.Context, path string, info os.FileInfo) {
 		return
 	}
 	r.queued[path] = true
+	if force {
+		r.forcedOnce[path] = true
+	}
 	r.mu.Unlock()
 
 	select {

@@ -17,12 +17,12 @@ func TestOutputPathDefaultsNextToDemo(t *testing.T) {
 	}
 	demo := filepath.Join(dir, "match.dem")
 	got := s.OutputPath(demo, "", ".html")
-	want := filepath.Join(dir, "match.battlelog.html")
+	want := filepath.Join(dir, "match.html")
 	if got != want {
 		t.Fatalf("got %q want %q", got, want)
 	}
 	got = s.OutputPath(filepath.Join(dir, "match.dem.gz"), "", ".json")
-	if got != filepath.Join(dir, "match.battlelog.json") {
+	if got != filepath.Join(dir, "match.json") {
 		t.Fatalf("compressed demo: %q", got)
 	}
 }
@@ -50,7 +50,7 @@ func TestSkip(t *testing.T) {
 	if err := os.WriteFile(demo, []byte("x"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	html := filepath.Join(dir, "m.battlelog.html")
+	html := filepath.Join(dir, "m.html")
 	if err := os.WriteFile(html, []byte("report"), 0o644); err != nil {
 		t.Fatal(err)
 	}

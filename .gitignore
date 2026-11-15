@@ -28,3 +28,8 @@ stuff/
 # Playwright scratch (not part of the project)
 .pw/
 **/.cs2battlelog/
+
+# Generated reports
+*.battlelog.html
+*.battlelog.json
+.pw/

@@ -17,7 +17,7 @@ No command prints the help. Unknown commands exit `2`.
 | `-o, --output DIR` | demo directory | Where reports are written. Created if missing. |
 | `--recursive` | `true` | Walk input directories recursively. |
 | `--workers N` | `min(4, CPU)` (analyze), `1` (watch) | Parallel processors. Each demo uses substantial RAM while the anti-cheat pass runs. |
-| `--json` | `false` | Write `<demo>.battlelog.json` next to the HTML. |
+| `--json` | `false` | Write `<demo>.json` next to the HTML. |
 | `--cheat` | `true` | Run the vendored anti-cheat detector (second parse pass). |
 | `--aim` | `true` | Collect aim statistics. |
 | `--force` | `false` | Reprocess unchanged demos (watch cache bypass). |
@@ -41,16 +41,16 @@ Flags override environment values.
 
 ## Output
 
-- `<base>.battlelog.html` — self-contained report. `<base>` strips `.dem`,
+- `<base>.html` — self-contained report. `<base>` strips `.dem`,
   `.dem.gz`, `.dem.bz2`.
-- `<base>.battlelog.json` — optional sidecar, schema documented in
+- `<base>.json` — optional sidecar, schema documented in
   `docs/report-schema.md`.
 - `<manifest-dir>/.cs2battlelog/manifest.json` — watch cache. Manifest dir is
   `--output` if set, otherwise the first input directory (or CWD for a single
   file input).
 
 When several demos share a basename and write into the same output directory,
-the later one gets a short source-hash suffix: `match-a1b2c3.battlelog.html`.
+the later one gets a short source-hash suffix: `match-a1b2c3.html`.
 
 ## Analyze behavior
 

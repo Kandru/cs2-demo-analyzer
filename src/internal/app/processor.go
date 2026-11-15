@@ -36,7 +36,7 @@ func NewProcessor(cfg config.Config, st *store.Store, log *slog.Logger) *Process
 // Skip reports whether path was already analyzed successfully (or failed) with
 // the same file signature.
 func (p *Processor) Skip(path string, size int64, mod time.Time, force bool) bool {
-	return p.store.Skip(path, size, mod, version.Short(), force || p.cfg.Force)
+	return p.store.Skip(path, size, mod, version.Short(), force)
 }
 
 // Save flushes the manifest.

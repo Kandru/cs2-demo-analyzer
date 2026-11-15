@@ -95,7 +95,7 @@ func detectMode(players int) string {
 		return "Unknown"
 	case players <= 4:
 		return "Wingman"
-	case players <= 10:
+	case players == 10:
 		return "Competitive"
 	default:
 		return "Custom"
@@ -214,7 +214,7 @@ func percentOf(a, b int) float64 {
 func buildSummary(m *model.Match) *model.Summary {
 	sum := &model.Summary{
 		Rounds:           len(m.Rounds),
-		RegulationRounds: 24,
+		RegulationRounds: regulationRounds(len(m.Players)),
 	}
 	for _, r := range m.Rounds {
 		if !r.Pregame {
@@ -255,7 +255,7 @@ func buildSummary(m *model.Match) *model.Summary {
 	}
 
 	for _, t := range m.Teams {
-		ts := model.TeamStats{TeamID: t.ID, Name: t.Name, Score: t.Score}
+		ts := model.TeamStats{TeamID: t.ID, Name: t.Name, Side: string(t.StartSide), Score: t.Score}
 		var aimSum float64
 		var aimN int
 		for _, p := range m.Players {
@@ -286,6 +286,13 @@ func buildSummary(m *model.Match) *model.Summary {
 		sum.TeamStats = append(sum.TeamStats, ts)
 	}
 	return sum
+}
+
+func regulationRounds(players int) int {
+	if players > 0 && players <= 4 {
+		return 8
+	}
+	return 24
 }
 
 func countOfficial(rounds []*model.Round) int {

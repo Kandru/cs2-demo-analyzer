@@ -37,8 +37,10 @@ pass, and the anti-cheat detector is a separate pass in `internal/anticheat`.
 ## Round counting and scores
 
 - Team order is captured at the first round: `teams[0]` = starting T,
-  `teams[1]` = starting CT. `TeamState.ID()` is stable across halftime, so
-  scores and groupings survive side swaps.
+  `teams[1]` = starting CT. In some CS2 demos `TeamState.ID()` is side-based
+  and is **not** stable across a side switch, so scores/winner states are
+  mapped to the stable team via the current roster (majority of players by
+  their original team). Never index scores by `TeamState.ID()` after halftime.
 - Scores are calculated as `startScore + 1` for the winning team (TeamState
   scores are not yet updated inside `RoundEnd`).
 - A candidate round with no damage and no score movement is marked

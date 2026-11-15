@@ -53,9 +53,13 @@ func RefreshSummary(m *model.Match) {
 	if m == nil {
 		return
 	}
+	regulation := 24
+	if len(m.Players) > 0 && len(m.Players) <= 4 {
+		regulation = 8
+	}
 	sum := &model.Summary{
 		Rounds:           len(m.Rounds),
-		RegulationRounds: 24,
+		RegulationRounds: regulation,
 	}
 	official := 0
 	for _, r := range m.Rounds {
@@ -96,7 +100,7 @@ func RefreshSummary(m *model.Match) {
 	}
 
 	for _, t := range m.Teams {
-		ts := model.TeamStats{TeamID: t.ID, Name: t.Name, Score: t.Score}
+		ts := model.TeamStats{TeamID: t.ID, Name: t.Name, Side: string(t.StartSide), Score: t.Score}
 		var aimSum float64
 		var aimN, hsKills int
 		rounds := 0

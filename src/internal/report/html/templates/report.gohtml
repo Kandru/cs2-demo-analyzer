@@ -110,7 +110,7 @@
         <div class="team-compare">
           {{range .TeamStats}}
           <div class="compare-row">
-            <div class="compare-head"><b>{{.Name}}</b><span class="muted">{{.Kills}} / {{.Deaths}} / {{.Assists}}</span></div>
+            <div class="compare-head"><b><span class="side-dot {{lower .Side}}"></span> {{.Name}}</b><span class="muted">{{.Kills}} / {{.Deaths}} / {{.Assists}}</span></div>
             <div class="compare-metrics">
               <div class="metric-line"><span>ADR</span><div class="bar"><i style="width:{{.ADR}}%"></i></div><b>{{one .ADR}}</b></div>
               <div class="metric-line"><span>HS</span><div class="bar"><i style="width:{{.HSPercent}}%"></i></div><b>{{zero .HSPercent}}%</b></div>
@@ -375,7 +375,7 @@
             {{range .Channels}}
             <div class="channel-row" title="{{.Channel.Description}}">
               <span class="channel-name">{{.Channel.Label}}</span>
-              <span class="channel-raw">{{.Raw}}</span>
+              <span class="channel-raw">{{.Raw}}{{if .Channel.Samples}} <small>n={{.Channel.Samples}}</small>{{end}}</span>
               <span class="channel-bar"><i class="{{.BarClass}}" style="width:{{.ScorePct}}%"></i><em>{{.ScorePct}}%</em></span>
               <span class="channel-conf"><i style="width:{{.ConfPct}}%"></i>{{.ConfPct}}%</span>
               <span class="zone {{.ZoneClass}}">{{if eq .Zone "no_data"}}no data{{else}}{{.Zone}}{{end}}</span>
@@ -397,8 +397,8 @@
             <h4>Weapons</h4>
             {{if .Weapons}}
             <table class="mini-table">
-              <thead><tr><th>Weapon</th><th>K</th><th>HS</th><th>Shots</th><th>Hits</th><th>Acc.</th></tr></thead>
-              <tbody>{{range .Weapons}}<tr><td>{{.Name}}</td><td>{{.Kills}}</td><td>{{.HSRate}}</td><td>{{if .Shots}}{{.Shots}}{{else}}—{{end}}</td><td>{{if .Hits}}{{.Hits}}{{else}}—{{end}}</td><td>{{.Accuracy}}</td></tr>{{end}}</tbody>
+              <thead><tr><th>Weapon</th><th>K</th><th>HS</th><th>DMG</th><th>Shots</th><th>Hits</th><th>Acc.</th></tr></thead>
+              <tbody>{{range .Weapons}}<tr><td>{{.Name}}</td><td>{{.Kills}}</td><td>{{.HSRate}}</td><td>{{if .Damage}}{{.Damage}}{{else}}—{{end}}</td><td>{{if .Shots}}{{.Shots}}{{else}}—{{end}}</td><td>{{if .Hits}}{{.Hits}}{{else}}—{{end}}</td><td>{{.Accuracy}}</td></tr>{{end}}</tbody>
             </table>
             {{else}}<p class="muted">No weapon data.</p>{{end}}
           </section>

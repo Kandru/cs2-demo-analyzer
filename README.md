@@ -2,7 +2,7 @@
 
 Analyze Counter-Strike 2 demos into a **self-contained, dark, Battlelog-style HTML report** — scoreboard, every round's event timeline, per-player stats, Leetify-style aim metrics, and a channel-by-channel cheat analysis.
 
-- One demo in → one `<demo>.battlelog.html` out (no server, no external assets, works offline).
+- One demo in → one `<demo>.html` out (no server, no external assets, works offline).
 - `watch` mode keeps an eye on folders and processes new demos automatically.
 - Built in Go with [`demoinfocs-golang/v5`](https://github.com/markus-wa/demoinfocs-golang) and a vendored copy of [`demo-anticheat`](https://github.com/TimAnthonyAlexander/demo-anticheat).
 - All Go work (build/test) runs in Docker; no local toolchain is required.
@@ -27,7 +27,7 @@ Reports default to the **same directory as the demo**:
 
 ```sh
 ./dist/cs2-battlelog analyze ./demos/match.dem
-# ./demos/match.battlelog.html
+# ./demos/match.html
 ```
 
 With Docker Compose:

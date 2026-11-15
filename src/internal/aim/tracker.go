@@ -167,15 +167,16 @@ func (t *Tracker) OnFrameState(playing []*common.Player, tick int) {
 			continue
 		}
 		pos := p.Position()
-		eyes, _ := p.PositionEyes()
-		snap := posSample{tick: tick, x: eyes.X, y: eyes.Y, z: eyes.Z,
-			yaw: float64(p.ViewDirectionX()), pitch: float64(p.ViewDirectionY())}
-		hist := append(t.history[p.SteamID64], snap)
-		cutoffTick := tick - int(1000*t.tickRate/1000.0) - 2
-		for len(hist) > 0 && hist[0].tick < cutoffTick {
-			hist = hist[1:]
+		if eyes, ok := p.PositionEyes(); ok {
+			snap := posSample{tick: tick, x: eyes.X, y: eyes.Y, z: eyes.Z,
+				yaw: float64(p.ViewDirectionX()), pitch: float64(p.ViewDirectionY())}
+			hist := append(t.history[p.SteamID64], snap)
+			cutoffTick := tick - int(t.tickRate) - 2
+			for len(hist) > 0 && hist[0].tick < cutoffTick {
+				hist = hist[1:]
+			}
+			t.history[p.SteamID64] = hist
 		}
-		t.history[p.SteamID64] = hist
 		if prev, ok := t.lastPos[p.SteamID64]; ok && tick > prev.tick {
 			dt := float64(tick-prev.tick) / t.tickRate
 			if dt > 0 && dt <= 0.5 {

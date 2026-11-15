@@ -26,6 +26,7 @@ DOCKER_RUN = docker run --rm \
 	-v $(GO_BUILD_CACHE):/root/.cache/go-build \
 	-w /workspace/src \
 	-e CGO_ENABLED=0 \
+	-e GOOS -e GOARCH \
 	$(DOCKER_GO_IMAGE)
 
 RELEASE_TARGETS := linux/amd64 linux/arm64 linux/386 windows/amd64 windows/arm64 darwin/amd64 darwin/arm64
@@ -71,13 +72,14 @@ tidy: check-docker ## Run go mod tidy in Docker
 	$(DOCKER_RUN) go mod tidy
 
 release: check-docker ## Cross-compile all release archives into dist/ (Docker)
+	@rm -rf $(DIST)
 	@mkdir -p $(DIST)
 	@for target in $(RELEASE_TARGETS); do \
 		os=$${target%/*}; arch=$${target#*/}; \
 		ext=""; [ "$$os" = "windows" ] && ext=".exe"; \
 		name="$(BINARY)-$(VERSION)-$$os-$$arch"; \
 		printf 'building %s...\n' "$$name"; \
-		$(DOCKER_RUN) go build $(GOFLAGS) -ldflags '$(LDFLAGS)' -o /workspace/$(DIST)/$$name/$(BINARY)$$ext ./cmd/$(BINARY) || exit 1; \
+		GOOS=$$os GOARCH=$$arch $(DOCKER_RUN) go build $(GOFLAGS) -ldflags '$(LDFLAGS)' -o /workspace/$(DIST)/$$name/$(BINARY)$$ext ./cmd/$(BINARY) || exit 1; \
 		cp README.md VERSION $(DIST)/$$name/ 2>/dev/null || true; \
 		( cd $(DIST) && tar -czf "$$name.tar.gz" "$$name" && rm -rf "$$name" ) || exit 1; \
 	done

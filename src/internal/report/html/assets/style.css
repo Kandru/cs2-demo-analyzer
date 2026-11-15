@@ -334,6 +334,7 @@ details.round.warmup .round-summary { box-shadow: inset 3px 0 0 var(--accent); }
 .channel-row:hover { background: rgba(255,255,255,.02); }
 .channel-name { color: #c8d5e4; }
 .channel-raw { font-family: var(--mono); color: var(--muted); text-align: right; }
+.channel-raw small { color: var(--dim); font-size: 9px; }
 .channel-bar { position: relative; height: 6px; background: var(--bg-3); border-radius: 3px; }
 .channel-bar i { display: block; height: 100%; background: var(--muted); border-radius: 3px; }
 .channel-bar em { position: absolute; right: 0; top: -14px; font-style: normal; font-size: 9px; color: var(--dim); }

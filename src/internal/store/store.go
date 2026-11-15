@@ -45,6 +45,15 @@ type Store struct {
 	outputs map[string]string
 }
 
+// NewMemory returns a store that tracks output names in memory only. Analyze
+// uses it so one-shot runs do not create a manifest next to the demos.
+func NewMemory() *Store {
+	return &Store{
+		entries: map[string]*Entry{},
+		outputs: map[string]string{},
+	}
+}
+
 // Open loads (or creates) the manifest under outputDir/.cs2battlelog/.
 func Open(outputDir string) (*Store, error) {
 	if outputDir == "" {
@@ -183,14 +192,14 @@ func (s *Store) OutputPath(demoPath, outputDir, suffix string) string {
 		dir = filepath.Dir(demoPath)
 	}
 	base := demoBase(demoPath)
-	name := safeName(base) + ".battlelog" + suffix
+	name := safeName(base) + suffix
 	cand := filepath.Join(dir, name)
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if src, ok := s.outputs[cand]; ok && src != demoPath {
 		h := sha256.Sum256([]byte(demoPath))
-		cand = filepath.Join(dir, fmt.Sprintf("%s-%x.battlelog%s", safeName(base), h[:3], suffix))
+		cand = filepath.Join(dir, fmt.Sprintf("%s-%x%s", safeName(base), h[:3], suffix))
 	}
 	return cand
 }
@@ -206,6 +215,9 @@ func (s *Store) ReserveOutput(path, demoPath string) {
 
 // Save writes the manifest atomically.
 func (s *Store) Save() error {
+	if s.path == "" {
+		return nil
+	}
 	s.mu.Lock()
 	data, err := json.MarshalIndent(manifestFile{Version: ManifestVersion, Entries: s.entries}, "", "  ")
 	s.mu.Unlock()

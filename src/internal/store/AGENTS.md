@@ -10,7 +10,7 @@ Manifest cache, output naming, atomic writes.
 - Skip only when `ok` + same size/mtime + same tool/schema version + HTML exists.
   Error entries are skipped while unchanged (retry on change/`--force`).
 - Output names are sanitized (`safeName`); default is
-  `<demo-base>.battlelog.html` next to the demo.
+  `<demo-base>.html` next to the demo.
 - Shared-output basename collisions get a short source hash.
 - Keep `schemaVersion` in sync with `model.SchemaVersion`.
 - Manifest access is mutex-protected (`watch` workers).

@@ -106,6 +106,18 @@ func openDemo(path string) (io.Reader, func() error, error) {
 		return nil, nil, err
 	}
 	name := strings.ToLower(path)
+	var magic [3]byte
+	n, _ := io.ReadFull(f, magic[:])
+	if _, err := f.Seek(0, io.SeekStart); err != nil {
+		f.Close()
+		return nil, nil, err
+	}
+	if n >= 2 && magic[0] == 0x1f && magic[1] == 0x8b {
+		name += ".gz"
+	}
+	if n >= 3 && magic[0] == 'B' && magic[1] == 'Z' && magic[2] == 'h' {
+		name += ".bz2"
+	}
 	switch {
 	case strings.HasSuffix(name, ".gz"):
 		zr, err := gzip.NewReader(f)

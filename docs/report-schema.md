@@ -23,8 +23,9 @@ manifest so template/schema changes invalidate cached reports.
 
 ## `Team`
 
-`id` (stable TeamState ID), `name`, `clanName`, `flag`, `startSide`,
-`finalSide`, `score`, `playerIds`.
+`id` (stable synthetic team ID captured at match start; the roster, not the
+live `TeamState.ID`, is authoritative after a side switch), `name`, `clanName`,
+`flag`, `startSide`, `finalSide`, `score`, `playerIds`.
 
 ## `Player`
 

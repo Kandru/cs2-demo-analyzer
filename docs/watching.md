@@ -42,7 +42,7 @@ Broken demos are cached as `error` and skipped until the file changes or
 | no output, first input is a directory | first input directory |
 | no output, input is a file | current working directory |
 
-Reports go to `<output>/<base>.battlelog.html`, or next to the demo when no
+Reports go to `<output>/<base>.html`, or next to the demo when no
 output is set. Basename collisions in a shared output directory get a short
 source hash.
 

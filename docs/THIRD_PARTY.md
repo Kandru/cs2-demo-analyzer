@@ -20,6 +20,8 @@ This project vendors one Go package and depends on several modules.
 | `stats/reaction_collectors.go` | Dropped same-tick TTD artifacts, publish `sub_100ms_count` |
 | `stats/cheatscore_overrides.go` | Tightened sub-100 ms floor sample/pre-FOV gates |
 | `stats/recoil_collectors.go` | Removed debug stdout |
+| `analyzer/analyzer.go` | Added `AnalyzeReader` so compressed demos can be analyzed without a temp file |
+| `stats/term_*.go`, `stats/html_reporter.go`, `stats/reporters.go`, `stats/report.tmpl.html` | Removed unused upstream terminal/HTML reporters so the battlelog owns rendering and the binary stays slim; `intMetric` kept in `metrics_util.go` |
 | `stats/battlelog.go` | **New file**: exposes detector metrics for the report |
 | `internal/anticheat/anticheat.go` | **New file**: adapter to `model.CheatReport` |
 

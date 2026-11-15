@@ -79,12 +79,20 @@ func Parse(ctx context.Context, path string, opts Options) (m *model.Match, err 
 		Warmup:        &model.Warmup{Events: []*model.Event{}},
 	}
 
+	var st *state
 	defer func() {
 		if r := recover(); r != nil {
 			m.Partial = true
 			m.ParseError = fmt.Sprintf("parser panic: %v", r)
 			m.Warnings = append(m.Warnings, m.ParseError)
 			opts.Logger.Error("demo parser panicked", "demo", path, "panic", r, "stack", string(debug.Stack()))
+			if st != nil {
+				func() {
+					defer func() { _ = recover() }()
+					st.finishPartial()
+					st.finalize()
+				}()
+			}
 			err = fmt.Errorf("parser panic: %v", r)
 		}
 	}()
@@ -108,7 +116,7 @@ func Parse(ctx context.Context, path string, opts Options) (m *model.Match, err 
 	p := dem.NewParser(rd)
 	defer p.Close()
 
-	st := newState(ctx, m, p, opts)
+	st = newState(ctx, m, p, opts)
 	st.installHandlers()
 	if err := st.parse(); err != nil {
 		st.finishPartial()
@@ -373,6 +381,7 @@ func (s *state) onRoundStart(e events.RoundStart) {
 }
 
 func (s *state) onFreezeEnd(events.RoundFreezetimeEnd) {
+	s.syncTick()
 	if !s.live || s.current == nil {
 		return
 	}
@@ -381,6 +390,7 @@ func (s *state) onFreezeEnd(events.RoundFreezetimeEnd) {
 }
 
 func (s *state) onRoundEnd(e events.RoundEnd) {
+	s.syncTick()
 	if s.current == nil {
 		return
 	}
@@ -390,13 +400,14 @@ func (s *state) onRoundEnd(e events.RoundEnd) {
 		Message: e.Message,
 	}
 	if t := s.teamState(e.Winner); t != nil {
-		opts.WinnerTeamID = t.ID()
+		opts.WinnerTeamID = s.teamIDForState(t)
 	}
 	s.addEvent(&model.Event{Type: "round_end", Text: opts.Reason, Score: s.endScore(opts)})
 	s.finalizeRound(opts)
 }
 
 func (s *state) onMVP(e events.RoundMVPAnnouncement) {
+	s.syncTick()
 	if e.Player == nil || s.current == nil {
 		return
 	}
@@ -425,6 +436,7 @@ func (s *state) endScore(o *finalizeOpts) [2]int {
 }
 
 func (s *state) finalizeRound(o *finalizeOpts) {
+	s.syncTick()
 	rb := s.current
 	if rb == nil || rb.finalized {
 		return
@@ -462,7 +474,11 @@ func (s *state) finalizeRound(o *finalizeOpts) {
 		pregame = true
 	}
 	r.Pregame = pregame
-	r.Overtime = !pregame && s.official >= 24
+	regulation := 24
+	if len(s.m.Players) <= 4 {
+		regulation = 8
+	}
+	r.Overtime = !pregame && s.official >= regulation
 	if pregame {
 		r.Number = 0
 	} else {
@@ -503,7 +519,7 @@ func (s *state) currentScore() [2]int {
 		if ts == nil {
 			continue
 		}
-		idx := s.teamIndex(ts.ID())
+		idx := s.teamIndexForState(ts)
 		if idx < 0 {
 			continue
 		}
@@ -521,6 +537,54 @@ func (s *state) teamIndex(teamID int) int {
 	return -1
 }
 
+// teamIndexForState maps a live TeamState to the stable team index captured at
+// match start. TeamState.ID is side-based in some CS2 demos (T=2, CT=3), so it
+// cannot be used after a side switch; the roster is the stable identity.
+func (s *state) teamIndexForState(ts *common.TeamState) int {
+	if ts == nil {
+		return -1
+	}
+	counts := map[int]int{}
+	for _, p := range ts.Members() {
+		if p == nil {
+			continue
+		}
+		mp := s.ensurePlayer(p)
+		if mp == nil {
+			continue
+		}
+		counts[mp.TeamID]++
+	}
+	bestID, bestN := 0, 0
+	for id, n := range counts {
+		if n > bestN || (n == bestN && id < bestID) {
+			bestID, bestN = id, n
+		}
+	}
+	if bestN > 0 {
+		if idx := s.teamIndex(bestID); idx >= 0 {
+			return idx
+		}
+	}
+	// Fallback before rosters are known: map the current side to the team that
+	// started on that side. Only correct in the first half, hence the roster
+	// path above is preferred.
+	for i, t := range s.m.Teams {
+		if t.StartSide == sideString(ts.Team()) {
+			return i
+		}
+	}
+	return -1
+}
+
+func (s *state) teamIDForState(ts *common.TeamState) int {
+	idx := s.teamIndexForState(ts)
+	if idx >= 0 {
+		return s.m.Teams[idx].ID
+	}
+	return 0
+}
+
 func (s *state) teamState(t common.Team) *common.TeamState {
 	if t != common.TeamTerrorists && t != common.TeamCounterTerrorists {
 		return nil
@@ -531,20 +595,45 @@ func (s *state) teamState(t common.Team) *common.TeamState {
 func (s *state) updateTeams(score [2]int) {
 	for i, t := range s.m.Teams {
 		t.Score = score[i]
-		if i == 0 || len(s.m.Rounds) > 0 {
-			t.FinalSide = s.teamFinalSide(t.ID)
-		}
+		t.FinalSide = s.teamFinalSide(t.ID)
 	}
 }
 
 func (s *state) teamFinalSide(teamID int) model.Side {
-	gs := s.p.GameState()
-	for _, side := range []common.Team{common.TeamTerrorists, common.TeamCounterTerrorists} {
-		if ts := gs.Team(side); ts != nil && ts.ID() == teamID {
-			return sideString(side)
+	// Score/MVP state at EOF may be gone; prefer the last round's player sides.
+	counts := map[model.Side]int{}
+	for i := len(s.m.Rounds) - 1; i >= 0; i-- {
+		last := s.m.Rounds[i]
+		if last.Pregame {
+			continue
+		}
+		for id, rs := range last.Players {
+			if rs == nil {
+				continue
+			}
+			if p := s.m.PlayerByID(id); p != nil && p.TeamID == teamID {
+				counts[rs.Side]++
+			}
+		}
+		break
+	}
+	if len(counts) == 0 {
+		for _, cp := range s.p.GameState().Participants().Playing() {
+			if cp == nil {
+				continue
+			}
+			if mp := s.playersByID[playerID(cp)]; mp != nil && mp.TeamID == teamID {
+				counts[sideString(cp.Team)]++
+			}
 		}
 	}
-	return ""
+	best, n := model.Side(""), 0
+	for side, count := range counts {
+		if count > n {
+			best, n = side, count
+		}
+	}
+	return best
 }
 
 func (s *state) ensureTeams() {
@@ -560,7 +649,11 @@ func (s *state) ensureTeams() {
 		}
 		name := strings.TrimSpace(ts.ClanName())
 		if name == "" {
-			name = fmt.Sprintf("Team %s", sideString(side))
+			if len(s.m.Teams) == 0 {
+				name = "Team A"
+			} else {
+				name = "Team B"
+			}
 		}
 		t := &model.Team{
 			ID:        id,
@@ -603,10 +696,7 @@ func (s *state) ensurePlayer(p *common.Player) *model.Player {
 		}
 		return mp
 	}
-	teamID := 0
-	if p.TeamState != nil {
-		teamID = p.TeamState.ID()
-	}
+	teamID := s.teamIDForNewPlayer(p)
 	mp := &model.Player{
 		ID:         id,
 		SteamID64:  p.SteamID64,
@@ -629,6 +719,46 @@ func (s *state) ensurePlayer(p *common.Player) *model.Player {
 		t.PlayerIDs = appendUnique(t.PlayerIDs, mp.ID)
 	}
 	return mp
+}
+
+// teamIDForNewPlayer assigns a player to the stable team captured at match
+// start. A late substitute may first appear after a side switch, where
+// TeamState.ID is no longer meaningful; the existing roster is the best
+// identity signal.
+func (s *state) teamIDForNewPlayer(p *common.Player) int {
+	if p == nil {
+		return 0
+	}
+	if p.TeamState != nil {
+		counts := map[int]int{}
+		for _, mate := range p.TeamState.Members() {
+			if mate == nil {
+				continue
+			}
+			if mp := s.playersByID[playerID(mate)]; mp != nil {
+				counts[mp.TeamID]++
+			}
+		}
+		best, n := 0, 0
+		for id, c := range counts {
+			if c > n {
+				best, n = id, c
+			}
+		}
+		if n > 0 {
+			return best
+		}
+	}
+	// First player of a side: map to the team that started there.
+	for _, t := range s.m.Teams {
+		if t.StartSide == sideString(p.Team) {
+			return t.ID
+		}
+	}
+	if p.TeamState != nil {
+		return p.TeamState.ID()
+	}
+	return 0
 }
 
 func (s *state) uniqueSlug(name, id string) string {
@@ -661,7 +791,14 @@ func playerID(p *common.Player) string {
 	return ""
 }
 
+func (s *state) syncTick() {
+	if s.p != nil {
+		s.lastTick = s.p.CurrentFrame()
+	}
+}
+
 func (s *state) addEvent(e *model.Event) {
+	s.syncTick()
 	if s.current == nil {
 		if !s.live {
 			s.addWarmupEvent(e)
@@ -758,6 +895,7 @@ func (s *state) updateEconomy() {
 }
 
 func (s *state) onKill(e events.Kill) {
+	s.syncTick()
 	if e.Victim == nil {
 		return
 	}
@@ -933,6 +1071,7 @@ func (s *state) roundHasEvent(typ string) bool {
 }
 
 func (s *state) onHurt(e events.PlayerHurt) {
+	s.syncTick()
 	if !s.live || s.current == nil || e.Attacker == nil || e.Player == nil {
 		return
 	}
@@ -969,6 +1108,7 @@ func (s *state) onHurt(e events.PlayerHurt) {
 }
 
 func (s *state) onBombPlanted(e events.BombPlanted) {
+	s.syncTick()
 	if e.Player == nil {
 		return
 	}
@@ -986,6 +1126,7 @@ func (s *state) onBombPlanted(e events.BombPlanted) {
 }
 
 func (s *state) onBombDefused(e events.BombDefused) {
+	s.syncTick()
 	if e.Player == nil {
 		return
 	}
@@ -1002,10 +1143,12 @@ func (s *state) onBombDefused(e events.BombDefused) {
 }
 
 func (s *state) onBombExplode(e events.BombExplode) {
+	s.syncTick()
 	s.addEvent(&model.Event{Type: "bomb_explode", Site: string(e.Site), Text: "The bomb has exploded"})
 }
 
 func (s *state) onGrenade(e events.GrenadeProjectileThrow) {
+	s.syncTick()
 	if e.Projectile == nil || e.Projectile.Thrower == nil || e.Projectile.WeaponInstance == nil {
 		return
 	}

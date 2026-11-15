@@ -70,11 +70,7 @@ func runAnalyze(ctx context.Context, args []string) int {
 		logger.Error("no demos found", "inputs", cfg.Inputs)
 		return 1
 	}
-	st, err := store.Open(cfg.ManifestDir())
-	if err != nil {
-		logger.Error("open manifest", "error", err)
-		return 1
-	}
+	st := store.NewMemory()
 	proc := NewProcessor(cfg, st, logger)
 	logger.Info("starting analysis", "demos", len(demos), "workers", cfg.Workers)
 
@@ -289,7 +285,7 @@ Flags:
   -o, --output DIR       output directory (default: next to each demo)
       --recursive        scan directories recursively (default true)
       --workers N        parallel workers (default min(4, CPU))
-      --json             also write <demo>.battlelog.json
+      --json             also write <demo>.json
       --cheat            run anti-cheat detector (default true)
       --aim              collect aim stats (default true)
       --force            reprocess unchanged demos
@@ -307,8 +303,8 @@ Environment:
   CS2BATTLELOG_AIM       true/false
 
 Output:
-  <demo>.battlelog.html  self-contained dark Battlelog-style report
-  <demo>.battlelog.json  optional machine-readable sidecar (--json)
+  <demo>.html  self-contained dark Battlelog-style report
+  <demo>.json  optional machine-readable sidecar (--json)
   <output>/.cs2battlelog/manifest.json  watch cache
 
 Exit codes: 0 success, 1 processing failure, 2 usage error.

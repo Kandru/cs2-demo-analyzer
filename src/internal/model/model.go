@@ -241,6 +241,7 @@ type Summary struct {
 type TeamStats struct {
 	TeamID    int     `json:"teamId"`
 	Name      string  `json:"name"`
+	Side      string  `json:"side,omitempty"`
 	Score     int     `json:"score"`
 	Kills     int     `json:"kills"`
 	Deaths    int     `json:"deaths"`
