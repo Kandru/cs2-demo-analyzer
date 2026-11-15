@@ -105,7 +105,7 @@ func (bc *BehavioralCollector) Setup(parser demoinfocs.Parser, demoStats *DemoSt
 	})
 
 	parser.RegisterEventHandler(func(e events.Kill) {
-		bc.handleKill(e)
+		bc.handleKill(e, demoStats)
 	})
 }
 
@@ -174,7 +174,7 @@ func (bc *BehavioralCollector) CollectFrame(parser demoinfocs.Parser, demoStats 
 }
 
 // handleKill computes back-kill rate and pre-FOV pre-aim angle for the killer.
-func (bc *BehavioralCollector) handleKill(e events.Kill) {
+func (bc *BehavioralCollector) handleKill(e events.Kill, demoStats *DemoStats) {
 	if e.Killer == nil || e.Victim == nil {
 		return
 	}
@@ -278,6 +278,23 @@ func (bc *BehavioralCollector) handleKill(e events.Kill) {
 	viewVec := viewDirectionToVector(ks.yawX, ks.pitch)
 	preFOVAngle := angleBetweenViewAndTarget(viewVec, ks.posX, ks.posY, ks.posZ, vs.posX, vs.posY, vs.posZ)
 	bc.preFOVAngles[killerID] = append(bc.preFOVAngles[killerID], preFOVAngle)
+
+	// Battlelog integration: record the pre-aim sample as a timestamped cue.
+	// The tick is when the victim entered the killer's FOV, so the reviewer can
+	// watch the approach rather than only the shot. Scoring is unchanged.
+	if preFOVAngle <= evidencePreFOVAngle {
+		if ps := demoStats.GetOrCreatePlayerStats(e.Killer); ps != nil {
+			ps.AddMoment(EvidenceMoment{
+				Kind:     "preaim",
+				Tick:     killerHistory[fovEntryIdx].tick,
+				Value:    preFOVAngle,
+				Unit:     "°",
+				Opponent: e.Victim.Name,
+				Weapon:   getWeaponName(e.Weapon),
+				Detail:   "crosshair angle 200 ms before the enemy became visible",
+			})
+		}
+	}
 }
 
 // CollectFinalStats publishes the per-player aggregates as metrics.

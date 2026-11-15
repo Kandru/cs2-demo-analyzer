@@ -26,6 +26,8 @@ type View struct {
 	Summary     *model.Summary
 	TeamStats   []model.TeamStats
 	Warnings    []string
+	Cheaters    []*CheaterView
+	RoundStrip  []RoundStripView
 }
 
 // TeamView groups scoreboard rows.
@@ -50,6 +52,10 @@ type PlayerView struct {
 	Weapons             []WeaponView
 	Aim                 []MetricView
 	Cheat               *CheatView
+	Moments             []*MomentView
+	TopMoments          []*MomentView
+	MomentCount         int
+	ShowReview          bool
 	Flagged             bool
 	KDDisplay           string
 	ADRDisplay          string
@@ -145,6 +151,52 @@ type ChannelView struct {
 	ZoneClass string
 }
 
+// CheaterView groups one flagged or review-level player for the Cheat watch
+// section. It reuses the player card data so both surfaces stay consistent.
+type CheaterView struct {
+	Player      *PlayerView
+	Cheat       *CheatView
+	TopChannels []ChannelView
+	TopMoments  []*MomentView
+	MomentCount int
+}
+
+// MomentView is one merged review cue (all detector reasons at one tick).
+type MomentView struct {
+	Tick        int
+	Time        string
+	RoundLabel  string
+	RoundAnchor string
+	RoundTime   string
+	Weapon      string
+	Opponent    string
+	Reasons     []MomentReason
+	Class       string
+	DemoCommand string
+	rank        int
+}
+
+// MomentReason is one detector signal inside a review cue.
+type MomentReason struct {
+	Kind   string
+	Label  string
+	Value  string
+	Detail string
+}
+
+// RoundStripView is one cell of the flat round-history overview.
+type RoundStripView struct {
+	Number   int
+	Label    string
+	Anchor   string
+	Class    string
+	BuyClass string
+	Score    string
+	Title    string
+	HasFlag  bool
+	Overtime bool
+}
+
 // RoundView is one round panel.
 type RoundView struct {
 	Round       *model.Round
@@ -155,6 +207,7 @@ type RoundView struct {
 	WinnerClass string
 	Score       string
 	ChipClass   string
+	HasFlag     bool
 	Economy     []EconomyView
 	Events      []EventView
 }
@@ -214,6 +267,9 @@ func NewView(m *model.Match, version string) *View {
 	v.Teams = buildTeams(m, v.TeamStats)
 	v.Players = buildPlayers(m)
 	v.Rounds = buildRounds(m)
+	v.RoundStrip = buildRoundStrip(m)
+	v.Cheaters = buildCheaters(v.Players)
+	markFlaggedRounds(v, m)
 	if m.Warmup != nil && len(m.Warmup.Events) > 0 {
 		v.Warmup = &TimelineView{
 			Duration: clock(m.Warmup.Duration),
@@ -373,6 +429,14 @@ func buildPlayer(m *model.Match, p *model.Player) *PlayerView {
 		return pv.Weapons[i].Name < pv.Weapons[j].Name
 	})
 	pv.Cheat = buildCheat(p.Cheat)
+	if p.Cheat != nil && len(p.Cheat.Moments) > 0 {
+		pv.Moments = buildMoments(m, p.Cheat.Moments)
+		pv.MomentCount = len(pv.Moments)
+		pv.TopMoments = topMoments(pv.Moments, 8)
+	}
+	if pv.Cheat != nil && pv.Cheat.Available && (pv.Flagged || pv.Cheat.Likelihood >= 25) {
+		pv.ShowReview = true
+	}
 	return pv
 }
 
@@ -447,6 +511,275 @@ func buildCheat(cr *model.CheatReport) *CheatView {
 		cv.Channels = append(cv.Channels, cvm)
 	}
 	return cv
+}
+
+func buildCheaters(players []*PlayerView) []*CheaterView {
+	out := make([]*CheaterView, 0, len(players))
+	for _, pv := range players {
+		if pv.Cheat == nil || !pv.Cheat.Available {
+			continue
+		}
+		if !pv.Flagged && pv.Cheat.Likelihood < 25 {
+			continue
+		}
+		out = append(out, &CheaterView{
+			Player:      pv,
+			Cheat:       pv.Cheat,
+			TopChannels: topChannels(pv.Cheat.Channels, 3),
+			TopMoments:  topMoments(pv.Moments, 10),
+			MomentCount: pv.MomentCount,
+		})
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		if out[i].Player.Flagged != out[j].Player.Flagged {
+			return out[i].Player.Flagged
+		}
+		if out[i].Cheat.Likelihood != out[j].Cheat.Likelihood {
+			return out[i].Cheat.Likelihood > out[j].Cheat.Likelihood
+		}
+		return out[i].Player.Player.Name < out[j].Player.Player.Name
+	})
+	return out
+}
+
+func topChannels(channels []ChannelView, n int) []ChannelView {
+	filtered := make([]ChannelView, 0, len(channels))
+	for _, ch := range channels {
+		if ch.Channel.HasData && ch.Channel.Score > 0 {
+			filtered = append(filtered, ch)
+		}
+	}
+	if len(filtered) == 0 {
+		for _, ch := range channels {
+			if ch.Channel.HasData {
+				filtered = append(filtered, ch)
+			}
+		}
+	}
+	sort.SliceStable(filtered, func(i, j int) bool {
+		si := filtered[i].Channel.Score * filtered[i].Channel.Confidence * filtered[i].Channel.Weight
+		sj := filtered[j].Channel.Score * filtered[j].Channel.Confidence * filtered[j].Channel.Weight
+		if si != sj {
+			return si > sj
+		}
+		return filtered[i].Channel.Score > filtered[j].Channel.Score
+	})
+	if len(filtered) > n {
+		filtered = filtered[:n]
+	}
+	return filtered
+}
+
+func buildMoments(m *model.Match, raw []model.CheatMoment) []*MomentView {
+	byTick := map[int]*MomentView{}
+	for _, rm := range raw {
+		if rm.Tick < 0 {
+			continue
+		}
+		mv := byTick[rm.Tick]
+		if mv == nil {
+			seconds := rm.Seconds
+			if seconds <= 0 && rm.Tick > 0 && m.TickRate > 0 {
+				seconds = float64(rm.Tick) / m.TickRate
+			}
+			mv = &MomentView{
+				Tick:        rm.Tick,
+				Time:        clock(seconds),
+				DemoCommand: fmt.Sprintf("demo_gototick %d", rm.Tick),
+			}
+			momentLocation(m, mv, seconds)
+			byTick[rm.Tick] = mv
+		}
+		reason, rank := momentReason(rm)
+		mv.Reasons = append(mv.Reasons, reason)
+		if rank > mv.rank {
+			mv.rank = rank
+			mv.Class = momentClass(rank)
+		}
+		if rm.Weapon != "" && mv.Weapon == "" {
+			mv.Weapon = rm.Weapon
+		}
+		if rm.Opponent != "" && mv.Opponent == "" {
+			mv.Opponent = rm.Opponent
+		}
+	}
+	out := make([]*MomentView, 0, len(byTick))
+	for _, mv := range byTick {
+		out = append(out, mv)
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		return out[i].Tick < out[j].Tick
+	})
+	return out
+}
+
+func momentLocation(m *model.Match, mv *MomentView, seconds float64) {
+	mv.RoundLabel = "Pre-match"
+	for _, r := range m.Rounds {
+		if r.Pregame || r.Number == 0 {
+			continue
+		}
+		if mv.Tick >= r.StartTick && mv.Tick <= r.EndTick {
+			mv.RoundLabel = fmt.Sprintf("Round %d", r.Number)
+			mv.RoundAnchor = fmt.Sprintf("round-%d", r.StartTick)
+			mv.RoundTime = clock(seconds - r.StartOffset)
+			return
+		}
+	}
+	firstStart := -1
+	for _, r := range m.Rounds {
+		if r.Pregame || r.Number == 0 {
+			continue
+		}
+		firstStart = r.StartTick
+		break
+	}
+	if firstStart >= 0 && mv.Tick < firstStart {
+		mv.RoundLabel = "Warmup"
+		if m.Warmup != nil {
+			mv.RoundAnchor = "warmup"
+			mv.RoundTime = clock(seconds)
+		} else {
+			mv.RoundLabel = "Pre-match"
+		}
+	}
+}
+
+func momentReason(rm model.CheatMoment) (MomentReason, int) {
+	reason := MomentReason{Kind: rm.Kind, Detail: rm.Detail}
+	rank := 1
+	switch rm.Kind {
+	case "snap":
+		reason.Label = "Snap"
+		reason.Value = fmt.Sprintf("%.2f °/ms", rm.Value)
+		rank = 2
+	case "ttd_sub100":
+		reason.Label = "Sub-100 ms"
+		reason.Value = fmt.Sprintf("%.0f ms", rm.Value)
+		rank = 3
+	case "ttd":
+		reason.Label = "Reaction"
+		reason.Value = fmt.Sprintf("%.0f ms", rm.Value)
+		rank = 2
+	case "preaim":
+		reason.Label = "Pre-aim"
+		reason.Value = fmt.Sprintf("%.1f°", rm.Value)
+		rank = 3
+	case "recoil":
+		reason.Label = "Recoil"
+		reason.Value = fmt.Sprintf("%.2f°", rm.Value)
+		rank = 2
+	case "wallbang":
+		reason.Label = "Wallbang"
+		if rm.Value > 1 {
+			reason.Value = fmt.Sprintf("%.0f layers", rm.Value)
+		} else {
+			reason.Value = "1 layer"
+		}
+		rank = 3
+	case "smoke":
+		reason.Label = "Through smoke"
+		reason.Value = "kill"
+		rank = 2
+	case "noscope":
+		reason.Label = "No-scope"
+		reason.Value = "kill"
+		rank = 2
+	default:
+		if rm.Kind == "" {
+			reason.Label = "Cue"
+		} else {
+			reason.Label = rm.Kind
+		}
+		reason.Value = "signal"
+	}
+	return reason, rank
+}
+
+func momentClass(rank int) string {
+	switch {
+	case rank >= 3:
+		return "cue-strong"
+	case rank == 2:
+		return "cue-mild"
+	default:
+		return "cue-info"
+	}
+}
+
+func topMoments(in []*MomentView, n int) []*MomentView {
+	if len(in) == 0 {
+		return nil
+	}
+	sorted := append([]*MomentView(nil), in...)
+	sort.SliceStable(sorted, func(i, j int) bool {
+		if sorted[i].rank != sorted[j].rank {
+			return sorted[i].rank > sorted[j].rank
+		}
+		return sorted[i].Tick < sorted[j].Tick
+	})
+	if len(sorted) > n {
+		sorted = sorted[:n]
+	}
+	sort.SliceStable(sorted, func(i, j int) bool {
+		return sorted[i].Tick < sorted[j].Tick
+	})
+	return sorted
+}
+
+func buildRoundStrip(m *model.Match) []RoundStripView {
+	out := make([]RoundStripView, 0, len(m.Rounds))
+	for _, r := range m.Rounds {
+		if r.Pregame {
+			continue
+		}
+		rv := RoundStripView{
+			Number:   r.Number,
+			Label:    fmt.Sprintf("%d", r.Number),
+			Anchor:   fmt.Sprintf("round-%d", r.StartTick),
+			Class:    teamSideClass(r.Winner),
+			Score:    fmt.Sprintf("%d:%d", r.EndScore[0], r.EndScore[1]),
+			Overtime: r.Overtime,
+		}
+		if len(r.Economy) > 0 {
+			rv.BuyClass = buyClass(r.Economy[0].BuyType)
+		}
+		winner := "Draw"
+		if t := m.TeamByID(r.WinnerTeamID); t != nil {
+			winner = t.Name
+		}
+		rv.Title = fmt.Sprintf("Round %d · %s %d:%d · %s", r.Number, winner, r.EndScore[0], r.EndScore[1], r.Reason)
+		out = append(out, rv)
+	}
+	return out
+}
+
+func markFlaggedRounds(v *View, m *model.Match) {
+	flagged := map[int]bool{}
+	for _, pv := range v.Players {
+		if !pv.Flagged {
+			continue
+		}
+		for _, moment := range pv.Moments {
+			for _, r := range m.Rounds {
+				if r.Pregame || r.Number == 0 {
+					continue
+				}
+				if moment.Tick >= r.StartTick && moment.Tick <= r.EndTick {
+					flagged[r.Number] = true
+					break
+				}
+			}
+		}
+	}
+	for _, rv := range v.Rounds {
+		if rv.Round != nil && flagged[rv.Round.Number] {
+			rv.HasFlag = true
+		}
+	}
+	for i := range v.RoundStrip {
+		v.RoundStrip[i].HasFlag = flagged[v.RoundStrip[i].Number]
+	}
 }
 
 func zoneClass(zone string) string {

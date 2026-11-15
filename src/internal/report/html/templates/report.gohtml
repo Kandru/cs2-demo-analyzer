@@ -20,6 +20,7 @@
     <nav class="mainnav" aria-label="Sections">
       <a href="#overview" class="active">Overview</a>
       <a href="#scoreboard">Scoreboard</a>
+      <a href="#cheaters">Cheat watch{{if .Cheaters}}<span class="nav-count">{{len .Cheaters}}</span>{{end}}</a>
       <a href="#rounds">Rounds</a>
       <a href="#players">Players</a>
     </nav>
@@ -32,35 +33,30 @@
 
 <main id="main" class="wrap">
 
-  <section class="hero" aria-labelledby="match-title">
-    <div class="hero-map {{mapClass .Match.Map}}">
-      <div class="hero-map-glow"></div>
-      <div class="hero-map-text">
+  <section class="match-banner" aria-labelledby="match-title">
+    <div class="banner-head">
+      <div class="banner-id">
         <span class="eyebrow">Match report</span>
         <h1 id="match-title">{{.Match.Map}}</h1>
-        <p class="hero-sub">{{.Match.Mode}} · {{clock .Match.Duration}} · {{if .Summary}}{{.Summary.Rounds}}{{else}}{{len .Match.Rounds}}{{end}} rounds</p>
+        <p class="banner-sub">{{.Match.Mode}} · {{clock .Match.Duration}} · {{if .Summary}}{{.Summary.Rounds}}{{else}}{{len .Match.Rounds}}{{end}} rounds</p>
       </div>
-      <div class="hero-badge">{{if .Summary}}{{if .Summary.WinnerName}}{{.Summary.WinnerName}} wins{{else}}Draw{{end}}{{end}}</div>
-    </div>
-
-    <div class="scoreboard-hero">
-      {{range .Teams}}
-      <a class="hero-team {{.Side}} {{if .Win}}winner{{end}}" href="#players">
-        <span class="hero-team-name">{{.Team.Name}}</span>
-        <span class="hero-team-side">{{.Side}} start</span>
-      </a>
-      {{end}}
-      <div class="hero-score">
-        {{if .Summary}}
-          <span class="score-num">{{index .Summary.Score 0}}</span>
-          <span class="score-sep">:</span>
-          <span class="score-num">{{index .Summary.Score 1}}</span>
+      <div class="banner-scoreboard">
+        {{range $i, $team := .Teams}}
+        <a class="banner-team {{if eq $i 0}}left{{else}}right{{end}} {{.Side}} {{if .Win}}winner{{end}}" href="#scoreboard">
+          <span class="banner-team-name">{{.Team.Name}}</span>
+          <span class="banner-team-side">{{.Side}} start</span>
+        </a>
+        {{if eq $i 0}}<div class="banner-score">
+          {{if $.Summary}}<span>{{index $.Summary.Score 0}}</span><em>:</em><span>{{index $.Summary.Score 1}}</span>{{end}}
+        </div>{{end}}
         {{end}}
       </div>
-      {{if .Match.Warnings}}<span class="warn-pill" title="{{range .Match.Warnings}}{{.}}&#10;{{end}}">{{len .Match.Warnings}} warning(s)</span>{{end}}
+      <div class="banner-winner">
+        {{if .Summary}}{{if .Summary.WinnerName}}{{.Summary.WinnerName}} <span>wins</span>{{else}}Draw{{end}}{{end}}
+        {{if .Match.Warnings}}<span class="warn-pill" title="{{range .Match.Warnings}}{{.}}&#10;{{end}}">{{len .Match.Warnings}} warning(s)</span>{{end}}
+      </div>
     </div>
-
-    <div class="match-meta">
+    <div class="banner-meta">
       <span><b>Demo</b> {{.Match.DemoName}}</span>
       {{if .Match.ServerName}}<span><b>Server</b> {{.Match.ServerName}}</span>{{end}}
       <span><b>Played</b> {{.Match.FileTime.Format "Mon, 02 Jan 2006 15:04"}}</span>
@@ -93,11 +89,11 @@
         <span class="tile-value">{{if .BestAimName}}{{.BestAimName}}{{else}}—{{end}}</span>
         <span class="tile-sub">{{if .BestAimName}}{{zero .BestAimRating}} · {{.BestAimGrade}}{{else}}no sample{{end}}</span>
       </div>
-      <div class="tile {{if gt .FlaggedPlayers 0}}alert{{end}}">
+      <a class="tile tile-link {{if gt .FlaggedPlayers 0}}alert{{end}}" href="#cheaters">
         <span class="tile-label">Cheat flags</span>
-        <span class="tile-value">{{.FlaggedPlayers}}</span>
-        <span class="tile-sub">{{if gt .FlaggedPlayers 0}}review the player cards{{else}}no player crossed 50%{{end}}</span>
-      </div>
+        <span class="tile-value">{{.FlaggedPlayers}}{{if $.Cheaters}} <em>/ {{len $.Cheaters}}</em>{{end}}</span>
+        <span class="tile-sub">{{if gt .FlaggedPlayers 0}}flagged · watch list open{{else if $.Cheaters}}review list open{{else}}no player above 50%{{end}}</span>
+      </a>
       <div class="tile">
         <span class="tile-label">Rounds</span>
         <span class="tile-value">{{.Rounds}}</span>
@@ -106,7 +102,28 @@
     </div>
     {{end}}
 
-    <div class="two-col">
+    <div class="panel round-history">
+      <div class="panel-head">
+        <h3 class="panel-title">Round history</h3>
+        <div class="round-legend">
+          <span><i class="legend-swatch ct"></i>CT win</span>
+          <span><i class="legend-swatch t"></i>T win</span>
+          <span><i class="legend-dot"></i>flagged round</span>
+        </div>
+      </div>
+      <div class="round-strip" role="list">
+        {{range .RoundStrip}}
+        <a class="round-cell {{.Class}} {{if .HasFlag}}has-flag{{end}}" href="#{{.Anchor}}" title="{{.Title}}" role="listitem">
+          <span class="round-cell-num">{{.Label}}{{if .Overtime}}<em>OT</em>{{end}}</span>
+          <span class="round-cell-score">{{.Score}}</span>
+          <span class="round-cell-buy {{.BuyClass}}"></span>
+          {{if .HasFlag}}<span class="round-cell-flag" aria-label="flagged activity">⚑</span>{{end}}
+        </a>
+        {{end}}
+      </div>
+    </div>
+
+    <div class="dashboard">
       <div class="panel">
         <h3 class="panel-title">Team comparison</h3>
         <div class="team-compare">
@@ -125,16 +142,19 @@
 
       <div class="panel">
         <h3 class="panel-title">Cheat watch</h3>
-        {{$flagged := false}}
-        {{range .Players}}{{if .Flagged}}{{$flagged = true}}{{end}}{{end}}
-        {{if $flagged}}
+        {{if .Cheaters}}
           <ul class="flag-list">
-          {{range .Players}}{{if .Flagged}}
-            <li><a href="#{{.Anchor}}" class="flag-name">{{.Player.Name}}</a><span class="flag-score">{{one .Cheat.Likelihood}}%</span><span class="muted">{{.TeamName}}</span></li>
-          {{end}}{{end}}
+          {{range .Cheaters}}
+            <li>
+              <a href="#cheater-{{.Player.Player.Slug}}" class="flag-name">{{.Player.Player.Name}}</a>
+              <span class="flag-score">{{one .Cheat.Likelihood}}%</span>
+              <span class="verdict {{.Cheat.VerdictClass}}">{{.Cheat.Verdict}}</span>
+              <span class="muted">{{.Player.TeamName}}</span>
+            </li>
+          {{end}}
           </ul>
         {{else}}
-          <p class="muted">No player reached the 50% flag threshold. Open a player card to read the channel-by-channel evidence.</p>
+          <p class="muted">No player reached the 25% review level. Open a player card to read the channel-by-channel evidence.</p>
         {{end}}
         <p class="disclaimer small">Statistical signal only — not proof of cheating. Always review demos and context.</p>
       </div>
@@ -205,6 +225,102 @@
     </div>
   </section>
 
+  <section id="cheaters" class="section">
+    <div class="section-head">
+      <h2>Cheat watch</h2>
+      <span class="section-note">Flagged and review-level players · timestamps point at the demo</span>
+    </div>
+
+    {{if .Cheaters}}
+    <div class="cheater-list">
+      {{range .Cheaters}}
+      <article class="cheater-card {{.Cheat.VerdictClass}}" id="cheater-{{.Player.Player.Slug}}">
+        <header class="cheater-head">
+          <div class="cheater-id">
+            <span class="avatar {{.Player.Side}}">{{.Player.Initials}}</span>
+            <div>
+              <h3><a href="#{{.Player.Anchor}}">{{.Player.Player.Name}}</a>{{if .Player.Player.ClanTag}} <span class="clan">[{{.Player.Player.ClanTag}}]</span>{{end}}</h3>
+              <div class="cheater-sub">
+                {{if .Player.TeamName}}<span class="team-tag {{.Player.Side}}">{{.Player.TeamName}}</span>{{end}}
+                <span>{{.Player.Player.RoundsPlayed}} rounds</span>
+                <span>{{.Player.Player.Stats.Kills}} / {{.Player.Player.Stats.Deaths}} / {{.Player.Player.Stats.Assists}}</span>
+                {{if .Player.Player.IsBot}}<span class="bot">BOT</span>{{end}}
+              </div>
+            </div>
+          </div>
+          <div class="cheater-verdict">
+            <span class="verdict {{.Cheat.VerdictClass}}">{{.Cheat.Verdict}}</span>
+            <span class="cheater-likelihood">{{.Cheat.LikelihoodPct}}</span>
+            <span class="muted small">likelihood · flag at 50%</span>
+          </div>
+        </header>
+        <div class="cheater-meter"><i style="width:{{.Cheat.Likelihood}}%"></i></div>
+
+        <div class="cheater-body">
+          <div class="cheater-why">
+            <h4>Why</h4>
+            {{if .Cheat.Narrative}}<p class="narrative">{{.Cheat.Narrative}}</p>{{end}}
+            {{if .TopChannels}}
+            <ul class="channel-highlights">
+              {{range .TopChannels}}
+              <li title="{{.Channel.Description}}">
+                <span class="channel-hl-name">{{.Channel.Label}}</span>
+                <span class="channel-hl-bar"><i class="{{.BarClass}}" style="width:{{.ScorePct}}%"></i></span>
+                <b>{{.ScorePct}}%</b>
+                <span class="raw">{{.Raw}}</span>
+                <span class="muted">{{.ConfPct}}% conf · n={{.Channel.Samples}}</span>
+                <span class="zone {{.ZoneClass}}">{{if eq .Zone "no_data"}}no data{{else}}{{.Zone}}{{end}}</span>
+              </li>
+              {{end}}
+            </ul>
+            {{end}}
+            {{if .Cheat.Grades}}
+            <div class="grades">
+              {{range .Cheat.Grades}}<span class="grade-chip"><span>{{.Label}}</span><b class="grade {{gradeClass .Grade}}">{{.Grade}}</b></span>{{end}}
+              {{if .Cheat.OverallGrade}}<span class="grade-chip overall"><span>Overall</span><b class="grade {{gradeClass .Cheat.OverallGrade}}">{{.Cheat.OverallGrade}}</b></span>{{end}}
+            </div>
+            {{end}}
+            {{if .Cheat.Adjustments}}
+            <details class="adjust-details">
+              <summary>Score adjustments ({{len .Cheat.Adjustments}})</summary>
+              <div class="adjustments">{{range .Cheat.Adjustments}}<span class="adjust">{{.Label}}{{if .Detail}} <em>{{.Detail}}</em>{{end}}</span>{{end}}</div>
+            </details>
+            {{end}}
+          </div>
+
+          <div class="cheater-when">
+            <h4>When to look</h4>
+            {{if .TopMoments}}
+            <p class="muted small">Timestamped cues from the detector. Click the round to read the kill feed, or copy the tick command and jump there in the demo.</p>
+            <ol class="review-list">
+              {{range .TopMoments}}{{template "moment" .}}{{end}}
+            </ol>
+            {{if gt .MomentCount (len .TopMoments)}}
+            <details class="all-cues">
+              <summary>All {{.MomentCount}} cues</summary>
+              <ol class="review-list">
+                {{range .Player.Moments}}{{template "moment" .}}{{end}}
+              </ol>
+            </details>
+            {{end}}
+            {{else}}
+            <p class="muted">No timestamped cue passed the recording thresholds. Read the aggregate channels for context.</p>
+            {{end}}
+          </div>
+        </div>
+        <p class="disclaimer small">Cues mark where a detector channel became interesting, not where cheating happened. Statistical signal, not proof — read the sample counts and review the demo.</p>
+      </article>
+      {{end}}
+    </div>
+    {{else}}
+    <div class="panel empty-state">
+      <h3>No players on the watch list</h3>
+      <p class="muted">Nobody crossed the 25% review level or the 50% flag threshold. You can still inspect every channel and sample count in the player cards.</p>
+      <p><a href="#players">Open player details</a></p>
+    </div>
+    {{end}}
+  </section>
+
   <section id="rounds" class="section">
     <div class="section-head">
       <h2>Rounds</h2>
@@ -214,7 +330,7 @@
     <div class="round-toolbar">
       <div class="chips" id="round-chips">
         {{if .Warmup}}<a class="chip warmup" href="#warmup">Warmup</a>{{end}}
-        {{range .Rounds}}<a class="chip {{.ChipClass}}" href="#{{.Anchor}}">{{.Label}}</a>{{end}}
+        {{range .Rounds}}<a class="chip {{.ChipClass}} {{if .HasFlag}}has-flag{{end}}" href="#{{.Anchor}}">{{.Label}}{{if .HasFlag}}<span class="chip-flag">⚑</span>{{end}}</a>{{end}}
       </div>
       <div class="filters">
         <div class="segmented" role="group" aria-label="Event filter">
@@ -250,9 +366,9 @@
     {{end}}
 
     {{range .Rounds}}
-    <details class="round {{.ChipClass}}" id="{{.Anchor}}" {{if eq .Round.Number 1}}open{{end}}>
+    <details class="round {{.ChipClass}} {{if .HasFlag}}has-flag{{end}}" id="{{.Anchor}}" {{if eq .Round.Number 1}}open{{end}}>
       <summary class="round-summary">
-        <span class="round-name">{{.Label}}</span>
+        <span class="round-name">{{.Label}}{{if .HasFlag}}<span class="flag-dot" title="Flagged activity this round">⚑</span>{{end}}</span>
         <span class="round-reason">{{.Round.Reason}}</span>
         <span class="round-time">{{.Duration}}</span>
         <span class="round-score">{{.Score}}</span>
@@ -308,91 +424,117 @@
       </header>
 
       <div class="player-body">
-        <div class="stat-strip">
-          <div><span>Kills</span><b>{{.Player.Stats.Kills}}</b></div>
-          <div><span>Deaths</span><b>{{.Player.Stats.Deaths}}</b></div>
-          <div><span>Assists</span><b>{{.Player.Stats.Assists}}</b></div>
-          <div><span>K/D</span><b>{{.KDDisplay}}</b></div>
-          <div><span>ADR</span><b>{{.ADRDisplay}}</b></div>
-          <div><span>HS</span><b>{{.HSDisplay}}</b></div>
-          <div><span>KAST</span><b>{{zero .Player.Stats.KASTPercent}}%</b></div>
-          <div><span>MVPs</span><b>{{.Player.Stats.MVPs}}</b></div>
-          <div><span>First kills</span><b>{{.Player.Stats.FirstKills}}</b></div>
-          <div><span>Plants / defuses</span><b>{{.Player.Stats.Plants}} / {{.Player.Stats.Defuses}}</b></div>
-          <div><span>Clutches</span><b>{{.Player.Stats.Clutches}}</b></div>
-          <div><span>Utility dmg</span><b>{{.Player.Stats.UtilityDamage}}</b></div>
-        </div>
-
-        {{if .Sides}}
-        <div class="side-split">
-          {{range .Sides}}
-          <div class="side-row {{lower .Side}}">
-            <b>{{.Side}}</b><span>{{.Rounds}} rounds</span><span>{{.Kills}} / {{.Deaths}} / {{.Assists}}</span><span>{{.ADR}} ADR</span><span>{{.HS}} HS</span>
+        <div class="player-main">
+          <div class="stat-strip">
+            <div><span>Kills</span><b>{{.Player.Stats.Kills}}</b></div>
+            <div><span>Deaths</span><b>{{.Player.Stats.Deaths}}</b></div>
+            <div><span>Assists</span><b>{{.Player.Stats.Assists}}</b></div>
+            <div><span>K/D</span><b>{{.KDDisplay}}</b></div>
+            <div><span>ADR</span><b>{{.ADRDisplay}}</b></div>
+            <div><span>HS</span><b>{{.HSDisplay}}</b></div>
+            <div><span>KAST</span><b>{{zero .Player.Stats.KASTPercent}}%</b></div>
+            <div><span>MVPs</span><b>{{.Player.Stats.MVPs}}</b></div>
+            <div><span>First kills</span><b>{{.Player.Stats.FirstKills}}</b></div>
+            <div><span>Plants / defuses</span><b>{{.Player.Stats.Plants}} / {{.Player.Stats.Defuses}}</b></div>
+            <div><span>Clutches</span><b>{{.Player.Stats.Clutches}}</b></div>
+            <div><span>Utility dmg</span><b>{{.Player.Stats.UtilityDamage}}</b></div>
           </div>
-          {{end}}
-        </div>
-        {{end}}
 
-        {{if .Aim}}
-        <section class="aim-panel">
-          <div class="panel-head">
-            <h4>Aim</h4>
-            <div class="aim-rating"><b>{{.AimDisplay}}</b><span>{{.AimGrade}}</span></div>
-          </div>
-          <div class="aim-grid">
-            {{range .Aim}}
-            <div class="aim-tile {{.Class}}" title="{{.Tooltip}} (n={{.Samples}})">
-              <span class="aim-label">{{.Label}}</span>
-              <span class="aim-value">{{.Display}}</span>
-              <span class="aim-bar"><i style="width:{{.ScorePct}}%"></i></span>
-              <span class="aim-sample">{{if .LowSample}}low sample · {{end}}n={{.Samples}}</span>
+          {{if .Sides}}
+          <div class="side-split">
+            {{range .Sides}}
+            <div class="side-row {{lower .Side}}">
+              <b>{{.Side}}</b><span>{{.Rounds}} rounds</span><span>{{.Kills}} / {{.Deaths}} / {{.Assists}}</span><span>{{.ADR}} ADR</span><span>{{.HS}} HS</span>
             </div>
             {{end}}
           </div>
-          <p class="disclaimer small">Aim metrics use fixed anchors, not rank data. Hover a tile for its definition and sample count.</p>
-        </section>
-        {{end}}
-
-        {{with .Cheat}}
-        <section class="cheat-panel {{.VerdictClass}}">
-          <div class="panel-head">
-            <h4>Cheat analysis</h4>
-            <span class="verdict {{.VerdictClass}}">{{.Verdict}}</span>
-          </div>
-          {{if .Available}}
-          <div class="cheat-meter-row">
-            <div class="cheat-meter"><i style="width:{{.Likelihood}}%"></i></div>
-            <b class="cheat-likelihood">{{.LikelihoodPct}}</b>
-            <span class="muted">likelihood · flag at 50%</span>
-          </div>
-          {{if .Narrative}}<p class="narrative">{{.Narrative}}</p>{{end}}
-          {{if .Grades}}
-          <div class="grades">
-            {{range .Grades}}<span class="grade-chip"><span>{{.Label}}</span><b class="grade {{gradeClass .Grade}}">{{.Grade}}</b></span>{{end}}
-            {{if .OverallGrade}}<span class="grade-chip overall"><span>Overall</span><b class="grade {{gradeClass .OverallGrade}}">{{.OverallGrade}}</b></span>{{end}}
-          </div>
           {{end}}
-          <div class="channel-table">
-            <div class="channel-head"><span>Channel</span><span>Raw</span><span>Evidence</span><span>Conf.</span><span>Zone</span></div>
-            {{range .Channels}}
-            <div class="channel-row" title="{{.Channel.Description}}">
-              <span class="channel-name">{{.Channel.Label}}</span>
-              <span class="channel-raw">{{.Raw}}{{if .Channel.Samples}} <small>n={{.Channel.Samples}}</small>{{end}}</span>
-              <span class="channel-bar"><i class="{{.BarClass}}" style="width:{{.ScorePct}}%"></i><em>{{.ScorePct}}%</em></span>
-              <span class="channel-conf"><i style="width:{{.ConfPct}}%"></i>{{.ConfPct}}%</span>
-              <span class="zone {{.ZoneClass}}">{{if eq .Zone "no_data"}}no data{{else}}{{.Zone}}{{end}}</span>
+
+          {{if .Aim}}
+          <section class="aim-panel">
+            <div class="panel-head">
+              <h4>Aim</h4>
+              <div class="aim-rating"><b>{{.AimDisplay}}</b><span>{{.AimGrade}}</span></div>
+            </div>
+            <div class="aim-grid">
+              {{range .Aim}}
+              <div class="aim-tile {{.Class}}" title="{{.Tooltip}} (n={{.Samples}})">
+                <span class="aim-label">{{.Label}}</span>
+                <span class="aim-value">{{.Display}}</span>
+                <span class="aim-bar"><i style="width:{{.ScorePct}}%"></i></span>
+                <span class="aim-sample">{{if .LowSample}}low sample · {{end}}n={{.Samples}}</span>
+              </div>
+              {{end}}
+            </div>
+            <p class="disclaimer small">Aim metrics use fixed anchors, not rank data. Hover a tile for its definition and sample count.</p>
+          </section>
+          {{end}}
+        </div>
+
+        <aside class="player-side">
+          {{with .Cheat}}
+          <section class="cheat-panel {{.VerdictClass}}">
+            <div class="panel-head">
+              <h4>Cheat analysis</h4>
+              <span class="verdict {{.VerdictClass}}">{{.Verdict}}</span>
+            </div>
+            {{if .Available}}
+            <div class="cheat-meter-row">
+              <div class="cheat-meter"><i style="width:{{.Likelihood}}%"></i></div>
+              <b class="cheat-likelihood">{{.LikelihoodPct}}</b>
+              <span class="muted">likelihood · flag at 50%</span>
+            </div>
+            {{if .Narrative}}<p class="narrative">{{.Narrative}}</p>{{end}}
+            {{if .Grades}}
+            <div class="grades">
+              {{range .Grades}}<span class="grade-chip"><span>{{.Label}}</span><b class="grade {{gradeClass .Grade}}">{{.Grade}}</b></span>{{end}}
+              {{if .OverallGrade}}<span class="grade-chip overall"><span>Overall</span><b class="grade {{gradeClass .OverallGrade}}">{{.OverallGrade}}</b></span>{{end}}
             </div>
             {{end}}
-          </div>
-          {{if .Adjustments}}
-          <div class="adjustments"><b>Adjustments:</b>{{range .Adjustments}}<span class="adjust">{{.Label}}{{if .Detail}} <em>{{.Detail}}</em>{{end}}</span>{{end}}</div>
+            <div class="channel-table">
+              <div class="channel-head"><span>Channel</span><span>Raw</span><span>Evidence</span><span>Conf.</span><span>Zone</span></div>
+              {{range .Channels}}
+              <div class="channel-row" title="{{.Channel.Description}}">
+                <span class="channel-name">{{.Channel.Label}}</span>
+                <span class="channel-raw">{{.Raw}}{{if .Channel.Samples}} <small>n={{.Channel.Samples}}</small>{{end}}</span>
+                <span class="channel-bar"><i class="{{.BarClass}}" style="width:{{.ScorePct}}%"></i><em>{{.ScorePct}}%</em></span>
+                <span class="channel-conf"><i style="width:{{.ConfPct}}%"></i>{{.ConfPct}}%</span>
+                <span class="zone {{.ZoneClass}}">{{if eq .Zone "no_data"}}no data{{else}}{{.Zone}}{{end}}</span>
+              </div>
+              {{end}}
+            </div>
+            {{if .Adjustments}}
+            <div class="adjustments"><b>Adjustments:</b>{{range .Adjustments}}<span class="adjust">{{.Label}}{{if .Detail}} <em>{{.Detail}}</em>{{end}}</span>{{end}}</div>
+            {{end}}
+            <p class="disclaimer small">Detector: vendored demo-anticheat (10-channel Bayesian model). Statistical signal, not proof. Small samples reduce confidence — read the sample counts and zones.</p>
+            {{else}}
+            <p class="error-text">Cheat analysis unavailable: {{.Error}}</p>
+            {{end}}
+          </section>
           {{end}}
-          <p class="disclaimer small">Detector: vendored demo-anticheat (10-channel Bayesian model). Statistical signal, not proof. Small samples reduce confidence — read the sample counts and zones.</p>
-          {{else}}
-          <p class="error-text">Cheat analysis unavailable: {{.Error}}</p>
+
+          {{if and .ShowReview .Moments}}
+          <section class="review-panel">
+            <div class="panel-head">
+              <h4>When to look</h4>
+              <span class="muted small">{{.MomentCount}} cue(s)</span>
+            </div>
+            <p class="muted small">Copy a tick and run <code>demo_gototick &lt;tick&gt;</code> in the demo console.</p>
+            <ol class="review-list">
+              {{range .TopMoments}}{{template "moment" .}}{{end}}
+            </ol>
+            {{if gt .MomentCount (len .TopMoments)}}
+            <details class="all-cues">
+              <summary>All {{.MomentCount}} cues</summary>
+              <ol class="review-list">
+                {{range .Moments}}{{template "moment" .}}{{end}}
+              </ol>
+            </details>
+            {{end}}
+            <p class="disclaimer small">Review cues only. They mark detector thresholds, not confirmed cheating.</p>
+          </section>
           {{end}}
-        </section>
-        {{end}}
+        </aside>
 
         <div class="detail-grid">
           <section class="panel">
@@ -444,11 +586,18 @@
   <symbol id="i-dot" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></symbol>
 </svg>
 
-
-
 <script>{{.JS}}</script>
 </body>
 </html>
+{{- end}}
+
+{{define "moment" -}}
+<li class="review-item {{.Class}}">
+  <span class="cue-time">{{.Time}}</span>
+  <span class="cue-round">{{if .RoundAnchor}}<a href="#{{.RoundAnchor}}">{{.RoundLabel}}</a>{{else}}{{.RoundLabel}}{{end}}{{if .RoundTime}} <em>{{.RoundTime}}</em>{{end}}</span>
+  <span class="cue-body">{{range .Reasons}}<span class="cue-tag {{.Kind}}" title="{{.Detail}}"><b>{{.Label}}</b> {{.Value}}</span>{{end}}{{if .Weapon}}<span class="cue-meta">{{.Weapon}}</span>{{end}}{{if .Opponent}}<span class="cue-meta">vs {{.Opponent}}</span>{{end}}</span>
+  <button type="button" class="tick-copy" data-copy="{{.DemoCommand}}" title="Copy {{.DemoCommand}}" aria-label="Copy {{.DemoCommand}}">tick {{.Tick}}</button>
+</li>
 {{- end}}
 
 {{define "event" -}}

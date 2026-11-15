@@ -95,6 +95,17 @@ func Analyze(path string, logger *slog.Logger) (rep Report) {
 		for _, a := range vr.Adjustments {
 			cr.Adjustments = append(cr.Adjustments, model.Adjustment{Label: a.Label, Detail: a.Detail})
 		}
+		for _, m := range vr.Moments {
+			cr.Moments = append(cr.Moments, model.CheatMoment{
+				Kind:     m.Kind,
+				Tick:     m.Tick,
+				Value:    m.Value,
+				Unit:     m.Unit,
+				Opponent: m.Opponent,
+				Weapon:   m.Weapon,
+				Detail:   m.Detail,
+			})
+		}
 		rep.Players[sid] = cr
 	}
 	return rep

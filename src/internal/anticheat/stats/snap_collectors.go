@@ -217,6 +217,24 @@ func (sac *SnapAngleCollector) processKill(e events.Kill, demoStats *DemoStats) 
 	if playerStats != nil {
 		// Increment kill count for this player
 		playerStats.IncrementIntMetric(Category("aiming"), Key("snapped_kills"))
+
+		// Battlelog integration: record a timestamped review cue when the snap
+		// is at or beyond the channel's ramp start. Scoring is unchanged.
+		if velocity >= evidenceSnapVelocity {
+			tick := endSnapshot.Tick
+			if tick <= 0 {
+				tick = sac.currentTick
+			}
+			playerStats.AddMoment(EvidenceMoment{
+				Kind:     "snap",
+				Tick:     tick,
+				Value:    velocity,
+				Unit:     "°/ms",
+				Opponent: e.Victim.Name,
+				Weapon:   getWeaponName(e.Weapon),
+				Detail:   "view-angle snap before the kill",
+			})
+		}
 	}
 }
 

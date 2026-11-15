@@ -18,6 +18,11 @@ func testMatch() *model.Match {
 		TickRate:      64,
 		FileTime:      time.Date(2026, 11, 13, 20, 0, 0, 0, time.UTC),
 		ParserVersion: "test",
+		Summary: &model.Summary{
+			WinnerName: "Alpha", Score: [2]int{13, 7}, Rounds: 1, RegulationRounds: 24,
+			FlaggedPlayers: 1, TopFraggerName: "kalle", TopFraggerKills: 25,
+			BestAimName: "kalle", BestAimRating: 72, BestAimGrade: "B+",
+		},
 		Teams: []*model.Team{
 			{ID: 2, Name: "Alpha", StartSide: model.SideT, FinalSide: model.SideCT, Score: 13, PlayerIDs: []string{"1"}},
 			{ID: 3, Name: "Bravo", StartSide: model.SideCT, FinalSide: model.SideT, Score: 7, PlayerIDs: []string{"2"}},
@@ -32,15 +37,17 @@ func testMatch() *model.Match {
 					{ID: "reaction", Label: "Reaction", Display: "380 ms", Samples: 12, Score: 60, Weight: 20, Tooltip: "x"},
 					{ID: "preaim", Label: "Preaim", Display: "8.0°", Samples: 12, Score: 80, Weight: 15, Tooltip: "x"},
 				}},
-				Cheat: &model.CheatReport{Available: true, Likelihood: 12, Flagged: false,
-					Channels: []model.CheatChannel{{ID: "hs", Label: "Headshot rate", Score: 0, Confidence: 0.9, Zone: "clean", Raw: 48, Unit: "%", Samples: 20, HasData: true}}},
+				Cheat: &model.CheatReport{Available: true, Likelihood: 62, Flagged: true, Narrative: "Snap and pre-aim signals are elevated.",
+					Channels:    []model.CheatChannel{{ID: "hs", Label: "Headshot rate", Score: 0, Confidence: 0.9, Zone: "clean", Raw: 48, Unit: "%", Samples: 20, HasData: true}},
+					Adjustments: []model.Adjustment{{Label: "Evidence stacking boost", Detail: "two channels"}},
+					Moments:     []model.CheatMoment{{Kind: "snap", Tick: 120, Seconds: 1.875, Round: 1, Value: 2.4, Unit: "°/ms", Opponent: "victim", Weapon: "AK-47"}}},
 				Weapons:    map[string]*model.WeaponStats{"AK-47": {Name: "AK-47", Kills: 15, Shots: 150, Hits: 45, Accuracy: 30}},
 				RoundStats: map[int]*model.RoundStat{1: {Side: model.SideT, Kills: 2, Damage: 200, EquipValue: 4000, Survived: true}},
 				SideStats:  map[model.Side]*model.PlayerStats{model.SideT: {Rounds: 10, Kills: 10, Deaths: 5, Assists: 2, Damage: 900, ADR: 90, HSPercent: 40}},
 			},
 		},
 		Rounds: []*model.Round{{
-			Number: 1, StartTick: 100, StartOffset: 10, Duration: 90, Winner: model.SideT, WinnerTeamID: 2,
+			Number: 1, StartTick: 100, EndTick: 500, StartOffset: 10, Duration: 90, Winner: model.SideT, WinnerTeamID: 2,
 			Reason: "Bomb exploded", StartScore: [2]int{0, 0}, EndScore: [2]int{1, 0},
 			Events:  []*model.Event{{Type: "kill", Offset: 20, ActorID: "1", ActorName: "kalle", VictimName: "victim", Weapon: "AK-47", Headshot: true}},
 			Players: map[string]*model.RoundStat{"1": {Side: model.SideT, Kills: 1}},
@@ -48,6 +55,31 @@ func testMatch() *model.Match {
 		Warmup: &model.Warmup{Duration: 30, Events: []*model.Event{{Type: "kill", Offset: 5, ActorName: "kalle", VictimName: "victim", Weapon: "USP-S"}}},
 	}
 	return m
+}
+
+func TestCheatMomentsMergeByTickAndFeedWatchList(t *testing.T) {
+	m := testMatch()
+	m.Players[0].Cheat.Moments = append(m.Players[0].Cheat.Moments,
+		model.CheatMoment{Kind: "ttd_sub100", Tick: 120, Value: 90, Unit: "ms", Opponent: "victim", Weapon: "AK-47"},
+		model.CheatMoment{Kind: "preaim", Tick: 300, Value: 3.2, Unit: "°", Opponent: "other", Weapon: "AK-47"},
+	)
+	v := NewView(m, "test")
+	if len(v.Cheaters) != 1 {
+		t.Fatalf("got %d watch-list players, want 1", len(v.Cheaters))
+	}
+	pv := v.Players[0]
+	if pv.MomentCount != 2 || len(pv.Moments) != 2 {
+		t.Fatalf("moments not merged by tick: count=%d len=%d", pv.MomentCount, len(pv.Moments))
+	}
+	if len(pv.Moments[0].Reasons) != 2 {
+		t.Fatalf("same-tick reasons not merged: %+v", pv.Moments[0].Reasons)
+	}
+	if pv.Moments[0].Class != "cue-strong" {
+		t.Fatalf("merged cue class: got %q, want cue-strong", pv.Moments[0].Class)
+	}
+	if pv.Moments[1].RoundAnchor != "round-100" {
+		t.Fatalf("round anchor: got %q, want round-100", pv.Moments[1].RoundAnchor)
+	}
 }
 
 func TestRenderContainsCoreSectionsAndEscapesNames(t *testing.T) {
@@ -59,7 +91,7 @@ func TestRenderContainsCoreSectionsAndEscapesNames(t *testing.T) {
 		t.Fatal(err)
 	}
 	page := buf.String()
-	for _, want := range []string{"BATTLELOG", "Scoreboard", "Rounds", "Players", "Aim", "Cheat analysis", "Warmup", "de_mirage", "26.11.1"} {
+	for _, want := range []string{"BATTLELOG", "Scoreboard", "Rounds", "Players", "Aim", "Cheat analysis", "Warmup", "de_mirage", "26.11.1", "Cheat watch", "When to look", "demo_gototick 120", "tick 120", "Round history"} {
 		if !strings.Contains(page, want) {
 			t.Errorf("missing %q in rendered report", want)
 		}

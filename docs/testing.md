@@ -38,6 +38,8 @@ No test requires network access or a demo file.
    - scoreboard totals equal the sum of player rows,
    - a clean player is not flagged; flagged players have plausible raw
      snap/TTD/pre-FOV values and sufficient sample counts,
+   - timestamped cheat cues land inside the round shown, and
+     `demo_gototick <tick>` reaches the corresponding moment,
    - aim samples (`n=`) are non-trivial before trusting a rating,
    - HTML opens offline and filters work,
    - JSON sidecar has `schemaVersion: 1`.

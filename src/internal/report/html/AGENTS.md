@@ -1,12 +1,12 @@
 # AGENTS.md — internal/report/html
 
-Self-contained Battlelog-style report renderer.
+Self-contained, flat Battlelog-style report renderer.
 
 ## Files
 
 - `view.go` — presentation view model and builders.
 - `renderer.go` — embedded template/assets, `Render`.
-- `templates/report.gohtml` — one HTML document + event partial.
+- `templates/report.gohtml` — one HTML document + event/moment partials.
 - `assets/style.css`, `assets/app.js` — inlined at render time.
 
 ## Invariants
@@ -15,17 +15,22 @@ Self-contained Battlelog-style report renderer.
 - Player/clan/demo strings are rendered via template actions only. Never build
   HTML from `fmt.Sprintf` and never use `template.HTML` for demo content.
 - The page must be readable with JS disabled; JS only adds nav highlighting,
-  filters, and expand/collapse.
+  filters, expand/collapse, and tick copying.
 - Every cheat card carries the “statistical signal, not proof” disclaimer.
-- Preserve anchors: `#overview`, `#scoreboard`, `#rounds`, `#players`,
-  `#player-<slug>`, `#round-<tick>`, `#warmup`.
+  Timestamped cues are review aids, not proof of cheating.
+- Preserve anchors: `#overview`, `#scoreboard`, `#cheaters`, `#rounds`,
+  `#players`, `#player-<slug>`, `#cheater-<slug>`, `#round-<tick>`, `#warmup`.
 - Keep the dark palette tokens; no light mode.
+- Keep the visual language flat (1 px borders, hard corners, no decorative
+  perspective/glow), and preserve the orange accent.
 - Score/round tables need horizontal scroll, not tiny text.
+- The layout must work from ~320 px to 4K without a fixed content-width cap.
 
 ## Extending
 
 1. Build data in `view.go`; avoid logic in templates.
 2. Add an event icon to the sprite and `iconByType` if needed.
-3. Style with existing tokens; support ≤640 px.
-4. Add a render test assertion in `render_test.go` for new sections or contracts.
+3. Style with existing tokens; support ≤640 px and very wide screens.
+4. Add a render test assertion in `render_test.go` for new sections or
+   contracts.
 5. Update `docs/battlelog-ui.md` and `docs/report-schema.md`.

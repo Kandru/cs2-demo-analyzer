@@ -286,6 +286,21 @@ type CheatReport struct {
 	Narrative     string         `json:"narrative,omitempty"`
 	Channels      []CheatChannel `json:"channels,omitempty"`
 	Adjustments   []Adjustment   `json:"adjustments,omitempty"`
+	Moments       []CheatMoment  `json:"moments,omitempty"`
+}
+
+// CheatMoment is one timestamped review cue from the detector. Round and
+// Seconds are filled by the analysis merge from the battlelog round model.
+type CheatMoment struct {
+	Kind     string  `json:"kind"`
+	Tick     int     `json:"tick"`
+	Round    int     `json:"round,omitempty"`
+	Seconds  float64 `json:"seconds,omitempty"`
+	Value    float64 `json:"value,omitempty"`
+	Unit     string  `json:"unit,omitempty"`
+	Opponent string  `json:"opponent,omitempty"`
+	Weapon   string  `json:"weapon,omitempty"`
+	Detail   string  `json:"detail,omitempty"`
 }
 
 // Grade is a category skill grade from the detector.

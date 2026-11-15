@@ -50,6 +50,96 @@ type Metric struct {
 type PlayerStats struct {
 	Player     PlayerIdentifier
 	Categories map[Category]map[Key]Metric
+	// Moments holds timestamped, suspicious-direction evidence recorded by the
+	// collectors. It is additive metadata for the report and never feeds the
+	// cheat score. See docs/anticheat.md.
+	Moments []EvidenceMoment
+}
+
+// EvidenceMoment is one timestamped detector observation that a reviewer can
+// jump to in the demo. Values mirror the channel that produced the signal.
+type EvidenceMoment struct {
+	Kind     string
+	Tick     int
+	Value    float64
+	Unit     string
+	Opponent string
+	Weapon   string
+	Detail   string
+}
+
+const (
+	// evidenceMomentCapPerKind bounds one channel's moments per player. A long
+	// match can produce hundreds of snap samples; the report only needs a
+	// useful review shortlist.
+	evidenceMomentCapPerKind = 50
+	// evidenceMomentCapPerPlayer bounds the total payload written to JSON/HTML.
+	evidenceMomentCapPerPlayer = 200
+)
+
+// AddMoment records one review cue, enforcing per-kind and per-player caps.
+// When a cap is full, a more suspicious cue replaces the weakest one so long
+// matches keep their strongest review targets.
+func (ps *PlayerStats) AddMoment(m EvidenceMoment) {
+	if ps == nil || m.Kind == "" || m.Tick < 0 {
+		return
+	}
+	kindIdx := make([]int, 0, 8)
+	for i, existing := range ps.Moments {
+		if existing.Kind == m.Kind {
+			kindIdx = append(kindIdx, i)
+		}
+	}
+	if len(kindIdx) >= evidenceMomentCapPerKind {
+		weakest := kindIdx[0]
+		for _, i := range kindIdx[1:] {
+			if momentSeverity(ps.Moments[i]) < momentSeverity(ps.Moments[weakest]) {
+				weakest = i
+			}
+		}
+		if momentSeverity(m) <= momentSeverity(ps.Moments[weakest]) {
+			return
+		}
+		ps.Moments[weakest] = m
+		return
+	}
+	if len(ps.Moments) >= evidenceMomentCapPerPlayer {
+		weakest := 0
+		for i := 1; i < len(ps.Moments); i++ {
+			if momentSeverity(ps.Moments[i]) < momentSeverity(ps.Moments[weakest]) {
+				weakest = i
+			}
+		}
+		if momentSeverity(m) <= momentSeverity(ps.Moments[weakest]) {
+			return
+		}
+		ps.Moments[weakest] = m
+		return
+	}
+	ps.Moments = append(ps.Moments, m)
+}
+
+// momentSeverity orders cues within a kind so the cap keeps the strongest
+// samples. The scales are deliberately simple; the report ranks by kind too.
+func momentSeverity(m EvidenceMoment) float64 {
+	switch m.Kind {
+	case "snap":
+		return m.Value // higher is worse
+	case "ttd", "ttd_sub100":
+		return 1000 - m.Value // lower is worse
+	case "preaim":
+		return 90 - m.Value
+	case "recoil":
+		return 10 - m.Value
+	case "wallbang":
+		return 20 + m.Value
+	case "smoke":
+		return 15
+	case "noscope":
+		return 14
+	default:
+		return 1
+	}
 }
 
 // NewPlayerStats creates a new PlayerStats instance

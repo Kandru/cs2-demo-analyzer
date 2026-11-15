@@ -22,7 +22,12 @@ at commit `635e8c7a152f3026446463cbe8f0ba2e170ec818` (2026-05-18).
   zone (`clean/mild/strong/blatant/no data`).
 - The detector's narrative paragraph and skill grades.
 - Boosts/discounts/overrides that shaped the final score.
+- Timestamped review cues (match clock, round, tick) that link into the round
+  timeline and can be copied as `demo_gototick <tick>`.
 - An explicit “statistical signal, not proof” disclaimer.
+
+Cues are recorded only in the suspicious direction and only when a channel
+crosses its ramp start. They are reviewer navigation aids, never a verdict.
 
 ## Upstream method (summary)
 
@@ -74,6 +79,24 @@ otherwise unchanged.
    Upstream printed a debug block on every run.
 
 5. **Adapter additions** (`battlelog.go`) only; no scoring changes.
+
+6. **Timestamped evidence cues** (`types.go`, `snap_collectors.go`,
+   `reaction_collectors.go`, `behavioral_collectors.go`,
+   `recoil_collectors.go`, new `evidence_collector.go`). Each collector appends
+   an `EvidenceMoment` when the signal crosses the corresponding channel ramp:
+
+   | Cue | Threshold |
+   |---|---|
+   | `snap` | ≥ 2.0 °/ms |
+   | `ttd` / `ttd_sub100` | ≤ 250 ms / ≤ 100 ms |
+   | `preaim` | ≤ 12° pre-FOV angle |
+   | `recoil` | ≤ 0.30° mean spray error, ≥ 3 bullets |
+   | `wallbang`, `smoke`, `noscope` | any qualifying kill |
+
+   Moments carry an additive per-player cap (50/kind, 200 total), never feed
+   the score, and are exposed through `BattlelogReports` → `model.CheatReport`.
+   `internal/analysis` maps their ticks to round numbers and seconds. Scoring
+   output is unchanged; calibration tests must stay green.
 
 The vendored code should be updated as a unit when upstream changes. Re-apply
 the patches and re-run `docs/testing.md` checks plus the anti-cheat calibration

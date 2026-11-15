@@ -80,7 +80,9 @@ demo takes roughly 9–11 s on a modern CPU (both passes included).
    anchors; update `docs/aim-metrics.md`; add a unit test.
 4. **New cheat channel**: this is upstream logic. Prefer extending the vendored
    detector only via documented patches; then map it in
-   `anticheat/stats/battlelog.go`.
+   `anticheat/stats/battlelog.go`. If reviewers should jump to the signal,
+   append an `EvidenceMoment` at the collector and document the threshold in
+   `docs/anticheat.md`.
 5. **New output format**: implement a renderer in `internal/report/<format>` and
    call it from `app.Processor`; keep the `model` contract unchanged.
 6. **New watcher source** (S3/SFTP): implement the `watch.Processor` boundary

@@ -53,12 +53,18 @@ IDs: `damage_speed`, `reaction`, `preaim`, `accuracy`, `head_accuracy`,
 ### `CheatReport`
 
 `available`, `error`, `likelihood`, `flagged`, `flagThreshold`, `overallGrade`,
-`grades[]`, `narrative`, `channels[]`, `adjustments[]`.
+`grades[]`, `narrative`, `channels[]`, `adjustments[]`, `moments[]`.
 
 `CheatChannel`: `id`, `label`, `score` (0–1), `confidence` (0–1), `zone`,
 `raw`, `unit`, `samples`, `weight`, `hasData`, `description`.
 
 Adjustments: `label`, `detail`.
+
+`CheatMoment`: `kind` (`snap`, `ttd`, `ttd_sub100`, `preaim`, `recoil`,
+`wallbang`, `smoke`, `noscope`), `tick`, `round` (0 = warmup/pre-match),
+`seconds` (demo clock), `value`, `unit`, `opponent`, `weapon`, `detail`.
+These are additive review cues, not scoring inputs. `round`/`seconds` are
+filled by `internal/analysis` from the battlelog round model.
 
 ## `Round`
 

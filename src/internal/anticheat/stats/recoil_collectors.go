@@ -423,6 +423,19 @@ func (rc *RecoilControlCollector) finalizeBurst(state *sprayState, steamID uint6
 	// Calculate mean error for this burst
 	meanError := state.sumError / float64(state.countedBullets)
 
+	// Battlelog integration: a near-perfect spray is a timestamped review cue.
+	// Only metadata; the recoil score is still computed below from the totals.
+	if meanError <= evidenceRecoilError && state.countedBullets >= rc.minBurstSize {
+		playerStats.AddMoment(EvidenceMoment{
+			Kind:   "recoil",
+			Tick:   state.firstTick,
+			Value:  meanError,
+			Unit:   "°",
+			Weapon: state.weaponName,
+			Detail: "spray deviation against the known recoil pattern",
+		})
+	}
+
 	if rc.debugMode {
 		fmt.Printf("[DEBUG] B%02d Player:%d %s - Burst finalized: bullets=%d, sum=%.2f°, mean=%.2f°\n",
 			state.burstID, steamID, state.weaponName, state.countedBullets, state.sumError, meanError)

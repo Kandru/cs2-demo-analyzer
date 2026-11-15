@@ -39,6 +39,18 @@ type BattlelogAdjustment struct {
 	Detail string
 }
 
+// BattlelogMoment is one timestamped review cue recorded by a collector.
+// Values mirror the channel that produced the signal.
+type BattlelogMoment struct {
+	Kind     string
+	Tick     int
+	Value    float64
+	Unit     string
+	Opponent string
+	Weapon   string
+	Detail   string
+}
+
 // BattlelogPlayerReport is the full detector verdict for one player.
 type BattlelogPlayerReport struct {
 	SteamID64     uint64
@@ -51,6 +63,7 @@ type BattlelogPlayerReport struct {
 	Narrative     string
 	Channels      []BattlelogChannel
 	Adjustments   []BattlelogAdjustment
+	Moments       []BattlelogMoment
 }
 
 const battlelogFlagThreshold = cheatscoreFlagThreshold
@@ -85,8 +98,31 @@ func BattlelogReports(ds *DemoStats) map[uint64]*BattlelogPlayerReport {
 		rep.Narrative = buildCheatscoreNarrative(ps)
 		rep.Channels = battlelogChannels(ps)
 		rep.Adjustments = battlelogAdjustments(ps)
+		rep.Moments = battlelogMoments(ps)
 		out[sid] = rep
 	}
+	return out
+}
+
+func battlelogMoments(ps *PlayerStats) []BattlelogMoment {
+	out := make([]BattlelogMoment, 0, len(ps.Moments))
+	for _, m := range ps.Moments {
+		out = append(out, BattlelogMoment{
+			Kind:     m.Kind,
+			Tick:     m.Tick,
+			Value:    m.Value,
+			Unit:     m.Unit,
+			Opponent: m.Opponent,
+			Weapon:   m.Weapon,
+			Detail:   m.Detail,
+		})
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		if out[i].Tick != out[j].Tick {
+			return out[i].Tick < out[j].Tick
+		}
+		return out[i].Kind < out[j].Kind
+	})
 	return out
 }
 

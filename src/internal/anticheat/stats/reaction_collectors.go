@@ -147,6 +147,30 @@ func (rtc *ReactionTimeCollector) processDamage(e events.PlayerHurt, demoStats *
 	}
 	rtc.ttds[attackerID] = append(rtc.ttds[attackerID], deltaT)
 	eng.damaged = true
+
+	// Battlelog integration: record the sighting as a timestamped review cue
+	// when the time-to-damage is suspicious. Only metadata; scoring unchanged.
+	if deltaT <= evidenceReactionMs {
+		if ps := demoStats.GetOrCreatePlayerStats(e.Attacker); ps != nil {
+			kind := "ttd"
+			if deltaT <= evidenceSub100Ms {
+				kind = "ttd_sub100"
+			}
+			weapon := e.WeaponString
+			if weapon == "" {
+				weapon = getWeaponName(e.Weapon)
+			}
+			ps.AddMoment(EvidenceMoment{
+				Kind:     kind,
+				Tick:     eng.entryTick,
+				Value:    deltaT,
+				Unit:     "ms",
+				Opponent: e.Player.Name,
+				Weapon:   weapon,
+				Detail:   "first damage after the enemy became visible",
+			})
+		}
+	}
 }
 
 func (rtc *ReactionTimeCollector) clearForPlayer(playerID uint64) {

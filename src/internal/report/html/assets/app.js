@@ -1,5 +1,6 @@
 /* CS2 Battlelog — progressive enhancement. The report is fully readable
-   without JavaScript; this only adds navigation, filtering, and folding. */
+   without JavaScript; this only adds navigation, filtering, folding, and
+   copying demo tick commands. */
 (function () {
   "use strict";
 
@@ -20,7 +21,7 @@
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
         if (visible) setActive(visible.target.id);
       },
-      { rootMargin: "-90px 0px -60% 0px", threshold: [0.05, 0.25, 0.5] }
+      { rootMargin: "-80px 0px -60% 0px", threshold: [0.05, 0.25, 0.5] }
     );
     sections.forEach((s) => observer.observe(s));
   }
@@ -90,6 +91,44 @@
   const collapse = document.getElementById("collapse-rounds");
   if (expand) expand.addEventListener("click", () => document.querySelectorAll("details.round").forEach((d) => (d.open = true)));
   if (collapse) collapse.addEventListener("click", () => document.querySelectorAll("details.round").forEach((d) => (d.open = false)));
+
+  // Copy "demo_gototick <tick>" so the reviewer can jump in-game. Without JS
+  // the tick number is still visible and selectable.
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text);
+    }
+    const area = document.createElement("textarea");
+    area.value = text;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.left = "-9999px";
+    document.body.appendChild(area);
+    area.select();
+    try {
+      document.execCommand("copy");
+    } catch (_) {}
+    document.body.removeChild(area);
+    return Promise.resolve();
+  }
+
+  document.querySelectorAll(".tick-copy").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const command = btn.dataset.copy || "";
+      if (!command) return;
+      copyText(command)
+        .then(() => {
+          const previous = btn.textContent;
+          btn.textContent = "copied";
+          btn.classList.add("copied");
+          window.setTimeout(() => {
+            btn.textContent = previous;
+            btn.classList.remove("copied");
+          }, 1200);
+        })
+        .catch(() => {});
+    });
+  });
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && playerFilter) {

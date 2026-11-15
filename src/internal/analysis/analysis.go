@@ -4,6 +4,7 @@ package analysis
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/Kandru/cs2-demo-analyzer/internal/anticheat"
 	"github.com/Kandru/cs2-demo-analyzer/internal/model"
@@ -45,7 +46,50 @@ func Apply(m *model.Match, opts Options) {
 			}
 		}
 	}
+	annotateCheatMoments(m)
 	RefreshSummary(m)
+}
+
+// annotateCheatMoments maps detector ticks onto battlelog rounds and clock
+// seconds. The detector runs in a separate parser pass, so ticks are the only
+// shared coordinate. Moments outside an official round (warmup/pregame) keep
+// Round 0 and are labelled by the report.
+func annotateCheatMoments(m *model.Match) {
+	tickRate := m.TickRate
+	if tickRate <= 0 {
+		tickRate = 64
+	}
+	for _, p := range m.Players {
+		if p.Cheat == nil || len(p.Cheat.Moments) == 0 {
+			continue
+		}
+		for i := range p.Cheat.Moments {
+			moment := &p.Cheat.Moments[i]
+			if moment.Tick > 0 {
+				moment.Seconds = float64(moment.Tick) / tickRate
+			}
+			moment.Round = 0
+			for _, r := range m.Rounds {
+				if r.Pregame || r.Number == 0 {
+					continue
+				}
+				if r.EndTick > 0 && moment.Tick >= r.StartTick && moment.Tick <= r.EndTick {
+					moment.Round = r.Number
+					break
+				}
+				if r.EndTick <= 0 && moment.Tick >= r.StartTick {
+					moment.Round = r.Number
+					break
+				}
+			}
+		}
+		sort.SliceStable(p.Cheat.Moments, func(i, j int) bool {
+			if p.Cheat.Moments[i].Tick != p.Cheat.Moments[j].Tick {
+				return p.Cheat.Moments[i].Tick < p.Cheat.Moments[j].Tick
+			}
+			return p.Cheat.Moments[i].Kind < p.Cheat.Moments[j].Kind
+		})
+	}
 }
 
 // RefreshSummary recomputes summary values from the current match state.
