@@ -1,0 +1,23 @@
+# Build output
+/dist/
+/bin/
+*.exe
+*.test
+*.out
+
+# Local reports and demos
+*.dem
+*.dem.gz
+*.dem.bz2
+demos/
+reports/
+out/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Go
+src/.cache/

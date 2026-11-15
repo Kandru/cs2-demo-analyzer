@@ -1,0 +1,11 @@
+.git
+.github
+dist
+bin
+demos
+reports
+out
+*.dem
+*.dem.gz
+*.dem.bz2
+.DS_Store

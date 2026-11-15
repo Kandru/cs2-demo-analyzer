@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="demo-anticheat report for {{.DemoName}}: {{.PlayerCount}} players, {{.FlaggedCount}} flagged.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%230d0e10'/><rect x='3' y='3' width='10' height='10' fill='none' stroke='%23dc5a4a' stroke-width='2'/></svg>">
+<title>{{.DemoName}} — demo-anticheat</title>
+<style>
+:root {
+  --bg: #0d0e10;
+  --card: #15171a;
+  --line: #262a30;
+  --text: #e6e7e9;
+  --dim: #9aa0a8;
+  --faint: #6a707a;
+  --flag: #dc5a4a;
+  --warn: #d49a3a;
+  --ok: #4f9d65;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-feature-settings: "tnum" 1;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+.container { max-width: 1320px; margin: 0 auto; padding: 56px 40px 72px; }
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12px;
+  color: var(--faint);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 14px;
+  margin-bottom: 40px;
+}
+header .name { color: var(--dim); }
+
+h1 { font-size: 36px; font-weight: 700; margin: 0 0 6px; letter-spacing: -0.02em; line-height: 1.15; }
+.meta { color: var(--dim); margin-bottom: 32px; font-size: 14px; }
+.meta code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; color: var(--text); }
+
+.verdict { font-size: 21px; line-height: 1.45; margin: 0 0 6px; font-weight: 400; }
+.verdict .count.flagged { color: var(--flag); font-weight: 700; }
+.verdict .count.clean { color: var(--ok); font-weight: 700; }
+.verdict-detail { color: var(--dim); font-size: 14px; margin: 0 0 56px; max-width: 60ch; }
+
+.section-title { font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--faint); font-weight: 700; margin: 0 0 22px; }
+
+.scoreboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px; margin-bottom: 56px; }
+.team-label { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; margin-bottom: 10px; color: var(--text); }
+.team-label .side { display: inline-block; padding: 2px 8px; border: 1px solid var(--line); border-radius: 3px; margin-right: 8px; font-size: 11px; color: var(--dim); }
+.team-label .side.T { color: var(--warn); border-color: var(--warn); }
+.team-label .side.CT { color: #6fa8c8; border-color: #6fa8c8; }
+.team-label .count { color: var(--faint); font-weight: 400; }
+
+.score-table { width: 100%; border-collapse: collapse; }
+.score-table th, .score-table td { padding: 8px 6px; text-align: right; border-bottom: 1px solid var(--line); font-size: 13px; }
+.score-table th { color: var(--faint); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+.score-table th:first-child, .score-table td:first-child { text-align: left; }
+.score-table td.player-cell { color: var(--text); font-weight: 500; padding-right: 12px; }
+.score-table td.num { font-variant-numeric: tabular-nums; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; color: var(--text); }
+.score-table td.muted { color: var(--faint); }
+
+.players { display: grid; gap: 14px; }
+.player {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 24px 28px;
+}
+.player.flagged { border-color: var(--flag); }
+.player-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+.player-name { font-size: 20px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.01em; }
+.player-id { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px; color: var(--faint); }
+.likelihood { text-align: right; flex-shrink: 0; }
+.likelihood-num {
+  font-size: 32px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.likelihood-num.flag { color: var(--flag); }
+.likelihood-num.warn { color: var(--warn); }
+.likelihood-num.ok { color: var(--ok); }
+.likelihood-label { font-size: 11px; color: var(--faint); letter-spacing: 0.08em; }
+
+/* Bottom categories grid uses CSS multi-columns so that categories of very
+   different lengths (4 rows vs 30+) auto-balance instead of leaving one giant
+   column next to three tiny ones. break-inside keeps each category intact. */
+.categories {
+  columns: 3 220px;
+  column-gap: 32px;
+}
+.category {
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  page-break-inside: avoid;
+  margin: 0 0 22px;
+  display: block;
+}
+.category h3 {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+.category h3 .note { color: var(--warn); font-weight: 500; text-transform: none; letter-spacing: 0; margin-left: 6px; font-size: 11px; }
+
+.metric {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+.metric:last-child { border-bottom: none; }
+.metric .k { color: var(--dim); }
+.metric .v {
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12.5px;
+  color: var(--text);
+}
+.metric .v.hot { color: var(--flag); }
+.metric .v.warm { color: var(--warn); }
+
+/* === Grade badges ====================================================== */
+.grades-block {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 10px;
+  margin-bottom: 22px;
+  padding: 18px 18px 16px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0));
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.grade-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 76px;
+  padding: 10px 12px 8px;
+  border-radius: 5px;
+  background: #1b1e22;
+  border: 1px solid var(--line);
+}
+.grade-pill .grade-title {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.grade-pill .grade-value {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+.grade-pill.overall {
+  background: #20232a;
+  border: 1px solid var(--text);
+  margin-left: auto;
+  min-width: 96px;
+}
+.grade-pill.overall .grade-title { color: var(--text); }
+.grade-pill.overall .grade-value { font-size: 28px; }
+
+.grade-a .grade-value { color: var(--ok); }
+.grade-b .grade-value { color: #7ec894; }
+.grade-c .grade-value { color: var(--warn); }
+.grade-d .grade-value { color: #d97a4a; }
+.grade-f .grade-value { color: var(--flag); }
+
+/* === Narrative paragraph =============================================== */
+.narrative {
+  margin: 0 0 22px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border-left: 2px solid var(--line);
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--dim);
+}
+.flagged .narrative { border-left-color: var(--flag); }
+
+/* === Channels (cheat-detection breakdown) ============================== */
+.channels-block { margin-bottom: 22px; }
+.channels-block h3 {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+  font-weight: 700;
+  margin: 0 0 10px;
+}
+.channels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 6px 24px;
+}
+.channel {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+.channel .ch-label { font-size: 13px; color: var(--dim); grid-column: 1; }
+.channel .ch-zone {
+  grid-column: 2;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+  color: var(--faint);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.channel .ch-score {
+  grid-column: 3;
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 13px;
+  color: var(--text);
+  min-width: 38px;
+  text-align: right;
+}
+.channel .ch-bar {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  height: 3px;
+  background: var(--line);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.channel .ch-bar-fill {
+  height: 100%;
+  background: var(--dim);
+  border-radius: 2px;
+}
+.channel .ch-conf { grid-column: 3; grid-row: 2; font-size: 10px; color: var(--faint); text-align: right; margin-top: 4px; }
+
+.channel.no-data .ch-label { color: var(--faint); }
+.channel.no-data .ch-score { color: var(--faint); }
+.channel.no-data .ch-bar { display: none; }
+
+.zone-ok { color: var(--ok); border-color: var(--ok); }
+.zone-warm { color: var(--warn); border-color: var(--warn); }
+.zone-hot { color: var(--flag); border-color: var(--flag); }
+.channel .ch-zone.zone-hot ~ .ch-bar-fill,
+.channel.zone-hot-row .ch-bar-fill { background: var(--flag); }
+.channel.zone-warm-row .ch-bar-fill { background: var(--warn); }
+.channel.zone-ok-row .ch-bar-fill { background: var(--ok); }
+
+/* === Boosts strip ====================================================== */
+.boosts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.boost {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #1b1e22;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-size: 12px;
+}
+.boost .b-label { color: var(--faint); text-transform: uppercase; letter-spacing: 0.08em; font-size: 10px; }
+.boost .b-value {
+  color: var(--text);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+}
+.boost .b-value.hot { color: var(--flag); }
+.boost .b-value.warm { color: var(--warn); }
+
+.empty { color: var(--faint); padding: 40px 0; }
+
+footer {
+  margin-top: 64px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  color: var(--faint);
+  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+footer a { color: var(--dim); text-decoration: none; border-bottom: 1px solid var(--line); }
+footer a:hover { color: var(--text); }
+
+@media (max-width: 640px) {
+  .container { padding: 32px 18px 56px; }
+  h1 { font-size: 28px; }
+  .verdict { font-size: 18px; }
+  .player { padding: 20px; }
+  .player-head { flex-direction: column; align-items: stretch; }
+  .likelihood { text-align: left; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <span class="name">demo-anticheat</span>
+    <span>{{.GeneratedAt}}</span>
+  </header>
+
+  <h1>{{.DemoName}}</h1>
+  <div class="meta">
+    {{if .MapName}}Map <code>{{.MapName}}</code>{{end}}
+    {{if .GameMode}}{{if .MapName}} · {{end}}<code>{{.GameMode}}</code>{{end}}
+    {{if gt .RoundCount 0}} · {{.RoundCount}} rounds{{end}}
+    · {{.PlayerCount}} players
+  </div>
+
+  {{if gt .PlayerCount 0}}
+  <p class="verdict">
+    <span class="count {{if gt .FlaggedCount 0}}flagged{{else}}clean{{end}}">{{.FlaggedCount}}</span> of {{.PlayerCount}} players flagged.
+  </p>
+  <p class="verdict-detail">
+    Threshold for auto-flag is 50%. Highest score {{printf "%.1f" .HighestLikelihood}}% ({{.HighestName}}), lowest {{printf "%.1f" .LowestLikelihood}}% ({{.LowestName}}).
+  </p>
+  {{end}}
+
+  {{if .Teams}}
+  <h2 class="section-title">Scoreboard</h2>
+  <div class="scoreboard">
+    {{range .Teams}}
+    <div>
+      <div class="team-label"><span class="side {{.Label}}">{{.Label}}</span><span class="count">{{len .Players}} player{{if ne (len .Players) 1}}s{{end}}</span></div>
+      <table class="score-table">
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th>K</th>
+            <th>D</th>
+            <th>A</th>
+            <th>ADR</th>
+            <th>HS%</th>
+            <th>MVP</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .Players}}
+          <tr>
+            <td class="player-cell">{{.Name}}</td>
+            <td class="num">{{.Kills}}</td>
+            <td class="num">{{.Deaths}}</td>
+            <td class="num">{{.Assists}}</td>
+            <td class="num{{if eq .ADR "—"}} muted{{end}}">{{.ADR}}</td>
+            <td class="num{{if eq .HS "—"}} muted{{end}}">{{.HS}}</td>
+            <td class="num{{if eq .MVPs "0"}} muted{{end}}">{{.MVPs}}</td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+    {{end}}
+  </div>
+  {{end}}
+
+  <h2 class="section-title">Per-player analysis</h2>
+
+  {{if .Players}}
+  <div class="players">
+    {{range .Players}}
+    <article class="player {{if .Flagged}}flagged{{end}}">
+      <div class="player-head">
+        <div>
+          <h3 class="player-name">{{.Name}}</h3>
+          <div class="player-id">steam {{.SteamID}}</div>
+        </div>
+        <div class="likelihood">
+          <div class="likelihood-num {{.LikelihoodClass}}">{{printf "%.1f" .Likelihood}}%</div>
+          <div class="likelihood-label">{{if .Flagged}}flagged{{else}}clear{{end}}</div>
+        </div>
+      </div>
+
+      {{if or .Grades .OverallGrade}}
+      <div class="grades-block">
+        {{range .Grades}}
+        <div class="grade-pill {{.Class}}">
+          <span class="grade-title">{{.Title}}</span>
+          <span class="grade-value">{{.Grade}}</span>
+        </div>
+        {{end}}
+        {{if .OverallGrade}}
+        <div class="grade-pill overall {{.OverallGradeClass}}">
+          <span class="grade-title">Overall</span>
+          <span class="grade-value">{{.OverallGrade}}</span>
+        </div>
+        {{end}}
+      </div>
+      {{end}}
+
+      {{if .Narrative}}
+      <p class="narrative">{{.Narrative}}</p>
+      {{end}}
+
+      {{if .Channels}}
+      <div class="channels-block">
+        <h3>Cheat-detection channels</h3>
+        <div class="channels-grid">
+          {{range .Channels}}
+          <div class="channel {{if not .HasData}}no-data{{end}} {{if eq .ZoneClass "zone-hot"}}zone-hot-row{{else if eq .ZoneClass "zone-warm"}}zone-warm-row{{else if eq .ZoneClass "zone-ok"}}zone-ok-row{{end}}">
+            <span class="ch-label">{{.Label}}</span>
+            <span class="ch-zone {{.ZoneClass}}">{{.Zone}}</span>
+            <span class="ch-score">{{.ScorePct}}</span>
+            {{if .HasData}}
+            <div class="ch-bar"><div class="ch-bar-fill" style="width: {{.ScoreBar}}%"></div></div>
+            <span class="ch-conf">conf {{.ConfPct}}</span>
+            {{end}}
+          </div>
+          {{end}}
+        </div>
+      </div>
+      {{end}}
+
+      {{if .Boosts}}
+      <div class="boosts">
+        {{range .Boosts}}
+        <div class="boost">
+          <span class="b-label">{{.Label}}</span>
+          <span class="b-value {{.Class}}">{{.Value}}</span>
+        </div>
+        {{end}}
+      </div>
+      {{end}}
+
+      <div class="categories">
+        {{range .Categories}}
+        <div class="category">
+          <h3>{{.Title}}{{if .Note}} <span class="note">{{.Note}}</span>{{end}}</h3>
+          {{range .Metrics}}
+          <div class="metric">
+            <span class="k">{{.Label}}</span>
+            <span class="v {{.Class}}">{{.Value}}</span>
+          </div>
+          {{end}}
+        </div>
+        {{end}}
+      </div>
+    </article>
+    {{end}}
+  </div>
+  {{else}}
+  <p class="empty">No player data available.</p>
+  {{end}}
+
+  <footer>
+    <span>Generated by <a href="https://github.com/Kandru/cs2-demo-analyzer">demo-anticheat</a></span>
+    <span>{{.PlayerCount}} players · {{.MetricCount}} metrics</span>
+  </footer>
+</div>
+</body>
+</html>
