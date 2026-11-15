@@ -188,8 +188,9 @@ func (sac *SnapAngleCollector) processKill(e events.Kill, demoStats *DemoStats) 
 			math.Pow(float64(angleDiff(startSnapshot.Pitch, endSnapshot.Pitch)), 2),
 	)
 
-	// Convert to degrees
-	deltaDeg := deltaRad * RadToDeg
+	// angleDiff already returns degrees. The upstream code multiplied by
+	// RadToDeg here, inflating snap velocity by ~57x. Fixed during vendoring.
+	deltaDeg := deltaRad
 
 	// Calculate time delta in milliseconds
 	deltaMs := tickDelta * (1000.0 / math.Max(1.0, sac.tickRate))

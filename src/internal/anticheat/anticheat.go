@@ -7,8 +7,13 @@
 package anticheat
 
 import (
+	"compress/bzip2"
+	"compress/gzip"
 	"fmt"
+	"io"
 	"log/slog"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/Kandru/cs2-demo-analyzer/internal/anticheat/analyzer"
@@ -38,7 +43,19 @@ func Analyze(path string, logger *slog.Logger) (rep Report) {
 		}
 	}()
 
-	results, err := analyzer.NewAnalyzer(path).Analyze()
+	an := analyzer.NewAnalyzer(path)
+	rd, closeFn, oerr := openDemo(path)
+	if oerr != nil {
+		rep.Err = fmt.Errorf("open demo for anti-cheat: %w", oerr)
+		if logger != nil {
+			logger.Warn("anti-cheat could not open demo", "demo", path, "error", oerr)
+		}
+		return rep
+	}
+	if closeFn != nil {
+		defer closeFn()
+	}
+	results, err := an.AnalyzeReader(rd)
 	if err != nil {
 		rep.Err = fmt.Errorf("anti-cheat analysis failed: %w", err)
 		if logger != nil {
@@ -81,4 +98,25 @@ func Analyze(path string, logger *slog.Logger) (rep Report) {
 		rep.Players[sid] = cr
 	}
 	return rep
+}
+
+func openDemo(path string) (io.Reader, func() error, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, nil, err
+	}
+	name := strings.ToLower(path)
+	switch {
+	case strings.HasSuffix(name, ".gz"):
+		zr, err := gzip.NewReader(f)
+		if err != nil {
+			f.Close()
+			return nil, nil, err
+		}
+		return zr, func() error { err := zr.Close(); _ = f.Close(); return err }, nil
+	case strings.HasSuffix(name, ".bz2"):
+		return bzip2.NewReader(f), f.Close, nil
+	default:
+		return f, f.Close, nil
+	}
 }

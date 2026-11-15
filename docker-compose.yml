@@ -1,0 +1,27 @@
+services:
+  cs2-battlelog:
+    build:
+      context: .
+      args:
+        VERSION: local
+    image: cs2-battlelog:latest
+    container_name: cs2-battlelog
+    restart: unless-stopped
+    volumes:
+      # Change the left-hand paths to your demo and report directories.
+      - ./demos:/demos:ro
+      - ./reports:/out
+    # Uncomment to run as your host user instead of root:
+    # user: "1000:1000"
+    command:
+      - watch
+      - --input
+      - /demos
+      - --output
+      - /out
+      - --workers
+      - "1"
+      - --interval
+      - 5s
+      - --debounce
+      - 2s

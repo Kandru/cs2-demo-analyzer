@@ -2,12 +2,13 @@ package analyzer
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
+	"github.com/Kandru/cs2-demo-analyzer/internal/anticheat/stats"
 	dem "github.com/markus-wa/demoinfocs-golang/v5/pkg/demoinfocs"
 	"github.com/markus-wa/demoinfocs-golang/v5/pkg/demoinfocs/msg"
-	"github.com/Kandru/cs2-demo-analyzer/internal/anticheat/stats"
 )
 
 // Analyzer represents a CS2 demo analyzer
@@ -51,17 +52,21 @@ func (a *Analyzer) RegisterCollector(collector stats.Collector) {
 	a.collectors = append(a.collectors, collector)
 }
 
-// Analyze performs the analysis of the demo file
+// Analyze performs the analysis of the demo file.
 func (a *Analyzer) Analyze() (Results, error) {
-	// Open the demo file
 	f, err := os.Open(a.demoPath)
 	if err != nil {
 		return Results{}, fmt.Errorf("failed to open demo file: %w", err)
 	}
 	defer f.Close()
+	return a.AnalyzeReader(f)
+}
 
-	// Create a new parser
-	parser := dem.NewParser(f)
+// AnalyzeReader performs the analysis from an arbitrary reader. It was added
+// for the battlelog integration so compressed demos can be decompressed
+// without a temporary file. Scoring behavior is unchanged.
+func (a *Analyzer) AnalyzeReader(rd io.Reader) (Results, error) {
+	parser := dem.NewParser(rd)
 	defer parser.Close()
 
 	// Initialize demo stats

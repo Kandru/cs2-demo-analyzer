@@ -140,6 +140,11 @@ func (rtc *ReactionTimeCollector) processDamage(e events.PlayerHurt, demoStats *
 		return
 	}
 
+	// A same-tick "sighting" is a radar-spot artifact, not a reaction sample.
+	if deltaT < 0.5*(1000.0/rtc.tickRate) {
+		eng.damaged = true
+		return
+	}
 	rtc.ttds[attackerID] = append(rtc.ttds[attackerID], deltaT)
 	eng.damaged = true
 }
@@ -242,6 +247,11 @@ func (rtc *ReactionTimeCollector) CollectFinalStats(demoStats *DemoStats) {
 			Type:        MetricPercentage,
 			FloatValue:  sub100Ratio,
 			Description: "Share of engagements completed in under 100 ms — statistically implausible without info or aim assistance",
+		})
+		ps.AddMetric(Category("reaction"), Key("sub_100ms_count"), Metric{
+			Type:        MetricInteger,
+			IntValue:    int64(sub100),
+			Description: "Number of engagements completed in under 100 ms",
 		})
 		ps.AddMetric(Category("reaction"), Key("ttd_samples"), Metric{
 			Type:        MetricInteger,

@@ -509,111 +509,54 @@ func (rc *RecoilControlCollector) CollectFinalStats(demoStats *DemoStats) {
 		}
 	}
 
-	// List of weapons we want to prioritize in output
-	priorityWeapons := []common.EquipmentType{
-		common.EqAK47,
-		common.EqM4A4,
-		common.EqMP9,
-	}
-
-	fmt.Println("\n=== DEBUG: Recoil Metrics ===")
-	// Calculate final stats for each player
-	for steamID, playerStats := range demoStats.Players {
+	// Calculate final stats for each player.
+	for _, playerStats := range demoStats.Players {
 		totalErrorSum, foundError := playerStats.GetMetric(Category("recoil"), Key("total_error_sum"))
 		totalBullets, foundBullets := playerStats.GetMetric(Category("recoil"), Key("total_counted_bullets"))
-		_, _ = playerStats.GetMetric(Category("recoil"), Key("burst_count")) // Get but don't store
 
-		// Calculate mean error if we have any data at all
 		if foundError && foundBullets && totalBullets.IntValue > 0 {
 			meanError := totalErrorSum.FloatValue / float64(totalBullets.IntValue)
-
-			fmt.Printf("Player %d - Mean Error: %.2f° (from %d bullets, total error: %.2f°)\n",
-				steamID, meanError, totalBullets.IntValue, totalErrorSum.FloatValue)
-
-			// Store mean angular error
 			playerStats.AddMetric(Category("recoil"), Key("mean_angular_error"), Metric{
 				Type:        MetricFloat,
 				FloatValue:  meanError,
 				Description: "Mean angular error in recoil control (degrees)",
 			})
 
-			// Calculate recoil score for the cheat detector (0-1 scale)
 			recoilScore := 0.0
-			if meanError <= 0.3 {
-				recoilScore = 1.0 // Perfect score (suspicious)
-			} else if meanError >= 0.75 {
-				recoilScore = 0.0 // No score
-			} else {
-				// Linear scale between 0.3 and 0.75 degrees
+			switch {
+			case meanError <= 0.3:
+				recoilScore = 1.0
+			case meanError >= 0.75:
+				recoilScore = 0.0
+			default:
 				recoilScore = (0.75 - meanError) / 0.45
 			}
-
-			fmt.Printf("Player %d - Recoil Score: %.2f\n", steamID, recoilScore)
-
 			playerStats.AddMetric(Category("recoil"), Key("recoil_score"), Metric{
 				Type:        MetricFloat,
 				FloatValue:  recoilScore,
 				Description: "Recoil score component for cheat detection (0-1)",
 			})
-
-			// Add interpretation
-			interp := interpretation(meanError, rc.perfectThreshold, rc.goodThreshold)
 			playerStats.AddMetric(Category("recoil"), Key("recoil_interpretation"), Metric{
 				Type:        MetricString,
-				StringValue: interp,
+				StringValue: interpretation(meanError, rc.perfectThreshold, rc.goodThreshold),
 				Description: "Interpretation of recoil control ability",
 			})
-
-			fmt.Printf("Player %d - Interpretation: %s\n\n", steamID, interp)
 		} else {
-			// No data at all
 			playerStats.AddMetric(Category("recoil"), Key("mean_angular_error"), Metric{
 				Type:        MetricFloat,
-				FloatValue:  0,
 				Description: "Mean angular error in recoil control (degrees) - no data",
 			})
-
 			playerStats.AddMetric(Category("recoil"), Key("recoil_score"), Metric{
 				Type:        MetricFloat,
-				FloatValue:  0,
 				Description: "Recoil score component - no data",
 			})
-
 			playerStats.AddMetric(Category("recoil"), Key("recoil_interpretation"), Metric{
 				Type:        MetricString,
 				StringValue: "No data",
 				Description: "Interpretation of recoil control ability",
 			})
 		}
-
-		// Calculate weapon-specific stats for priority weapons
-		for _, weaponType := range priorityWeapons {
-			weaponKey := Key(fmt.Sprintf("%s_bullets", weaponTypeToString(weaponType)))
-			weaponBullets, foundWeapon := playerStats.GetMetric(Category("recoil"), weaponKey)
-
-			if foundWeapon && weaponBullets.IntValue > 0 {
-				// Calculate weapon-specific metrics if we have any data
-				weaponErrorKey := Key(fmt.Sprintf("%s_error_sum", weaponTypeToString(weaponType)))
-				weaponErrorSum, foundWeaponError := playerStats.GetMetric(Category("recoil"), weaponErrorKey)
-
-				if foundWeaponError && weaponErrorSum.FloatValue > 0 {
-					weaponMeanError := weaponErrorSum.FloatValue / float64(weaponBullets.IntValue)
-
-					// Store weapon-specific mean error
-					playerStats.AddMetric(Category("recoil"), Key(fmt.Sprintf("%s_mean_error", weaponTypeToString(weaponType))), Metric{
-						Type:        MetricFloat,
-						FloatValue:  weaponMeanError,
-						Description: fmt.Sprintf("Mean error for %s (degrees)", weaponTypeToString(weaponType)),
-					})
-
-					fmt.Printf("Player %d - %s: %.2f° mean error\n",
-						steamID, weaponTypeToString(weaponType), weaponMeanError)
-				}
-			}
-		}
 	}
-	fmt.Println("=== End of DEBUG Recoil Metrics ===")
-	fmt.Println()
 }
 
 // interpretation returns a label describing the recoil profile, oriented

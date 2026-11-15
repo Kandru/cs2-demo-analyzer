@@ -1,0 +1,458 @@
+{{define "report" -}}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>{{.Title}} · CS2 Battlelog</title>
+<style>{{.CSS}}</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="#overview" aria-label="CS2 Battlelog home">
+      <span class="brand-mark">CS2</span>
+      <span class="brand-word">BATTLELOG</span>
+    </a>
+    <nav class="mainnav" aria-label="Sections">
+      <a href="#overview" class="active">Overview</a>
+      <a href="#scoreboard">Scoreboard</a>
+      <a href="#rounds">Rounds</a>
+      <a href="#players">Players</a>
+    </nav>
+    <div class="topmeta">
+      <span class="tag">{{.Match.Map}}</span>
+      <span>{{.Match.Mode}}</span>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+
+  <section class="hero" aria-labelledby="match-title">
+    <div class="hero-map {{mapClass .Match.Map}}">
+      <div class="hero-map-glow"></div>
+      <div class="hero-map-text">
+        <span class="eyebrow">Match report</span>
+        <h1 id="match-title">{{.Match.Map}}</h1>
+        <p class="hero-sub">{{.Match.Mode}} · {{clock .Match.Duration}} · {{len .Match.Rounds}} rounds</p>
+      </div>
+      <div class="hero-badge">{{if .Summary}}{{if .Summary.WinnerName}}{{.Summary.WinnerName}} wins{{else}}Draw{{end}}{{end}}</div>
+    </div>
+
+    <div class="scoreboard-hero">
+      {{range .Teams}}
+      <a class="hero-team {{.Side}} {{if .Win}}winner{{end}}" href="#players">
+        <span class="hero-team-name">{{.Team.Name}}</span>
+        <span class="hero-team-side">{{.Side}} start</span>
+      </a>
+      {{end}}
+      <div class="hero-score">
+        {{if .Summary}}
+          <span class="score-num">{{index .Summary.Score 0}}</span>
+          <span class="score-sep">:</span>
+          <span class="score-num">{{index .Summary.Score 1}}</span>
+        {{end}}
+      </div>
+      {{if .Match.Warnings}}<span class="warn-pill" title="{{range .Match.Warnings}}{{.}}&#10;{{end}}">{{len .Match.Warnings}} warning(s)</span>{{end}}
+    </div>
+
+    <div class="match-meta">
+      <span><b>Played</b> {{.Match.FileTime.Format "Mon, 02 Jan 2006 15:04"}}</span>
+      <span><b>Players</b> {{len .Match.Players}}</span>
+      <span><b>Tickrate</b> {{zero .Match.TickRate}}</span>
+      <span><b>Report</b> v{{.Version}}</span>
+    </div>
+  </section>
+
+  <section id="overview" class="section">
+    <div class="section-head">
+      <h2>Overview</h2>
+      <span class="section-note">The match at a glance</span>
+    </div>
+
+    {{with .Summary}}
+    <div class="tile-grid">
+      <div class="tile">
+        <span class="tile-label">Winner</span>
+        <span class="tile-value">{{if .WinnerName}}{{.WinnerName}}{{else}}Draw{{end}}</span>
+        <span class="tile-sub">{{index .Score 0}} : {{index .Score 1}}</span>
+      </div>
+      <div class="tile">
+        <span class="tile-label">Top fragger</span>
+        <span class="tile-value">{{if .TopFraggerName}}{{.TopFraggerName}}{{else}}—{{end}}</span>
+        <span class="tile-sub">{{.TopFraggerKills}} kills</span>
+      </div>
+      <div class="tile">
+        <span class="tile-label">Best aim</span>
+        <span class="tile-value">{{if .BestAimName}}{{.BestAimName}}{{else}}—{{end}}</span>
+        <span class="tile-sub">{{if .BestAimName}}{{zero .BestAimRating}} · {{.BestAimGrade}}{{else}}no sample{{end}}</span>
+      </div>
+      <div class="tile {{if gt .FlaggedPlayers 0}}alert{{end}}">
+        <span class="tile-label">Cheat flags</span>
+        <span class="tile-value">{{.FlaggedPlayers}}</span>
+        <span class="tile-sub">{{if gt .FlaggedPlayers 0}}review the player cards{{else}}no player crossed 50%{{end}}</span>
+      </div>
+      <div class="tile">
+        <span class="tile-label">Rounds</span>
+        <span class="tile-value">{{.Rounds}}</span>
+        <span class="tile-sub">regulation {{.RegulationRounds}}</span>
+      </div>
+    </div>
+    {{end}}
+
+    <div class="two-col">
+      <div class="panel">
+        <h3 class="panel-title">Team comparison</h3>
+        <div class="team-compare">
+          {{range .TeamStats}}
+          <div class="compare-row">
+            <div class="compare-head"><b>{{.Name}}</b><span class="muted">{{.Kills}} / {{.Deaths}} / {{.Assists}}</span></div>
+            <div class="compare-metrics">
+              <div class="metric-line"><span>ADR</span><div class="bar"><i style="width:{{.ADR}}%"></i></div><b>{{one .ADR}}</b></div>
+              <div class="metric-line"><span>HS</span><div class="bar"><i style="width:{{.HSPercent}}%"></i></div><b>{{zero .HSPercent}}%</b></div>
+              <div class="metric-line"><span>Aim</span><div class="bar aim"><i style="width:{{.AimRating}}%"></i></div><b>{{zero .AimRating}}</b></div>
+            </div>
+          </div>
+          {{end}}
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3 class="panel-title">Cheat watch</h3>
+        {{$flagged := false}}
+        {{range .Players}}{{if .Flagged}}{{$flagged = true}}{{end}}{{end}}
+        {{if $flagged}}
+          <ul class="flag-list">
+          {{range .Players}}{{if .Flagged}}
+            <li><a href="#{{.Anchor}}" class="flag-name">{{.Player.Name}}</a><span class="flag-score">{{one .Cheat.Likelihood}}%</span><span class="muted">{{.TeamName}}</span></li>
+          {{end}}{{end}}
+          </ul>
+        {{else}}
+          <p class="muted">No player reached the 50% flag threshold. Open a player card to read the channel-by-channel evidence.</p>
+        {{end}}
+        <p class="disclaimer small">Statistical signal only — not proof of cheating. Always review demos and context.</p>
+      </div>
+    </div>
+
+    {{if .Warnings}}
+    <div class="panel warnings">
+      <h3 class="panel-title">Parser warnings</h3>
+      <ul>{{range .Warnings}}<li>{{.}}</li>{{end}}</ul>
+    </div>
+    {{end}}
+  </section>
+
+  <section id="scoreboard" class="section">
+    <div class="section-head">
+      <h2>Scoreboard</h2>
+      <span class="section-note">Match totals · click a player for details</span>
+    </div>
+    <div class="teams">
+      {{range .Teams}}
+      <div class="team-board {{.Side}} {{if .Win}}is-winner{{end}}">
+        <div class="team-head">
+          <div>
+            <span class="team-side">{{.Side}}</span>
+            <h3>{{.Team.Name}}</h3>
+          </div>
+          <div class="team-score">{{.Team.Score}}{{if .Win}}<span class="win-mark">WIN</span>{{end}}</div>
+        </div>
+        <div class="table-scroll">
+        <table class="score-table">
+          <thead>
+            <tr><th class="name">Player</th><th>Score</th><th>K</th><th>D</th><th>A</th><th>K/D</th><th>ADR</th><th>HS</th><th>AIM</th><th>MVP</th></tr>
+          </thead>
+          <tbody>
+          {{range .Players}}
+            <tr class="{{if .Flagged}}flagged{{end}}">
+              <td class="name"><a href="#{{.Anchor}}">{{.Player.Name}}</a>{{if .Player.ClanTag}} <span class="clan">[{{.Player.ClanTag}}]</span>{{end}}{{if .Flagged}} <span class="flag-dot" title="Flagged by anti-cheat">⚑</span>{{end}}{{if .Player.IsBot}} <span class="bot">BOT</span>{{end}}</td>
+              <td>{{.ScoreDisplay}}</td>
+              <td>{{.Player.Stats.Kills}}</td>
+              <td>{{.Player.Stats.Deaths}}</td>
+              <td>{{.Player.Stats.Assists}}</td>
+              <td>{{.KDDisplay}}</td>
+              <td>{{.ADRDisplay}}</td>
+              <td>{{.HSDisplay}}</td>
+              <td class="aim-cell">{{if .AimDisplay}}{{.AimDisplay}} <span class="grade {{gradeClass .AimGrade}}">{{.AimGrade}}</span>{{else}}—{{end}}</td>
+              <td>{{.Player.Stats.MVPs}}</td>
+            </tr>
+          {{end}}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td class="name">Team total</td>
+              <td>—</td>
+              <td>{{.Stats.Kills}}</td>
+              <td>{{.Stats.Deaths}}</td>
+              <td>{{.Stats.Assists}}</td>
+              <td>—</td>
+              <td>{{one .Stats.ADR}}</td>
+              <td>{{zero .Stats.HSPercent}}%</td>
+              <td>{{zero .Stats.AimRating}}</td>
+              <td>—</td>
+            </tr>
+          </tfoot>
+        </table>
+        </div>
+      </div>
+      {{end}}
+    </div>
+  </section>
+
+  <section id="rounds" class="section">
+    <div class="section-head">
+      <h2>Rounds</h2>
+      <span class="section-note">Warmup first, then every round in order</span>
+    </div>
+
+    <div class="round-toolbar">
+      <div class="chips" id="round-chips">
+        {{if .Warmup}}<a class="chip warmup" href="#warmup">Warmup</a>{{end}}
+        {{range .Rounds}}<a class="chip {{.ChipClass}}" href="#{{.Anchor}}">{{.Label}}</a>{{end}}
+      </div>
+      <div class="filters">
+        <div class="segmented" role="group" aria-label="Event filter">
+          <button type="button" data-evt-filter="all" class="active">All</button>
+          <button type="button" data-evt-filter="kill">Kills</button>
+          <button type="button" data-evt-filter="bomb">Bombs</button>
+          <button type="button" data-evt-filter="grenade">Utility</button>
+          <button type="button" data-evt-filter="mvp">MVP</button>
+        </div>
+        <select id="player-filter" aria-label="Filter events by player">
+          <option value="">All players</option>
+          {{range .Players}}<option value="{{.Player.ID}}">{{.Player.Name}}</option>{{end}}
+        </select>
+        <button type="button" class="ghost" id="expand-rounds">Expand all</button>
+        <button type="button" class="ghost" id="collapse-rounds">Collapse all</button>
+      </div>
+    </div>
+
+    {{if .Warmup}}
+    <details class="round warmup" id="warmup" open>
+      <summary class="round-summary">
+        <span class="round-name">Warmup</span>
+        <span class="round-reason">before the first official round</span>
+        <span class="round-time">{{.Warmup.Duration}}</span>
+        <span class="round-events">{{len .Warmup.Events}} events</span>
+      </summary>
+      <div class="round-body">
+        <ol class="timeline">
+          {{range .Warmup.Events}}{{template "event" .}}{{end}}
+        </ol>
+      </div>
+    </details>
+    {{end}}
+
+    {{range .Rounds}}
+    <details class="round {{.ChipClass}}" id="{{.Anchor}}" {{if eq .Round.Number 1}}open{{end}}>
+      <summary class="round-summary">
+        <span class="round-name">{{.Label}}</span>
+        <span class="round-reason">{{.Round.Reason}}</span>
+        <span class="round-time">{{.Duration}}</span>
+        <span class="round-score">{{.Score}}</span>
+        <span class="round-events">{{len .Events}} events</span>
+      </summary>
+      <div class="round-body">
+        {{if .Economy}}
+        <div class="economy">
+          {{range .Economy}}
+          <div class="econ {{.Class}}">
+            <span class="econ-team"><i class="side-dot {{lower .Side}}"></i>{{.TeamName}}</span>
+            <span class="econ-buy">{{.BuyType}}</span>
+            <span class="econ-value">${{.Equip}}</span>
+          </div>
+          {{end}}
+        </div>
+        {{end}}
+        <ol class="timeline">
+          {{range .Events}}{{template "event" .}}{{end}}
+        </ol>
+      </div>
+    </details>
+    {{end}}
+  </section>
+
+  <section id="players" class="section">
+    <div class="section-head">
+      <h2>Players</h2>
+      <span class="section-note">Detailed stats, aim profile, and cheat analysis</span>
+    </div>
+
+    <div class="player-pills">
+      {{range .Players}}<a href="#{{.Anchor}}" class="pill {{if .Flagged}}flagged{{end}}">{{.Player.Name}}</a>{{end}}
+    </div>
+
+    {{range .Players}}
+    <article class="player-card" id="{{.Anchor}}">
+      <header class="player-head">
+        <div class="avatar {{if .Team}}{{.Side}}{{end}}">{{.Initials}}</div>
+        <div class="player-id">
+          <h3>{{.Player.Name}}{{if .Flagged}} <span class="flag-dot">⚑</span>{{end}}</h3>
+          <div class="player-sub">
+            {{if .TeamName}}<span class="team-tag {{.Side}}">{{.TeamName}}</span>{{end}}
+            {{if .Player.SteamID64}}<a href="https://steamcommunity.com/profiles/{{.Player.SteamID64}}" rel="noopener noreferrer">Steam profile</a>{{end}}
+            <span>{{.Player.RoundsPlayed}} rounds</span>
+            {{if .Player.IsBot}}<span class="bot">BOT</span>{{end}}
+          </div>
+        </div>
+        <div class="player-verdicts">
+          {{if .AimDisplay}}<span class="aim-badge">AIM {{.AimDisplay}} <b>{{.AimGrade}}</b></span>{{end}}
+          {{with .Cheat}}<span class="verdict {{.VerdictClass}}">{{.Verdict}}</span>{{end}}
+        </div>
+      </header>
+
+      <div class="player-body">
+        <div class="stat-strip">
+          <div><span>Kills</span><b>{{.Player.Stats.Kills}}</b></div>
+          <div><span>Deaths</span><b>{{.Player.Stats.Deaths}}</b></div>
+          <div><span>Assists</span><b>{{.Player.Stats.Assists}}</b></div>
+          <div><span>K/D</span><b>{{.KDDisplay}}</b></div>
+          <div><span>ADR</span><b>{{.ADRDisplay}}</b></div>
+          <div><span>HS</span><b>{{.HSDisplay}}</b></div>
+          <div><span>KAST</span><b>{{zero .Player.Stats.KASTPercent}}%</b></div>
+          <div><span>MVPs</span><b>{{.Player.Stats.MVPs}}</b></div>
+          <div><span>First kills</span><b>{{.Player.Stats.FirstKills}}</b></div>
+          <div><span>Plants / defuses</span><b>{{.Player.Stats.Plants}} / {{.Player.Stats.Defuses}}</b></div>
+          <div><span>Clutches</span><b>{{.Player.Stats.Clutches}}</b></div>
+          <div><span>Utility dmg</span><b>{{.Player.Stats.UtilityDamage}}</b></div>
+        </div>
+
+        {{if .Sides}}
+        <div class="side-split">
+          {{range .Sides}}
+          <div class="side-row {{lower .Side}}">
+            <b>{{.Side}}</b><span>{{.Rounds}} rounds</span><span>{{.Kills}} / {{.Deaths}} / {{.Assists}}</span><span>{{.ADR}} ADR</span><span>{{.HS}} HS</span>
+          </div>
+          {{end}}
+        </div>
+        {{end}}
+
+        {{if .Aim}}
+        <section class="aim-panel">
+          <div class="panel-head">
+            <h4>Aim</h4>
+            <div class="aim-rating"><b>{{.AimDisplay}}</b><span>{{.AimGrade}}</span></div>
+          </div>
+          <div class="aim-grid">
+            {{range .Aim}}
+            <div class="aim-tile {{.Class}}" title="{{.Tooltip}} (n={{.Samples}})">
+              <span class="aim-label">{{.Label}}</span>
+              <span class="aim-value">{{.Display}}</span>
+              <span class="aim-bar"><i style="width:{{.ScorePct}}%"></i></span>
+              <span class="aim-sample">{{if .LowSample}}low sample · {{end}}n={{.Samples}}</span>
+            </div>
+            {{end}}
+          </div>
+          <p class="disclaimer small">Aim metrics use fixed anchors, not rank data. Hover a tile for its definition and sample count.</p>
+        </section>
+        {{end}}
+
+        {{with .Cheat}}
+        <section class="cheat-panel {{.VerdictClass}}">
+          <div class="panel-head">
+            <h4>Cheat analysis</h4>
+            <span class="verdict {{.VerdictClass}}">{{.Verdict}}</span>
+          </div>
+          {{if .Available}}
+          <div class="cheat-meter-row">
+            <div class="cheat-meter"><i style="width:{{.Likelihood}}%"></i></div>
+            <b class="cheat-likelihood">{{.LikelihoodPct}}</b>
+            <span class="muted">likelihood · flag at 50%</span>
+          </div>
+          {{if .Narrative}}<p class="narrative">{{.Narrative}}</p>{{end}}
+          {{if .Grades}}
+          <div class="grades">
+            {{range .Grades}}<span class="grade-chip"><span>{{.Label}}</span><b class="grade {{gradeClass .Grade}}">{{.Grade}}</b></span>{{end}}
+            {{if .OverallGrade}}<span class="grade-chip overall"><span>Overall</span><b class="grade {{gradeClass .OverallGrade}}">{{.OverallGrade}}</b></span>{{end}}
+          </div>
+          {{end}}
+          <div class="channel-table">
+            <div class="channel-head"><span>Channel</span><span>Raw</span><span>Evidence</span><span>Conf.</span><span>Zone</span></div>
+            {{range .Channels}}
+            <div class="channel-row" title="{{.Channel.Description}}">
+              <span class="channel-name">{{.Channel.Label}}</span>
+              <span class="channel-raw">{{.Raw}}</span>
+              <span class="channel-bar"><i class="{{.BarClass}}" style="width:{{.ScorePct}}%"></i><em>{{.ScorePct}}%</em></span>
+              <span class="channel-conf"><i style="width:{{.ConfPct}}%"></i>{{.ConfPct}}%</span>
+              <span class="zone {{.ZoneClass}}">{{if eq .Zone "no_data"}}no data{{else}}{{.Zone}}{{end}}</span>
+            </div>
+            {{end}}
+          </div>
+          {{if .Adjustments}}
+          <div class="adjustments"><b>Adjustments:</b>{{range .Adjustments}}<span class="adjust">{{.Label}}{{if .Detail}} <em>{{.Detail}}</em>{{end}}</span>{{end}}</div>
+          {{end}}
+          <p class="disclaimer small">Detector: vendored demo-anticheat (10-channel Bayesian model). Statistical signal, not proof. Small samples reduce confidence — read the sample counts and zones.</p>
+          {{else}}
+          <p class="error-text">Cheat analysis unavailable: {{.Error}}</p>
+          {{end}}
+        </section>
+        {{end}}
+
+        <div class="detail-grid">
+          <section class="panel">
+            <h4>Weapons</h4>
+            {{if .Weapons}}
+            <table class="mini-table">
+              <thead><tr><th>Weapon</th><th>K</th><th>HS</th><th>Shots</th><th>Hits</th><th>Acc.</th></tr></thead>
+              <tbody>{{range .Weapons}}<tr><td>{{.Name}}</td><td>{{.Kills}}</td><td>{{.HSRate}}</td><td>{{if .Shots}}{{.Shots}}{{else}}—{{end}}</td><td>{{if .Hits}}{{.Hits}}{{else}}—{{end}}</td><td>{{.Accuracy}}</td></tr>{{end}}</tbody>
+            </table>
+            {{else}}<p class="muted">No weapon data.</p>{{end}}
+          </section>
+
+          <section class="panel">
+            <h4>Per round</h4>
+            {{if .Rounds}}
+            <div class="table-scroll">
+            <table class="mini-table round-table">
+              <thead><tr><th>Round</th><th>Side</th><th>K</th><th>D</th><th>A</th><th>DMG</th><th>Equip</th><th>Result</th></tr></thead>
+              <tbody>
+              {{range .Rounds}}<tr><td><a href="#{{.Anchor}}">{{.Number}}</a></td><td><span class="side-dot {{lower .Side}}"></span>{{.Side}}</td><td>{{.Kills}}</td><td>{{.Deaths}}</td><td>{{.Assists}}</td><td>{{.Damage}}</td><td>{{.EquipValue}}</td><td class="{{.ResultClass}}">{{.Result}}{{if .KAST}} · KAST{{end}}</td></tr>{{end}}
+              </tbody>
+            </table>
+            </div>
+            {{else}}<p class="muted">No round data.</p>{{end}}
+          </section>
+        </div>
+      </div>
+    </article>
+    {{end}}
+  </section>
+</main>
+
+<footer class="footer wrap">
+  <p>CS2 Battlelog report · generated {{.GeneratedAt}} · tool v{{.Version}} · parser {{.Match.ParserVersion}}</p>
+  <p class="muted">Demo content is untrusted input. Player names are escaped. Anti-cheat output is probabilistic and must not be used as the sole basis for accusations.</p>
+</footer>
+
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 3v18M5 4h12l-2.5 4L17 12H5"/></symbol>
+  <symbol id="i-buy" viewBox="0 0 24 24"><path d="M4 7h16v12H4zM8 7V5h8v2M4 12h16"/></symbol>
+  <symbol id="i-kill" viewBox="0 0 24 24"><path d="M4 4l16 16M20 4L4 20M9 4l3 3 3-3M4 9l3 3-3 3M20 9l-3 3 3 3"/></symbol>
+  <symbol id="i-warning" viewBox="0 0 24 24"><path d="M12 3l10 18H2zM12 9v5M12 17h.01"/></symbol>
+  <symbol id="i-bomb" viewBox="0 0 24 24"><circle cx="11" cy="14" r="6"/><path d="M15 6l4-4M16 3h5v5"/></symbol>
+  <symbol id="i-defuse" viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></symbol>
+  <symbol id="i-explosion" viewBox="0 0 24 24"><path d="M12 2l2 6 6-3-3 6 5 3-6 1 2 7-5-4-5 4 2-7-6-1 5-3-3-6 6 3z"/></symbol>
+  <symbol id="i-grenade" viewBox="0 0 24 24"><circle cx="12" cy="14" r="6"/><path d="M9 8l-1-4h8l-1 4M17 5h4"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5-5.8-3-5.8 3 1.1-6.5L2.6 9.8l6.5-.9z"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 01-10 0zM7 6H4v2a3 3 0 003 3M17 6h3v2a3 3 0 01-3 3M12 14v4M8 21h8"/></symbol>
+  <symbol id="i-dot" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></symbol>
+</svg>
+
+
+
+<script>{{.JS}}</script>
+</body>
+</html>
+{{- end}}
+
+{{define "event" -}}
+<li class="evt {{.Class}}" data-type="{{.Type}}" data-players="{{.DataPlayers}}">
+  <span class="evt-time">{{.Time}}</span>
+  <span class="evt-icon"><svg class="ico" aria-hidden="true"><use href="#i-{{.Icon}}"></use></svg></span>
+  <span class="evt-text">{{range .Parts}}{{if .Href}}<a href="{{.Href}}">{{.Text}}</a>{{else}}{{.Text}}{{end}}{{end}}{{range .Badges}}<span class="badge">{{.}}</span>{{end}}</span>
+</li>
+{{- end}}

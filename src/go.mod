@@ -5,6 +5,7 @@ go 1.27.0
 require (
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/charmbracelet/x/term v0.2.2
+	github.com/fsnotify/fsnotify v1.9.0
 	github.com/markus-wa/demoinfocs-golang/v5 v5.3.0
 	github.com/mattn/go-isatty v0.0.24
 	github.com/muesli/termenv v0.16.0

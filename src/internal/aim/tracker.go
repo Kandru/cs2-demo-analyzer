@@ -57,8 +57,9 @@ type engagement struct {
 }
 
 type posSample struct {
-	tick int
-	x, y float64
+	tick       int
+	x, y, z    float64
+	yaw, pitch float64
 }
 
 type playerState struct {
@@ -96,6 +97,7 @@ type Tracker struct {
 	engagements map[uint64]map[uint64]*engagement
 
 	lastPos map[uint64]posSample
+	history map[uint64][]posSample
 	anyHurt bool
 }
 
@@ -109,6 +111,7 @@ func New(tickRate float64) *Tracker {
 		players:     map[uint64]*playerState{},
 		engagements: map[uint64]map[uint64]*engagement{},
 		lastPos:     map[uint64]posSample{},
+		history:     map[uint64][]posSample{},
 	}
 }
 
@@ -164,6 +167,15 @@ func (t *Tracker) OnFrameState(playing []*common.Player, tick int) {
 			continue
 		}
 		pos := p.Position()
+		eyes, _ := p.PositionEyes()
+		snap := posSample{tick: tick, x: eyes.X, y: eyes.Y, z: eyes.Z,
+			yaw: float64(p.ViewDirectionX()), pitch: float64(p.ViewDirectionY())}
+		hist := append(t.history[p.SteamID64], snap)
+		cutoffTick := tick - int(1000*t.tickRate/1000.0) - 2
+		for len(hist) > 0 && hist[0].tick < cutoffTick {
+			hist = hist[1:]
+		}
+		t.history[p.SteamID64] = hist
 		if prev, ok := t.lastPos[p.SteamID64]; ok && tick > prev.tick {
 			dt := float64(tick-prev.tick) / t.tickRate
 			if dt > 0 && dt <= 0.5 {
@@ -202,10 +214,6 @@ func (t *Tracker) OnFrameState(playing []*common.Player, tick int) {
 				eng = &engagement{entryTick: tick, seenTick: tick}
 				eng.entryAngle = viewToTargetAngle(attacker, victim)
 				victims[vid] = eng
-				if eng.entryAngle <= 90 && eng.entryAngle > 0 {
-					st := t.state(aid)
-					st.preaim = append(st.preaim, eng.entryAngle)
-				}
 			} else {
 				eng.seenTick = tick
 			}
@@ -293,6 +301,12 @@ func (t *Tracker) OnPlayerHurt(e events.PlayerHurt) {
 			elapsed := float64(t.tick-eng.entryTick) * 1000.0 / t.tickRate
 			if !eng.damaged && elapsed >= 0 && elapsed <= maxEngagementMs {
 				st.ttd = append(st.ttd, elapsed)
+				// Radar spotting can happen well before an enemy is actually
+				// on screen, so angle-at-sighting is noisy. Measure crosshair
+				// placement 200 ms before the first damage instead.
+				if ang, ok := t.preaimAngle(aid, vid, t.tick); ok {
+					st.preaim = append(st.preaim, ang)
+				}
 				eng.damaged = true
 			}
 		}
@@ -438,18 +452,19 @@ func buildAimStats(st *playerState, anyHurt bool) *model.AimStats {
 	spray := percent(st.sprayHits, st.sprayAtt)
 
 	if !anyHurt {
+		st.shots = 0
 		st.hits = 0
 		st.sprayAtt = 0
 		st.sprayHits = 0
 	}
 	specs := []def{
-		{"damage_speed", "Damage speed", "ms", "Median time from first visibility to first damage. Lower is better.", medTTD, len(st.ttd), 3, 20, false, 500, 200},
-		{"reaction", "Reaction", "ms", "Median time from first visibility to the first shot that hits that enemy. Lower is better.", medReaction, len(st.reaction), 3, 20, false, 400, 150},
-		{"preaim", "Preaim", "°", "Median angle between crosshair and enemy at the moment the enemy first becomes visible. Lower is better.", medPreaim, len(st.preaim), 4, 20, false, 15, 3},
-		{"accuracy", "Accuracy", "%", "Bullets that hit an enemy divided by bullets fired. Shotguns, knives and utility excluded.", accuracy, st.shots, 20, 15, true, 12, 30},
-		{"head_accuracy", "Head accuracy", "%", "Head hits divided by all hits (not kills).", headAccuracy, st.hits, 10, 10, true, 15, 55},
+		{"damage_speed", "Damage speed", "ms", "Median time from first visibility to first damage. Lower is better.", medTTD, len(st.ttd), 3, 20, false, 800, 250},
+		{"reaction", "Reaction", "ms", "Median time from first visibility to the first shot that hits that enemy. Lower is better.", medReaction, len(st.reaction), 3, 20, false, 600, 180},
+		{"preaim", "Preaim", "°", "Median angle between crosshair and enemy when an engagement starts. Lower is better.", medPreaim, len(st.preaim), 4, 15, false, 25, 5},
+		{"accuracy", "Accuracy", "%", "Bullets that hit an enemy divided by bullets fired. Shotguns, knives and utility excluded.", accuracy, st.shots, 20, 20, true, 10, 28},
+		{"head_accuracy", "Head accuracy", "%", "Head hits divided by all hits (not kills).", headAccuracy, st.hits, 10, 10, true, 10, 45},
 		{"counter_strafe", "Counter-strafe", "%", "Shots fired while horizontal speed was 34 u/s or less. Lower sample counts are unreliable.", counter, st.counterShots, 10, 5, true, 20, 80},
-		{"spray", "Spray", "%", "Hit rate of bullets 2..N in sprays of at least four bullets.", spray, st.sprayAtt, 6, 10, true, 20, 60},
+		{"spray", "Spray", "%", "Hit rate of bullets 2..N in sprays of at least four bullets.", spray, st.sprayAtt, 6, 10, true, 15, 45},
 	}
 
 	stats := &model.AimStats{}
@@ -588,6 +603,48 @@ func isAutomatic(t common.EquipmentType) bool {
 		return t == common.EqM249 || t == common.EqNegev
 	}
 	return false
+}
+
+// preaimAngle measures the attacker's crosshair-to-victim angle 200 ms
+// before the tick at which the engagement produced damage.
+func (t *Tracker) preaimAngle(attackerID, victimID uint64, tick int) (float64, bool) {
+	lookback := int(200*t.tickRate/1000.0) + 1
+	target := tick - lookback
+	ah, vh := t.history[attackerID], t.history[victimID]
+	if len(ah) == 0 || len(vh) == 0 {
+		return 0, false
+	}
+	as := nearestAtOrBefore(ah, target)
+	vs := nearestAtOrBefore(vh, target)
+	if as == nil || vs == nil {
+		return 0, false
+	}
+	view := viewDirectionToVector(as.yaw, as.pitch)
+	dx, dy, dz := vs.x-as.x, vs.y-as.y, vs.z-as.z
+	mag := math.Sqrt(dx*dx + dy*dy + dz*dz)
+	if mag == 0 {
+		return 0, false
+	}
+	dot := (view[0]*dx + view[1]*dy + view[2]*dz) / mag
+	if dot > 1 {
+		dot = 1
+	} else if dot < -1 {
+		dot = -1
+	}
+	ang := math.Acos(dot) * 180 / math.Pi
+	if ang <= 0 || ang > 90 {
+		return 0, false
+	}
+	return ang, true
+}
+
+func nearestAtOrBefore(hist []posSample, tick int) *posSample {
+	for i := len(hist) - 1; i >= 0; i-- {
+		if hist[i].tick <= tick {
+			return &hist[i]
+		}
+	}
+	return nil
 }
 
 func viewToTargetAngle(attacker, victim *common.Player) float64 {

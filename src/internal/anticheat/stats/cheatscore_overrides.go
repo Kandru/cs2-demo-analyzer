@@ -18,23 +18,25 @@ const (
 	cheatscoreCategoryGameInfo  = Category("game_info")
 	cheatscoreCategoryAntiCheat = Category("anti_cheat")
 
-	wingmanKPRThreshold        = 0.7
-	evidenceStackingMinStrong  = 3
-	evidenceStackingMinChannel = 0.30
-	evidenceStackingMultiplier = 1.4
-	ttdSub100FloorRate         = 25.0
-	ttdSub100FloorSamples      = 3
-	ttdSub100FloorScore        = 55.0
+	wingmanKPRThreshold         = 0.7
+	evidenceStackingMinStrong   = 3
+	evidenceStackingMinChannel  = 0.30
+	evidenceStackingMultiplier  = 1.4
+	ttdSub100FloorRate          = 25.0
+	ttdSub100FloorSamples       = 20
+	ttdSub100FloorCount         = 5
+	ttdSub100FloorPreFOVSamples = 8
+	ttdSub100FloorScore         = 55.0
 
 	// Wallhack co-occurrence boost: both pre-FOV signal and back-kill-given
 	// rate must clear their thresholds. Either alone is noisy (pro lobbies
 	// have low pre-FOV; legitimate flankers have high back-kill-given). The
 	// conjunction is the "wallhack-via-info" signature: pre-aim through walls
 	// AND successful approaches against unaware opponents.
-	coOccurrencePreFOVProduct  = 0.45
-	coOccurrenceBackKillPct    = 8.0
-	coOccurrenceBackKillMin    = 4
-	coOccurrenceMultiplier     = 1.20
+	coOccurrencePreFOVProduct = 0.45
+	coOccurrenceBackKillPct   = 8.0
+	coOccurrenceBackKillMin   = 4
+	coOccurrenceMultiplier    = 1.20
 )
 
 // applyWingmanBoost: ×1.8 in Wingman when KPR ≥ 0.7 OR kills ≥ 10.
@@ -104,9 +106,16 @@ func applyEvidenceStacking(score float64, channels []Channel) (float64, bool, in
 }
 
 // applyTTDSub100Floor: floor at 55% when a player exhibits ALL of:
-//   - sub_100ms_ttd ≥ 25% on ≥3 TTD samples (triggerbot-style reactions)
-//   - pre-FOV median ≤ 10° on ≥3 pre-FOV samples (wallhack-style pre-aim)
+//   - sub_100ms_ttd ≥ 25% on ≥20 TTD samples AND ≥5 such engagements
+//   - pre-FOV median ≤ 9° on ≥8 pre-FOV samples (wallhack-style pre-aim)
 //   - lobby asymmetry: at least half of OTHER players have <2 pre-FOV samples
+//
+// Vendored upstream used ≥3 samples and a 10° pre-FOV gate. On short/custom
+// lobbies that combination fires on ordinary prefires and small samples: a
+// 5/18 sub-100 rate with a 9.2° pre-aim was enough to pin a clean player at
+// 55%. Larger sample gates and a tighter pre-aim requirement keep the
+// triggerbot signal while avoiding that false positive. A 0 ms TTD (sighting
+// and damage in the same tick) is dropped upstream as a radar-spot artifact.
 //
 // The asymmetry requirement avoids false-positives in 5v5 pro lobbies where
 // every player has pre-FOV samples by virtue of long matches. A wallhack
@@ -124,12 +133,16 @@ func applyTTDSub100Floor(score float64, ps *PlayerStats, preFOVLobbyAsymmetric b
 		return score, false
 	}
 
+	count, hasCount := psGetInt(ps, channelCategoryReaction, Key("sub_100ms_count"))
+	if !hasCount || count < ttdSub100FloorCount {
+		return score, false
+	}
 	preFOVN, hasFOVN := psGetInt(ps, channelCategoryBehavioral, Key("pre_fov_aim_samples"))
-	if !hasFOVN || preFOVN < 3 {
+	if !hasFOVN || preFOVN < ttdSub100FloorPreFOVSamples {
 		return score, false
 	}
 	preFOVMed, hasFOVMed := psGetFloat(ps, channelCategoryBehavioral, Key("pre_fov_aim_median_deg"))
-	if !hasFOVMed || preFOVMed <= 0 || preFOVMed > 10.0 {
+	if !hasFOVMed || preFOVMed <= 0 || preFOVMed > 9.0 {
 		return score, false
 	}
 

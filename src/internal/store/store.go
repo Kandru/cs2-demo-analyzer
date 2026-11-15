@@ -92,10 +92,18 @@ func (s *Store) Skip(path string, size int64, modTime time.Time, toolVersion str
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	e := s.entries[path]
-	if e == nil || e.Status != "ok" {
+	if e == nil {
 		return false
 	}
 	if e.Size != size || e.ModTime != modTime.UnixNano() {
+		return false
+	}
+	if e.Status == "error" {
+		// Broken/unchanged demos are not retried on every scan. --force or a
+		// file change retries them.
+		return true
+	}
+	if e.Status != "ok" {
 		return false
 	}
 	if e.ToolVersion != toolVersion || e.SchemaVersion != schemaVersion {
@@ -185,6 +193,15 @@ func (s *Store) OutputPath(demoPath, outputDir, suffix string) string {
 		cand = filepath.Join(dir, fmt.Sprintf("%s-%x.battlelog%s", safeName(base), h[:3], suffix))
 	}
 	return cand
+}
+
+// ReserveOutput records that path will be produced from demoPath. It prevents
+// two concurrent workers with the same demo basename from choosing the same
+// report path. MarkOK keeps the mapping afterwards.
+func (s *Store) ReserveOutput(path, demoPath string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.outputs[path] = demoPath
 }
 
 // Save writes the manifest atomically.

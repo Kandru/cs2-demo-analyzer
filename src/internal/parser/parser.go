@@ -956,6 +956,9 @@ func (s *state) onHurt(e events.PlayerHurt) {
 	ars.Damage += dmg
 	vp.Stats.DamageTaken += dmg
 	_ = vrs
+	if e.Weapon != nil && dmg > 0 {
+		s.recordWeaponDamage(ap.ID, e.Weapon.String(), dmg)
+	}
 	if dmg > 0 {
 		s.current.hadDamage = true
 	}
@@ -1015,6 +1018,22 @@ func (s *state) onGrenade(e events.GrenadeProjectileThrow) {
 	}
 	name := e.Projectile.WeaponInstance.String()
 	s.addEvent(&model.Event{Type: "grenade", ActorID: p.ID, ActorName: p.Name, Grenade: name, Weapon: name})
+}
+
+func (s *state) recordWeaponDamage(playerID, weapon string, dmg int) {
+	if weapon == "" {
+		return
+	}
+	p := s.m.PlayerByID(playerID)
+	if p == nil {
+		return
+	}
+	ws := p.Weapons[weapon]
+	if ws == nil {
+		ws = &model.WeaponStats{Name: weapon}
+		p.Weapons[weapon] = ws
+	}
+	ws.Damage += dmg
 }
 
 func (s *state) recordWeaponKill(playerID, weapon string, hs bool) {

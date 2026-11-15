@@ -16,6 +16,8 @@ type View struct {
 	Title       string
 	Version     string
 	GeneratedAt string
+	CSS         template.CSS
+	JS          template.JS
 	Match       *model.Match
 	Teams       []*TeamView
 	Players     []*PlayerView
@@ -44,6 +46,7 @@ type PlayerView struct {
 	TeamName            string
 	Side                string
 	Rounds              []PlayerRoundView
+	Sides               []SideView
 	Weapons             []WeaponView
 	Aim                 []MetricView
 	Cheat               *CheatView
@@ -66,6 +69,7 @@ type PlayerView struct {
 // PlayerRoundView is one row in the per-round table.
 type PlayerRoundView struct {
 	Number      int
+	Anchor      string
 	Side        string
 	Kills       int
 	Deaths      int
@@ -76,6 +80,17 @@ type PlayerRoundView struct {
 	ResultClass string
 	KAST        bool
 	KD          string
+}
+
+// SideView is a T/CT split row.
+type SideView struct {
+	Side    string
+	Rounds  int
+	Kills   int
+	Deaths  int
+	Assists int
+	ADR     string
+	HS      string
 }
 
 // WeaponView is one row in the weapon table.
@@ -133,6 +148,7 @@ type ChannelView struct {
 // RoundView is one round panel.
 type RoundView struct {
 	Round       *model.Round
+	Anchor      string
 	Label       string
 	Time        string
 	Duration    string
@@ -278,6 +294,7 @@ func buildPlayer(m *model.Match, p *model.Player) *PlayerView {
 		}
 		pv.Rounds = append(pv.Rounds, PlayerRoundView{
 			Number:      r.Number,
+			Anchor:      fmt.Sprintf("round-%d", r.StartTick),
 			Side:        string(rs.Side),
 			Kills:       rs.Kills,
 			Deaths:      rs.Deaths,
@@ -288,6 +305,21 @@ func buildPlayer(m *model.Match, p *model.Player) *PlayerView {
 			ResultClass: resClass,
 			KAST:        rs.KAST,
 			KD:          ratio(rs.Kills, rs.Deaths),
+		})
+	}
+	for _, side := range []model.Side{model.SideT, model.SideCT} {
+		ss := p.SideStats[side]
+		if ss == nil || ss.Rounds == 0 {
+			continue
+		}
+		pv.Sides = append(pv.Sides, SideView{
+			Side:    string(side),
+			Rounds:  ss.Rounds,
+			Kills:   ss.Kills,
+			Deaths:  ss.Deaths,
+			Assists: ss.Assists,
+			ADR:     fmt.Sprintf("%.1f", ss.ADR),
+			HS:      fmt.Sprintf("%.0f%%", ss.HSPercent),
 		})
 	}
 	if p.Aim != nil {
@@ -468,6 +500,7 @@ func buildRounds(m *model.Match) []*RoundView {
 	for _, r := range m.Rounds {
 		rv := &RoundView{
 			Round:       r,
+			Anchor:      fmt.Sprintf("round-%d", r.StartTick),
 			Time:        clock(r.StartOffset),
 			Duration:    clock(r.Duration),
 			WinnerClass: "loss",
@@ -623,6 +656,45 @@ func eventClass(e *model.Event) string {
 	}
 }
 
+func mapClass(m string) string {
+	m = strings.ToLower(strings.TrimSpace(m))
+	m = strings.TrimPrefix(m, "de_")
+	m = strings.TrimPrefix(m, "cs_")
+	var b strings.Builder
+	for _, r := range m {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			b.WriteRune(r)
+		}
+	}
+	if b.Len() == 0 {
+		return "map-generic"
+	}
+	return "map-" + b.String()
+}
+
+func gradeClass(g string) string {
+	switch g {
+	case "A+":
+		return "grade-ap"
+	case "A":
+		return "grade-a"
+	case "B+":
+		return "grade-bp"
+	case "B":
+		return "grade-b"
+	case "C+":
+		return "grade-cp"
+	case "C":
+		return "grade-c"
+	case "D":
+		return "grade-d"
+	case "F":
+		return "grade-f"
+	default:
+		return "grade-na"
+	}
+}
+
 func teamSideClass(side model.Side) string {
 	switch side {
 	case model.SideCT:
@@ -735,7 +807,9 @@ func FuncMap() template.FuncMap {
 		"zero": func(v float64) string {
 			return fmt.Sprintf("%.0f", v)
 		},
-		"sideClass": func(s model.Side) string { return teamSideClass(s) },
-		"lower":     strings.ToLower,
+		"sideClass":  func(s model.Side) string { return teamSideClass(s) },
+		"lower":      strings.ToLower,
+		"gradeClass": gradeClass,
+		"mapClass":   mapClass,
 	}
 }
