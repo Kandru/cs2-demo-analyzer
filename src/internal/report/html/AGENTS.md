@@ -5,8 +5,10 @@ Self-contained, flat Battlelog-style report renderer.
 ## Files
 
 - `view.go` — presentation view model and builders.
-- `renderer.go` — embedded template/assets, `Render`.
+- `index.go` — output-directory index view and renderer.
+- `renderer.go` — embedded template/assets, `Render`, `RenderIndex`.
 - `templates/report.gohtml` — one HTML document + event/moment partials.
+- `templates/index.gohtml` — self-contained report index.
 - `assets/style.css`, `assets/app.js` — inlined at render time.
 
 ## Invariants

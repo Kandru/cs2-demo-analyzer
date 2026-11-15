@@ -18,6 +18,8 @@ No command prints the help. Unknown commands exit `2`.
 | `--recursive` | `true` | Walk input directories recursively. |
 | `--workers N` | `min(4, CPU)` (analyze), `1` (watch) | Parallel processors. Each demo uses substantial RAM while the anti-cheat pass runs. |
 | `--json` | `false` | Write `<demo>.json` next to the HTML. |
+| `--index` | `false` | Write an `index.html` listing reports in each report directory. Also automatic when reports are written next to their demos. |
+| `--demo-download` | `false` | Link the source demo for download even when it lives outside the report directory. Same-directory links are always enabled. |
 | `--cheat` | `true` | Run the vendored anti-cheat detector (second parse pass). |
 | `--aim` | `true` | Collect aim statistics. |
 | `--force` | `false` | Reprocess unchanged demos (watch cache bypass). |
@@ -34,6 +36,8 @@ No command prints the help. Unknown commands exit `2`.
 | `CS2BATTLELOG_INPUT` | OS path-list separated inputs (`:` on Linux/macOS, `;` on Windows). |
 | `CS2BATTLELOG_OUTPUT` | Output directory. |
 | `CS2BATTLELOG_JSON` | `true`/`false`. |
+| `CS2BATTLELOG_INDEX` | `true`/`false`. |
+| `CS2BATTLELOG_DEMO_DOWNLOAD` | `true`/`false`. |
 | `CS2BATTLELOG_CHEAT` | `true`/`false`. |
 | `CS2BATTLELOG_AIM` | `true`/`false`. |
 
@@ -45,9 +49,16 @@ Flags override environment values.
   `.dem.gz`, `.dem.bz2`.
 - `<base>.json` — optional sidecar, schema documented in
   `docs/report-schema.md`.
+- `index.html` — self-contained list of reports in a report directory. Written
+  when `--index` is set or when a report is written next to its demo.
 - `<manifest-dir>/.cs2battlelog/manifest.json` — watch cache. Manifest dir is
   `--output` if set, otherwise the first input directory (or CWD for a single
   file input).
+
+Each report links its source `.dem` as a download when the demo is in the same
+directory as the report (the default output layout). Use `--demo-download` to
+opt in to relative links when `--output` points elsewhere. The link points at
+the original demo path; move or delete demos accordingly.
 
 When several demos share a basename and write into the same output directory,
 the later one gets a short source-hash suffix: `match-a1b2c3.html`.
@@ -65,7 +76,9 @@ the later one gets a short source-hash suffix: `match-a1b2c3.html`.
 - A file must have the same size and mtime on two consecutive scans before it
   is queued. This prevents parsing downloads in progress.
 - Successful demos are skipped while size, mtime, tool version, schema version,
-  and the report file are unchanged.
+  report options, and the report file are unchanged.
+- Report indexes are refreshed on startup for cached reports, then after each
+  successful analysis.
 - Failed demos are cached as well; they are retried only when the file changes
   or with `--force`.
 - Files matching `.dem`, `.dem.gz`, `.dem.bz2` (case-insensitive) are eligible.

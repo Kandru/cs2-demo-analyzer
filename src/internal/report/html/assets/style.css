@@ -134,6 +134,30 @@ code { font-family: var(--mono); color: var(--accent-2); font-size: .92em; }
   background: var(--bg-1);
 }
 .banner-meta b { color: var(--dim); font-weight: 600; margin-right: 3px; }
+.demo-download {
+  color: var(--accent-2); border: 1px solid rgba(255,179,71,.35);
+  padding: 1px 7px; border-radius: var(--radius); font-weight: 600;
+}
+.demo-download:hover { color: #ffd28a; border-color: rgba(255,179,71,.65); text-decoration: none; }
+
+/* ---------- report index ---------- */
+.index-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 8px;
+}
+.index-card {
+  display: flex; flex-direction: column; gap: 8px;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 12px;
+}
+.index-report { display: block; color: var(--text); }
+.index-report:hover { color: var(--text); text-decoration: none; }
+.index-card:hover { border-color: var(--line-hi); }
+.index-name {
+  display: block; font-weight: 700; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.index-meta { display: block; color: var(--muted); font-size: .74rem; margin-top: 2px; }
+.index-demo { font-size: .74rem; font-weight: 600; }
 
 /* ---------- sections ---------- */
 .section { margin-top: clamp(26px, 4vw, 54px); }

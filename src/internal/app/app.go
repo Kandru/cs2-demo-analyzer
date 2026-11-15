@@ -17,6 +17,7 @@ import (
 	"sync"
 
 	"github.com/Kandru/cs2-demo-analyzer/internal/config"
+	"github.com/Kandru/cs2-demo-analyzer/internal/demofile"
 	"github.com/Kandru/cs2-demo-analyzer/internal/store"
 	"github.com/Kandru/cs2-demo-analyzer/internal/version"
 	"github.com/Kandru/cs2-demo-analyzer/internal/watch"
@@ -146,6 +147,7 @@ func runWatch(ctx context.Context, args []string) int {
 		return 1
 	}
 	proc := NewProcessor(cfg, st, logger)
+	proc.RefreshIndexes()
 	if err := watch.Run(ctx, cfg, proc, logger); err != nil {
 		logger.Error("watcher stopped", "error", err)
 		return 1
@@ -165,6 +167,8 @@ func commonFlags(fs *flag.FlagSet, cfg *config.Config) {
 	fs.BoolVar(&cfg.JSON, "json", envBool("CS2BATTLELOG_JSON", cfg.JSON), "write a JSON sidecar next to the HTML")
 	fs.BoolVar(&cfg.Cheat, "cheat", envBool("CS2BATTLELOG_CHEAT", cfg.Cheat), "run the anti-cheat detector (second parse pass)")
 	fs.BoolVar(&cfg.Aim, "aim", envBool("CS2BATTLELOG_AIM", cfg.Aim), "collect aim statistics")
+	fs.BoolVar(&cfg.Index, "index", envBool("CS2BATTLELOG_INDEX", cfg.Index), "write index.html listing reports in each output directory")
+	fs.BoolVar(&cfg.DemoLinks, "demo-download", envBool("CS2BATTLELOG_DEMO_DOWNLOAD", cfg.DemoLinks), "link the source demo for download even when it is outside the report directory")
 	fs.BoolVar(&cfg.Force, "force", cfg.Force, "reprocess demos even if unchanged")
 	fs.BoolVar(&cfg.Quiet, "quiet", cfg.Quiet, "only log errors")
 	fs.BoolVar(&cfg.Verbose, "verbose", cfg.Verbose, "debug logging")
@@ -187,7 +191,7 @@ func discover(inputs []string, recursive bool) ([]string, error) {
 	seen := map[string]bool{}
 	var out []string
 	add := func(path string) {
-		if !supportedDemo(path) || seen[path] {
+		if !demofile.IsSupported(path) || seen[path] {
 			return
 		}
 		seen[path] = true
@@ -295,6 +299,8 @@ Flags:
       --json             also write <demo>.json
       --cheat            run anti-cheat detector (default true)
       --aim              collect aim stats (default true)
+      --index            also write index.html in each report directory
+      --demo-download    link demos outside the report directory for download
       --force            reprocess unchanged demos
       --timeout 15m      per-demo timeout
       --quiet / --verbose
@@ -308,10 +314,13 @@ Environment:
   CS2BATTLELOG_JSON      true/false
   CS2BATTLELOG_CHEAT     true/false
   CS2BATTLELOG_AIM       true/false
+  CS2BATTLELOG_INDEX     true/false
+  CS2BATTLELOG_DEMO_DOWNLOAD  true/false
 
 Output:
   <demo>.html  self-contained dark Battlelog-style report
   <demo>.json  optional machine-readable sidecar (--json)
+  index.html   report index when --index or the report sits next to its demo
   <output>/.cs2battlelog/manifest.json  watch cache
 
 Exit codes: 0 success, 1 processing failure, 2 usage error.

@@ -1,0 +1,64 @@
+{{define "index" -}}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>{{.Title}} · CS2 Battlelog</title>
+<style>{{.CSS}}</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="{{.IndexFile}}" aria-label="CS2 Battlelog report index">
+      <span class="brand-mark">CS2</span>
+      <span class="brand-word">BATTLELOG</span>
+    </a>
+    <nav class="mainnav" aria-label="Sections">
+      <a href="{{.IndexFile}}" class="active">Reports</a>
+    </nav>
+    <div class="topmeta">
+      <span>{{len .Entries}} report(s)</span>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+  <section class="section" aria-labelledby="reports-title">
+    <div class="section-head">
+      <h2 id="reports-title">Match reports</h2>
+      <span class="section-note">Generated {{.GeneratedAt}} · v{{.Version}}</span>
+    </div>
+
+    {{if .Entries}}
+    <div class="index-grid">
+      {{range .Entries}}
+      <article class="index-card">
+        <a class="index-report" href="{{.Href}}">
+          <span class="index-name">{{.Name}}</span>
+          <span class="index-meta">Open report{{if .Modified}} · {{.Modified}}{{end}}</span>
+        </a>
+        {{with .Demo}}
+        <a class="index-demo" href="{{.Href}}" download="{{.Name}}" title="Download {{.Name}}">Download demo{{if .Size}} · {{.Size}}{{end}}</a>
+        {{else}}
+        <span class="index-demo muted">Demo not linked</span>
+        {{end}}
+      </article>
+      {{end}}
+    </div>
+    {{else}}
+    <p class="muted">No match reports in this directory yet.</p>
+    {{end}}
+  </section>
+</main>
+
+<footer class="footer wrap">
+  <span>CS2 Battlelog v{{.Version}}</span>
+  <span>Self-contained index · no external assets</span>
+</footer>
+</body>
+</html>
+{{- end}}

@@ -7,8 +7,9 @@ Manifest cache, output naming, atomic writes.
 - Manifest lives at `<dir>/.cs2battlelog/manifest.json`; never write reports
   into that directory.
 - Writes are `.tmp` + fsync + rename; readers must never see partial reports.
-- Skip only when `ok` + same size/mtime + same tool/schema version + HTML exists.
-  Error entries are skipped while unchanged (retry on change/`--force`).
+- Skip only when `ok` + same size/mtime + same tool/schema version + same report
+  options + HTML exists. Error entries are skipped while unchanged (retry on
+  change/`--force`).
 - Output names are sanitized (`safeName`); default is
   `<demo-base>.html` next to the demo.
 - Shared-output basename collisions get a short source hash.

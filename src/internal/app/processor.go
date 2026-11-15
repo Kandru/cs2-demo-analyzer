@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Kandru/cs2-demo-analyzer/internal/analysis"
@@ -24,9 +25,10 @@ import (
 
 // Processor runs the full analysis pipeline for one demo.
 type Processor struct {
-	cfg   config.Config
-	store *store.Store
-	log   *slog.Logger
+	cfg     config.Config
+	store   *store.Store
+	log     *slog.Logger
+	indexMu sync.Mutex
 }
 
 // NewProcessor creates a processor writing through st.
@@ -37,7 +39,12 @@ func NewProcessor(cfg config.Config, st *store.Store, log *slog.Logger) *Process
 // Skip reports whether path was already analyzed successfully (or failed) with
 // the same file signature.
 func (p *Processor) Skip(path string, size int64, mod time.Time, force bool) bool {
-	return p.store.Skip(path, size, mod, version.Short(), force)
+	return p.store.Skip(path, size, mod, version.Short(), p.reportOptions(p.outputPath(path), path), force)
+}
+
+// outputPath returns the report path for a demo.
+func (p *Processor) outputPath(demoPath string) string {
+	return p.store.OutputPath(demoPath, p.cfg.Output, ".html")
 }
 
 // Save flushes the manifest.
@@ -79,15 +86,17 @@ func (p *Processor) Process(ctx context.Context, path string) error {
 	analysis.Apply(m, analysis.Options{ToolVersion: version.Short(), Cheat: cheat})
 	analysis.Validate(m)
 
+	htmlPath := p.outputPath(path)
+	p.store.ReserveOutput(htmlPath, path)
+
 	view := html.NewView(m, version.Short())
+	view.DemoDownload = p.demoLink(htmlPath, path)
 	var buf bytes.Buffer
 	if err := html.Render(&buf, view); err != nil {
 		p.recordError(path, info, err)
 		return err
 	}
 
-	htmlPath := p.store.OutputPath(path, p.cfg.Output, ".html")
-	p.store.ReserveOutput(htmlPath, path)
 	if err := store.WriteAtomic(htmlPath, func(w io.Writer) error {
 		_, err := w.Write(buf.Bytes())
 		return err
@@ -107,7 +116,12 @@ func (p *Processor) Process(ctx context.Context, path string) error {
 		}
 	}
 
-	p.store.MarkOK(path, info.Size(), info.ModTime(), hash, htmlPath, jsonPath, version.Short())
+	p.store.MarkOK(path, info.Size(), info.ModTime(), hash, p.reportOptions(htmlPath, path), htmlPath, jsonPath, version.Short())
+	if p.indexEnabled(htmlPath, path) {
+		if err := p.writeIndex(filepath.Dir(htmlPath)); err != nil {
+			p.log.Warn("could not write index", "demo", path, "error", err)
+		}
+	}
 	if err := p.store.Save(); err != nil {
 		p.log.Warn("could not save manifest", "error", err)
 	}

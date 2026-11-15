@@ -86,15 +86,19 @@ func TestRenderContainsCoreSectionsAndEscapesNames(t *testing.T) {
 	m := testMatch()
 	m.Players[0].Name = `<script>alert(1)</script>`
 	v := NewView(m, "26.11.1")
+	v.DemoDownload = &DemoLink{Href: "match.dem", Name: `match"demo.dem`, Size: "12.0 MiB"}
 	var buf bytes.Buffer
 	if err := Render(&buf, v); err != nil {
 		t.Fatal(err)
 	}
 	page := buf.String()
-	for _, want := range []string{"BATTLELOG", "Scoreboard", "Rounds", "Players", "Aim", "Cheat analysis", "Warmup", "de_mirage", "26.11.1", "Cheat watch", "When to look", "demo_gototick 120", "tick 120", "Round history"} {
+	for _, want := range []string{"BATTLELOG", "Scoreboard", "Rounds", "Players", "Aim", "Cheat analysis", "Warmup", "de_mirage", "26.11.1", "Cheat watch", "When to look", "demo_gototick 120", "tick 120", "Round history", "Download demo", "match.dem", "12.0 MiB"} {
 		if !strings.Contains(page, want) {
 			t.Errorf("missing %q in rendered report", want)
 		}
+	}
+	if !strings.Contains(page, `download="match&#34;demo.dem"`) {
+		t.Fatal("demo download filename was not escaped")
 	}
 	if strings.Contains(page, "<script>alert(1)</script>") {
 		t.Fatal("player name was not escaped")

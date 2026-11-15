@@ -13,21 +13,29 @@ import (
 
 // View is the template model for one report.
 type View struct {
-	Title       string
-	Version     string
-	GeneratedAt string
-	CSS         template.CSS
-	JS          template.JS
-	Match       *model.Match
-	Teams       []*TeamView
-	Players     []*PlayerView
-	Rounds      []*RoundView
-	Warmup      *TimelineView
-	Summary     *model.Summary
-	TeamStats   []model.TeamStats
-	Warnings    []string
-	Cheaters    []*CheaterView
-	RoundStrip  []RoundStripView
+	Title        string
+	Version      string
+	GeneratedAt  string
+	CSS          template.CSS
+	JS           template.JS
+	Match        *model.Match
+	Teams        []*TeamView
+	Players      []*PlayerView
+	Rounds       []*RoundView
+	Warmup       *TimelineView
+	Summary      *model.Summary
+	TeamStats    []model.TeamStats
+	Warnings     []string
+	Cheaters     []*CheaterView
+	RoundStrip   []RoundStripView
+	DemoDownload *DemoLink
+}
+
+// DemoLink is a direct download link for a source demo.
+type DemoLink struct {
+	Href string
+	Name string
+	Size string
 }
 
 // TeamView groups scoreboard rows.

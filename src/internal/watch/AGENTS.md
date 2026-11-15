@@ -19,5 +19,5 @@ Folder watcher and queue.
 
 ## Tests
 
-`watch_test.go` checks settle behavior and extension filtering. Use fake
-processors; never start fsnotify in tests.
+`watch_test.go` checks settle behavior. Demo extension checks live in
+`internal/demofile`. Use fake processors; never start fsnotify in tests.

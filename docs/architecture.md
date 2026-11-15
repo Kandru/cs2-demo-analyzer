@@ -20,6 +20,7 @@ internal/app.Processor
    │
    ▼
 internal/store  atomic writes + .cs2battlelog/manifest.json cache
+internal/app    optional index.html + demo download links per report directory
 ```
 
 This is deliberately **two parse passes**: the battlelog parser owns the event
@@ -42,7 +43,9 @@ demo takes roughly 9–11 s on a modern CPU (both passes included).
 | `internal/report/jsondata` | Placeholder for future format-specific transforms | report |
 | `internal/store` | Manifest, skip logic, output naming, atomic I/O | parser |
 | `internal/watch` | Discovery loop, settle window, worker queue | report |
-| `internal/app` | CLI, wiring, processor | report internals |
+| `internal/app` | CLI, wiring, processor, output index | report internals |
+| `internal/demofile` | Demo extension checks, report base names, sibling lookup | parser, report, app |
+| `internal/units` | Human-readable byte sizes shared by logs and reports | anything |
 | `internal/version` | Build-time version vars | anything |
 
 ## Round model

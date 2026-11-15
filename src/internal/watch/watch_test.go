@@ -56,16 +56,3 @@ func TestScanSettlesFiles(t *testing.T) {
 		t.Fatal("file was not queued after settling")
 	}
 }
-
-func TestSupportedDemo(t *testing.T) {
-	for _, p := range []string{"a.dem", "A.DEM.GZ", "x.dem.bz2"} {
-		if !supportedDemo(p) {
-			t.Errorf("%q should be supported", p)
-		}
-	}
-	for _, p := range []string{"a.txt", "a.dem.info", "a"} {
-		if supportedDemo(p) {
-			t.Errorf("%q should not be supported", p)
-		}
-	}
-}

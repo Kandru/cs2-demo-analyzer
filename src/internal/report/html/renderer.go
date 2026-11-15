@@ -7,7 +7,7 @@ import (
 	"io"
 )
 
-//go:embed templates/report.gohtml
+//go:embed templates/*.gohtml
 var templatesFS embed.FS
 
 //go:embed assets/style.css

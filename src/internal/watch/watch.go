@@ -17,6 +17,8 @@ import (
 	"github.com/fsnotify/fsnotify"
 
 	"github.com/Kandru/cs2-demo-analyzer/internal/config"
+	"github.com/Kandru/cs2-demo-analyzer/internal/demofile"
+	"github.com/Kandru/cs2-demo-analyzer/internal/units"
 )
 
 // Processor is the analysis pipeline used by the watcher.
@@ -152,7 +154,7 @@ func (r *Runner) scan(ctx context.Context) {
 			continue
 		}
 		if !info.IsDir() {
-			if supportedDemo(in) {
+			if demofile.IsSupported(in) {
 				r.consider(ctx, in, info)
 			}
 			continue
@@ -173,7 +175,7 @@ func (r *Runner) scan(ctx context.Context) {
 				}
 				return nil
 			}
-			if supportedDemo(path) {
+			if demofile.IsSupported(path) {
 				if fi, err := d.Info(); err == nil {
 					r.consider(ctx, path, fi)
 				}
@@ -221,7 +223,7 @@ func (r *Runner) consider(ctx context.Context, path string, info os.FileInfo) {
 
 	select {
 	case r.jobs <- path:
-		r.log.Info("queued demo", "demo", path, "size", humanSize(info.Size()))
+		r.log.Info("queued demo", "demo", path, "size", units.Bytes(info.Size()))
 	case <-ctx.Done():
 	default:
 		r.mu.Lock()
@@ -276,61 +278,4 @@ func addRecursive(w *fsnotify.Watcher, root string) error {
 		}
 		return nil
 	})
-}
-
-func supportedDemo(path string) bool {
-	p := strings.ToLower(path)
-	return strings.HasSuffix(p, ".dem") ||
-		strings.HasSuffix(p, ".dem.gz") ||
-		strings.HasSuffix(p, ".dem.bz2")
-}
-
-func humanSize(n int64) string {
-	const unit = 1024
-	if n < unit {
-		return formatInt(n) + " B"
-	}
-	div, exp := int64(unit), 0
-	for m := n / unit; m >= unit; m /= unit {
-		div *= unit
-		exp++
-	}
-	return formatFloat(float64(n)/float64(div), 1) + string("KMGTPE"[exp]) + "iB"
-}
-
-func formatInt(n int64) string {
-	if n == 0 {
-		return "0"
-	}
-	neg := n < 0
-	if neg {
-		n = -n
-	}
-	var buf [20]byte
-	i := len(buf)
-	for n > 0 {
-		i--
-		buf[i] = byte('0' + n%10)
-		n /= 10
-	}
-	if neg {
-		i--
-		buf[i] = '-'
-	}
-	return string(buf[i:])
-}
-
-func formatFloat(v float64, digits int) string {
-	pow := int64(1)
-	for i := 0; i < digits; i++ {
-		pow *= 10
-	}
-	n := int64(v*float64(pow) + 0.5)
-	whole := n / pow
-	frac := n % pow
-	s := formatInt(whole) + "."
-	for p := pow / 10; p > 0; p /= 10 {
-		s += string(byte('0' + (frac/p)%10))
-	}
-	return s
 }

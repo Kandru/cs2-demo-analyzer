@@ -18,6 +18,11 @@ Players (pills, cards: stats, sides, aim, cheat, review cues, weapons, per-round
 footer (generated/version/parser, untrusted-input + probabilistic notice)
 ```
 
+When a report directory also receives an `index.html`, it uses the same dark
+design tokens: a list of report cards with an “Open report” link and an optional
+“Download demo” link. The match banner shows the demo download link when the
+source `.dem` is reachable (same directory, or `--demo-download`).
+
 Anchors: `#overview`, `#scoreboard`, `#cheaters`, `#rounds`, `#players`,
 `#player-<slug>`, `#cheater-<slug>`, `#round-<startTick>`, `#warmup`.
 

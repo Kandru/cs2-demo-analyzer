@@ -18,6 +18,8 @@ type Config struct {
 	JSON      bool
 	Cheat     bool
 	Aim       bool
+	Index     bool
+	DemoLinks bool
 	Force     bool
 	Quiet     bool
 	Verbose   bool

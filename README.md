@@ -27,8 +27,13 @@ Reports default to the **same directory as the demo**:
 
 ```sh
 ./dist/cs2-battlelog analyze ./demos/match.dem
-# ./demos/match.html
+# ./demos/match.html (plus a downloadable link to match.dem)
 ```
+
+When demos and reports share a directory, the tool also writes an
+`index.html` there and links each report's `.dem` as a download. Use
+`--index` / `--demo-download` to enable indexes and demo links when `--output`
+points somewhere else.
 
 With Docker Compose:
 
@@ -56,7 +61,7 @@ cs2-battlelog watch   [flags] <directory>...
 cs2-battlelog version
 ```
 
-Key flags: `--input/-i`, `--output/-o`, `--recursive`, `--workers`, `--json`, `--cheat`, `--aim`, `--force`, `--timeout`, `--interval`, `--debounce`, `--quiet`, `--verbose`.
+Key flags: `--input/-i`, `--output/-o`, `--recursive`, `--workers`, `--json`, `--index`, `--demo-download`, `--cheat`, `--aim`, `--force`, `--timeout`, `--interval`, `--debounce`, `--quiet`, `--verbose`.
 
 See [docs/cli.md](docs/cli.md) for all flags, env vars, exit codes, and watch semantics.
 

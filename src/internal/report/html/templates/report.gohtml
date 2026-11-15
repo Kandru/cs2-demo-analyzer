@@ -58,6 +58,7 @@
     </div>
     <div class="banner-meta">
       <span><b>Demo</b> {{.Match.DemoName}}</span>
+      {{with .DemoDownload}}<a class="demo-download" href="{{.Href}}" download="{{.Name}}" title="Download {{.Name}}">Download demo{{if .Size}} · {{.Size}}{{end}}</a>{{end}}
       {{if .Match.ServerName}}<span><b>Server</b> {{.Match.ServerName}}</span>{{end}}
       <span><b>Played</b> {{.Match.FileTime.Format "Mon, 02 Jan 2006 15:04"}}</span>
       <span><b>Players</b> {{len .Match.Players}}</span>

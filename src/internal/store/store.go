@@ -11,6 +11,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/Kandru/cs2-demo-analyzer/internal/demofile"
 )
 
 // ManifestVersion is bumped when the cache file format changes.
@@ -26,6 +28,7 @@ type Entry struct {
 	JSONPath      string    `json:"jsonPath,omitempty"`
 	AnalyzedAt    time.Time `json:"analyzedAt,omitempty"`
 	ToolVersion   string    `json:"toolVersion,omitempty"`
+	ReportOptions string    `json:"reportOptions,omitempty"`
 	SchemaVersion int       `json:"schemaVersion,omitempty"`
 	Status        string    `json:"status,omitempty"` // ok | error
 	Error         string    `json:"error,omitempty"`
@@ -92,9 +95,9 @@ func Open(outputDir string) (*Store, error) {
 }
 
 // Skip reports whether a demo can be skipped because the same file was
-// analyzed successfully with the same tool version and schema, and the output
-// still exists.
-func (s *Store) Skip(path string, size int64, modTime time.Time, toolVersion string, force bool) bool {
+// analyzed successfully with the same tool version, report options, and
+// schema, and the output still exists.
+func (s *Store) Skip(path string, size int64, modTime time.Time, toolVersion, reportOptions string, force bool) bool {
 	if force {
 		return false
 	}
@@ -115,7 +118,7 @@ func (s *Store) Skip(path string, size int64, modTime time.Time, toolVersion str
 	if e.Status != "ok" {
 		return false
 	}
-	if e.ToolVersion != toolVersion || e.SchemaVersion != schemaVersion {
+	if e.ToolVersion != toolVersion || e.SchemaVersion != schemaVersion || e.ReportOptions != reportOptions {
 		return false
 	}
 	if e.HTMLPath == "" {
@@ -144,7 +147,7 @@ func (s *Store) Entry(path string) (Entry, bool) {
 }
 
 // MarkOK records a successful analysis.
-func (s *Store) MarkOK(path string, size int64, modTime time.Time, hash, html, jsonPath, toolVersion string) {
+func (s *Store) MarkOK(path string, size int64, modTime time.Time, hash, reportOptions, html, jsonPath, toolVersion string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.entries[path] = &Entry{
@@ -156,6 +159,7 @@ func (s *Store) MarkOK(path string, size int64, modTime time.Time, hash, html, j
 		JSONPath:      jsonPath,
 		AnalyzedAt:    time.Now().UTC(),
 		ToolVersion:   toolVersion,
+		ReportOptions: reportOptions,
 		SchemaVersion: schemaVersion,
 		Status:        "ok",
 	}
@@ -191,7 +195,7 @@ func (s *Store) OutputPath(demoPath, outputDir, suffix string) string {
 	if dir == "" {
 		dir = filepath.Dir(demoPath)
 	}
-	base := demoBase(demoPath)
+	base := demofile.BaseName(demoPath)
 	name := safeName(base) + suffix
 	cand := filepath.Join(dir, name)
 
@@ -211,6 +215,27 @@ func (s *Store) ReserveOutput(path, demoPath string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.outputs[path] = demoPath
+}
+
+// DemoForReport returns the demo path that produced reportPath, if known.
+func (s *Store) DemoForReport(reportPath string) (string, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	demo, ok := s.outputs[reportPath]
+	return demo, ok && demo != ""
+}
+
+// Entries returns a copy of every cached manifest entry.
+func (s *Store) Entries() []Entry {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	out := make([]Entry, 0, len(s.entries))
+	for _, e := range s.entries {
+		if e != nil {
+			out = append(out, *e)
+		}
+	}
+	return out
 }
 
 // Save writes the manifest atomically.
@@ -257,18 +282,6 @@ func WriteAtomic(path string, write func(io.Writer) error, perm os.FileMode) err
 		_ = os.Chmod(tmpName, perm)
 	}
 	return os.Rename(tmpName, path)
-}
-
-func demoBase(path string) string {
-	base := filepath.Base(path)
-	lower := strings.ToLower(base)
-	for _, ext := range []string{".dem.gz", ".dem.bz2", ".dem", ".gz", ".bz2"} {
-		if strings.HasSuffix(lower, ext) {
-			base = base[:len(base)-len(ext)]
-			break
-		}
-	}
-	return base
 }
 
 func safeName(s string) string {

@@ -5,13 +5,17 @@ CLI parsing, discovery, and per-demo pipeline.
 ## Invariants
 
 - `Processor.Process` order: hash → parse → anti-cheat → analysis → render →
-  atomic write → manifest.
+  atomic write → manifest → optional index refresh.
 - Always write the HTML even if the detector fails.
 - Per-demo timeout is applied inside `Process`.
 - `analyze` never uses the cache to skip; `watch` does via `Processor.Skip`.
 - Failures are isolated: analyze continues and exits 1 if any failed; watch logs
   and continues.
 - Outputs default next to the demo; `--output` is a single shared directory.
+- Demo download links are automatic only when report and demo share a directory;
+  `--demo-download` opts in to relative links across directories.
+- `index.html` is written when `--index` is set or when reports sit next to their
+  demos. Index entries come from the directory scan plus the store mapping.
 - Do not log player names as structured fields.
 
 ## Flags

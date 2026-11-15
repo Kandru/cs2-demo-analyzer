@@ -20,10 +20,13 @@ path and the one used by the Makefile.
 | Aim formulas | `internal/aim/metrics_test.go` | anchors, medians, no-damage degradation, display strings |
 | Parser helpers | `internal/parser/helpers_test.go` | slugs, buy types, ADR/HS/accuracy finalization, stable IDs |
 | Anti-cheat calibration | `internal/anticheat/stats/calibration_test.go` | sub-100 floor gates, snap-unit regression |
-| HTML report | `internal/report/html/render_test.go` | template compiles, core sections render, names are escaped |
+| HTML report | `internal/report/html/render_test.go`, `index_test.go` | template compiles, core sections render, names are escaped, index links |
+| Index/demo links | `internal/app/index_test.go` | same-directory and opt-in links, index entries |
+| Demo filenames | `internal/demofile/demofile_test.go` | supported extensions, base names, sibling lookup |
+| Sizes | `internal/units/units_test.go` | IEC byte formatting |
 | Cache/store | `internal/store/store_test.go` | output naming, collisions, skip/invalidations, atomic writes |
 | Discovery | `internal/app/discover_test.go` | recursive/non-recursive filters, env path lists |
-| Watcher | `internal/watch/watch_test.go` | settle-before-queue, extensions |
+| Watcher | `internal/watch/watch_test.go` | settle-before-queue |
 
 No test requires network access or a demo file.
 

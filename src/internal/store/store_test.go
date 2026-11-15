@@ -33,7 +33,7 @@ func TestOutputPathCollision(t *testing.T) {
 	a := filepath.Join(out, "a", "match.dem")
 	b := filepath.Join(out, "b", "match.dem")
 	pa := s.OutputPath(a, out, ".html")
-	s.MarkOK(a, 1, time.Unix(1, 0), "", pa, "", "v")
+	s.MarkOK(a, 1, time.Unix(1, 0), "", "", pa, "", "v")
 	pb := s.OutputPath(b, out, ".html")
 	if pa == pb {
 		t.Fatalf("collision not disambiguated: %q", pa)
@@ -55,18 +55,21 @@ func TestSkip(t *testing.T) {
 		t.Fatal(err)
 	}
 	mod := time.Unix(100, 0)
-	s.MarkOK(demo, 1, mod, "h", html, "", "1.0")
-	if !s.Skip(demo, 1, mod, "1.0", false) {
+	s.MarkOK(demo, 1, mod, "h", "", html, "", "1.0")
+	if !s.Skip(demo, 1, mod, "1.0", "", false) {
 		t.Fatal("expected skip for unchanged successful demo")
 	}
-	if s.Skip(demo, 2, mod, "1.0", false) {
+	if s.Skip(demo, 2, mod, "1.0", "", false) {
 		t.Fatal("size change must invalidate")
 	}
-	if s.Skip(demo, 1, mod, "1.0", true) {
+	if s.Skip(demo, 1, mod, "1.0", "", true) {
 		t.Fatal("force must bypass skip")
 	}
-	if s.Skip(demo, 1, mod, "2.0", false) {
+	if s.Skip(demo, 1, mod, "2.0", "", false) {
 		t.Fatal("tool version change must invalidate")
+	}
+	if s.Skip(demo, 1, mod, "1.0", "demo-download", false) {
+		t.Fatal("report option change must invalidate")
 	}
 }
 
@@ -75,10 +78,10 @@ func TestSkipCachesFailures(t *testing.T) {
 	s, _ := Open(dir)
 	mod := time.Unix(100, 0)
 	s.MarkError(filepath.Join(dir, "bad.dem"), 10, mod, os.ErrInvalid, "1.0")
-	if !s.Skip(filepath.Join(dir, "bad.dem"), 10, mod, "1.0", false) {
+	if !s.Skip(filepath.Join(dir, "bad.dem"), 10, mod, "1.0", "", false) {
 		t.Fatal("unchanged failed demos should not be retried on every scan")
 	}
-	if s.Skip(filepath.Join(dir, "bad.dem"), 11, mod, "1.0", false) {
+	if s.Skip(filepath.Join(dir, "bad.dem"), 11, mod, "1.0", "", false) {
 		t.Fatal("changed failed demos should be retried")
 	}
 }
