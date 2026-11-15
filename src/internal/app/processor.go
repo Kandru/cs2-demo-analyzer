@@ -3,12 +3,12 @@ package app
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/Kandru/cs2-demo-analyzer/internal/analysis"
@@ -17,6 +17,7 @@ import (
 	"github.com/Kandru/cs2-demo-analyzer/internal/model"
 	"github.com/Kandru/cs2-demo-analyzer/internal/parser"
 	"github.com/Kandru/cs2-demo-analyzer/internal/report/html"
+	"github.com/Kandru/cs2-demo-analyzer/internal/report/jsondata"
 	"github.com/Kandru/cs2-demo-analyzer/internal/store"
 	"github.com/Kandru/cs2-demo-analyzer/internal/version"
 )
@@ -97,15 +98,9 @@ func (p *Processor) Process(ctx context.Context, path string) error {
 
 	jsonPath := ""
 	if p.cfg.JSON {
-		jsonPath = p.store.OutputPath(path, p.cfg.Output, ".json")
-		data, jerr := json.MarshalIndent(m, "", "  ")
-		if jerr != nil {
-			p.recordError(path, info, jerr)
-			return fmt.Errorf("marshal json: %w", jerr)
-		}
+		jsonPath = strings.TrimSuffix(htmlPath, ".html") + ".json"
 		if err := store.WriteAtomic(jsonPath, func(w io.Writer) error {
-			_, err := w.Write(data)
-			return err
+			return jsondata.Write(w, m)
 		}, 0o644); err != nil {
 			p.recordError(path, info, err)
 			return fmt.Errorf("write json: %w", err)
