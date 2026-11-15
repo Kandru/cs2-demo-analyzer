@@ -365,6 +365,9 @@ func (s *state) onRoundStart(e events.RoundStart) {
 	}
 
 	startScore := s.currentScore()
+	if s.official == 0 && (startScore[0] > 0 || startScore[1] > 0) {
+		s.m.Warnings = append(s.m.Warnings, "demo starts mid-match; only rounds observed in the demo are shown and scores begin at the demo's current score")
+	}
 	r := &model.Round{
 		StartTick:   tick,
 		StartOffset: s.offset(),
