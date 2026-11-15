@@ -33,3 +33,6 @@ stuff/
 *.battlelog.html
 *.battlelog.json
 .pw/
+
+# Release workflow scratch
+release_notes.md
