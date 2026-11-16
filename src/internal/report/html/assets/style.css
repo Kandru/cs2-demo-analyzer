@@ -28,6 +28,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html {
   font-size: clamp(15px, 0.35vw + 10px, 19px);
   scroll-behavior: smooth;
