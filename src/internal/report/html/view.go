@@ -462,6 +462,9 @@ func buildPlayer(m *model.Match, p *model.Player) *PlayerView {
 		for _, ch := range p.Cheat.Channels {
 			cheatTerms = append(cheatTerms, ch.ID, ch.Label, ch.Zone, ch.Description)
 		}
+		for _, mo := range p.Cheat.Moments {
+			cheatTerms = append(cheatTerms, mo.Kind, mo.Label, mo.ValueText, mo.Opponent, mo.Weapon)
+		}
 		pv.Search = searchKey(append([]string{pv.Search}, cheatTerms...)...)
 	}
 	if p.Cheat != nil && len(p.Cheat.Moments) > 0 {

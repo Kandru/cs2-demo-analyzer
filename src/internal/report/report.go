@@ -144,7 +144,7 @@ func DemoKey(demoPath string) string {
 		abs = demoPath
 	}
 	sum := sha256.Sum256([]byte(abs))
-	return hex.EncodeToString(sum[:4])
+	return hex.EncodeToString(sum[:8])
 }
 
 // ReadHeader reads only the metadata header of an HTML or JSON report.
