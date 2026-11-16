@@ -193,8 +193,12 @@ code { font-family: var(--mono); color: var(--accent-2); font-size: .92em; }
   display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
   border-bottom: 1px solid var(--line); padding-bottom: 7px; margin-bottom: 12px;
 }
-.section-head h2 { position: relative; padding-left: 11px; }
-.section-head h2::before {
+.section-head h1, .section-head h2 { position: relative; padding-left: 11px; }
+.section-head h1 {
+  font-size: clamp(1.15rem, 1.6vw, 1.45rem);
+  text-transform: uppercase; letter-spacing: .06em;
+}
+.section-head h1::before, .section-head h2::before {
   content: ""; position: absolute; left: 0; top: 3px; bottom: 3px; width: 3px; background: var(--accent);
 }
 .section-note { color: var(--muted); font-size: .76rem; text-align: right; }
