@@ -200,7 +200,7 @@ cannot be used inside `@media`:
 |---|---|
 | `<= 480px` | single-column stat tiles, three round cells, stacked timeline timestamps, scrollable tables |
 | `<= 720px` | single-column cards, compact topbar, four round cells, wrapped filters |
-| `<= 1024px` | scoreboards stack, six round cells, index hero narrows |
+| `<= 1024px` | scoreboards stack, six round cells |
 | `>= 1600px` | wider index grid |
 | `>= 2200px` | wider content gutters |
 | `>= 3000px` | full 4K layout, no cramped columns |

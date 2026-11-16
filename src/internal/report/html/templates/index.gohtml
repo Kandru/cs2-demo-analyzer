@@ -19,18 +19,6 @@
 {{template "topbar" .}}
 
 <main id="main" class="wrap">
-  <section class="index-hero cs-panel" aria-label="Report index summary">
-    <img class="index-logo" src="{{.Assets.Logo}}" alt="" width="560" height="313">
-    <div class="index-hero-text">
-      <p class="hero-sub">Newest first - grouped by server - {{byline}}</p>
-      <div class="index-stats">
-        <span><b>{{.Count}}</b> report(s)</span>
-        <span><b>{{.Servers}}</b> server(s)</span>
-        {{if .Newest}}<span><b>Newest</b> {{.Newest}}</span>{{end}}
-      </div>
-    </div>
-  </section>
-
   <section class="section" aria-labelledby="reports-list">
     <div class="section-head">
       <h2 id="reports-list">All reports</h2>

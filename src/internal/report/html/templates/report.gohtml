@@ -43,7 +43,7 @@
 
     <div class="hero-meta">
       {{with .DemoDownload}}<a class="demo-download" href="{{.Href}}" download="{{.Name}}" title="Download {{.Name}}">Download demo{{if .Size}} - {{.Size}}{{end}}</a>{{end}}
-      <span><b>Report</b> <a href="{{.Footer.RepoURL}}" target="_blank" rel="noopener noreferrer">v{{.Version}}</a></span>
+      <a class="badge badge--accent" href="{{.Footer.RepoURL}}" target="_blank" rel="noopener noreferrer">Report v{{.Version}}</a>
     </div>
   </section>
 
@@ -85,7 +85,7 @@
       </div>
       <a class="stat-tile stat-link {{if gt .FlaggedPlayers 0}}is-alert{{end}}" href="#cheaters">
         <span class="stat-label">Watchlist</span>
-        <span class="stat-value">{{.FlaggedPlayers}}{{if $.Cheaters}} <em>/ {{len $.Cheaters}}</em>{{end}}</span>
+        <span class="stat-value">{{.FlaggedPlayers}} <em>/ {{len $.Match.Players}}</em></span>
         <span class="stat-sub">{{if gt .FlaggedPlayers 0}}flagged players{{else if $.Cheaters}}review players{{else}}no player above 25%{{end}}</span>
       </a>
       <div class="stat-tile">

@@ -74,7 +74,6 @@ The project logo and favicon were supplied by the repository owner in
 `docs/assets/`. Optimised, small derivatives are embedded in generated reports:
 
 - `assets/brand-mark.png`
-- `assets/logo.jpg`
 - `assets/favicon-32.png`
 - `assets/apple-touch-icon.png`
 

@@ -111,10 +111,15 @@
 
 {{define "moment" -}}
 <li class="cue {{.Class}}">
-  <span class="cue-time">{{.Time}}</span>
-  <span class="cue-round">{{if .RoundAnchor}}<a href="#{{.RoundAnchor}}">{{.RoundLabel}}</a>{{else}}{{.RoundLabel}}{{end}}{{if .RoundTime}} <em>{{.RoundTime}}</em>{{end}}</span>
-  <span class="cue-body">{{range .Reasons}}<span class="badge badge--neutral cue-tag {{.Kind}}" title="{{.Detail}}"><b>{{.Label}}</b> {{.Value}}</span>{{end}}{{if .Weapon}}<span class="cue-meta">{{.Weapon}}</span>{{end}}{{if .Opponent}}<span class="cue-meta">vs {{.Opponent}}</span>{{end}}</span>
-  <button type="button" class="tick-copy" data-copy="{{.DemoCommand}}" title="Copy {{.DemoCommand}}" aria-label="Copy {{.DemoCommand}}">tick {{.Tick}}</button>
+  <header class="cue-head">
+    <span class="cue-round">{{if .RoundAnchor}}<a href="#{{.RoundAnchor}}">{{.RoundLabel}}</a>{{else}}{{.RoundLabel}}{{end}}{{if .RoundTime}} <em>{{.RoundTime}}</em>{{end}}</span>
+    <span class="cue-actions">
+      <span class="cue-time">{{.Time}}</span>
+      <button type="button" class="tick-copy" data-copy="{{.DemoCommand}}" title="Copy {{.DemoCommand}}" aria-label="Copy {{.DemoCommand}}">tick {{.Tick}}</button>
+    </span>
+  </header>
+  <div class="cue-body">{{range .Reasons}}<span class="badge badge--neutral cue-tag {{.Kind}}" title="{{.Detail}}"><b>{{.Label}}</b> {{.Value}}</span>{{end}}</div>
+  {{if or .Weapon .Opponent}}<footer class="cue-foot">{{if .Weapon}}<span class="cue-meta" title="Weapon">{{.Weapon}}</span>{{end}}{{if .Opponent}}<span class="cue-meta" title="Opponent">vs {{.Opponent}}</span>{{end}}</footer>{{end}}
 </li>
 {{- end}}
 
@@ -131,7 +136,12 @@
     <span class="channel-rank" aria-hidden="true">{{.Rank}}</span>
     <span class="channel-main">
       <span class="channel-line"><b>{{.Channel.Label}}</b><span class="zone {{.ZoneClass}}">{{if eq .Zone "no_data"}}no data{{else}}{{.Zone}}{{end}}</span></span>
-      <span class="channel-vals"><span>{{.Raw}}</span><span>{{.ScorePct}}% evidence</span><span>{{.ConfPct}}% conf</span>{{if .Channel.Samples}}<span>{{.SampleLabel}}</span>{{end}}</span>
+      <span class="channel-vals">
+        <span class="badge badge--neutral" title="Raw measured value">{{.Raw}}</span>
+        <span class="badge badge--accent" title="Evidence score: how strongly this channel points to cheating (0-100%)">Evidence {{.ScorePct}}%</span>
+        <span class="badge" title="Confidence: how reliable the evidence is for this sample size (0-100%)">Confidence {{.ConfPct}}%</span>
+        {{if .Channel.Samples}}<span class="badge" title="Samples: observations behind this channel">{{.SampleLabel}}</span>{{end}}
+      </span>
       <span class="bar channel-bar"><i class="{{.BarClass}}" style="width:{{.ScorePct}}%"></i></span>
     </span>
   </li>

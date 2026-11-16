@@ -81,7 +81,6 @@ func TestEmbeddedAssetBudget(t *testing.T) {
 	total := 0
 	for _, uri := range []string{
 		string(reportAssets.BrandMark),
-		string(reportAssets.Logo),
 		string(reportAssets.Favicon),
 		string(reportAssets.AppleTouch),
 	} {

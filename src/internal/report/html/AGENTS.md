@@ -16,7 +16,7 @@ Self-contained, flat report renderer with a shared CS 1.6-inspired dark theme.
 - `assets/theme.css` - the only source of raw colours and theme tokens.
 - `assets/style.css` - component layout using theme tokens only.
 - `assets/app.js` - progressive enhancement.
-- `assets/brand-mark.png`, `logo.jpg`, `favicon-32.png`,
+- `assets/brand-mark.png`, `favicon-32.png`,
   `apple-touch-icon.png` - optimised inlined brand assets.
 
 ## Invariants

@@ -165,6 +165,8 @@ state adds `is-alert`.
 - `.score-table` for scoreboards, `.mini-table` for compact data.
 - Always wrap in `.table-scroll`.
 - Numeric cells use `--font-mono`, tabular numbers and right alignment.
+- Compact `.mini-table` cells are centred except the first label column; never
+  let the last column consume the remaining width.
 - Header labels are uppercase and muted.
 - Provide a `<caption class="sr-only">`.
 - Never shrink text to fit; scroll horizontally instead.
@@ -223,10 +225,16 @@ state adds `is-alert`.
 - Aim and channel samples use readable nouns (shots, hits, engagements,
   samples), never a bare `n=`.
 - Channel rows flow in two columns when there is room.
+- Each channel row is a card. Show the raw value plus labelled badges:
+  `Evidence N%`, `Confidence N%`, sample count and zone. The labels/tooltips
+  explain the numbers; do not print bare percentages.
 - Cheat analysis is a bulleted signal list, not prose. Use the short
   “Statistic calculation only. No Proof.” subtext.
 - “When to look” shows every cue in a three-column card grid on wide screens.
-- Score adjustments are always visible when present.
+- Each cue card has a left/right header (round and time left, copy-tick right),
+  a badge body and a small weapon/opponent footer.
+- Score adjustments use the same three-column card grid, each with a title and
+  a plain-language explanation.
 
 ### Search dropdown
 

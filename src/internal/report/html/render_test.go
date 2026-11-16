@@ -337,7 +337,6 @@ func TestIndexMetadataAndSharedFooter(t *testing.T) {
 		Title:       "Match reports",
 		Version:     "test",
 		GeneratedAt: "2026.11.16 12:11",
-		Count:       1,
 		Groups: []IndexServerGroup{{
 			Name:    "Server",
 			Entries: []IndexEntry{{Href: "match.html", Name: "Mirage", Played: "2026-11-15 12:00", Demo: &DemoLink{Href: "match.dem", Name: "match.dem", Size: "1.0 MiB"}}},
@@ -379,6 +378,7 @@ func TestRenderUsesCompactCopyAndSharedStickyTools(t *testing.T) {
 		`class="button" href="#player-kalle-000001">Open full analysis</a>`,
 		"Statistic calculation only. No Proof.",
 		"3 detector channels showed strong agreement",
+		">Report vtest</a>",
 		`class="mini-table round-table"`,
 		`<col class="col-round">`,
 	} {
@@ -537,7 +537,6 @@ func TestIndexOmitsDownloadWhenDisabled(t *testing.T) {
 	v := &IndexView{
 		Title:   "Match reports",
 		Version: "test",
-		Count:   1,
 		Groups: []IndexServerGroup{{
 			Name:    "Server",
 			Entries: []IndexEntry{{Href: "match.html", Name: "Mirage", Played: "2026-11-15 12:00"}},

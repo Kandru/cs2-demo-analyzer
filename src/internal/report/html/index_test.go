@@ -28,7 +28,6 @@ func TestRenderIndexListsReportsAndEscapesNames(t *testing.T) {
 		Title:       "Match reports",
 		Version:     "test",
 		GeneratedAt: "2026.11.16 12:11",
-		Count:       2,
 		Groups: []IndexServerGroup{
 			{
 				Name: "Alpha Server",
@@ -66,7 +65,7 @@ func TestRenderIndexListsReportsAndEscapesNames(t *testing.T) {
 			t.Errorf("missing %q in rendered index", want)
 		}
 	}
-	for _, unwanted := range []string{"Self-contained index", "no external assets", "Generated 2026"} {
+	for _, unwanted := range []string{"Self-contained index", "no external assets", "Generated 2026", "index-hero", "index-logo", "Newest first"} {
 		if strings.Contains(page, unwanted) {
 			t.Errorf("removed text %q still present", unwanted)
 		}
@@ -98,7 +97,6 @@ func TestRenderIndexEmpty(t *testing.T) {
 func TestIndexEntryPlayedAtNotRendered(t *testing.T) {
 	v := &IndexView{
 		Version: "test",
-		Count:   1,
 		Groups: []IndexServerGroup{{
 			Name: "Server",
 			Entries: []IndexEntry{{

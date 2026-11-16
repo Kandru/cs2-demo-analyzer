@@ -351,6 +351,7 @@ table {
   display: flex;
   flex: 1 1 auto;
   min-width: 0;
+  align-self: stretch;
   align-items: stretch;
   overflow-x: auto;
   scrollbar-width: none;
@@ -361,16 +362,17 @@ table {
 }
 
 .mainnav a {
-  display: inline-flex;
-  height: 100%;
+  display: flex;
+  flex: 0 0 auto;
+  align-self: stretch;
   align-items: center;
   gap: 0.35rem;
   padding: 0 0.7rem;
-  border-bottom: 3px solid transparent;
   color: var(--muted);
   font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.1em;
+  line-height: 1;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -382,7 +384,7 @@ table {
 }
 
 .mainnav a.active {
-  border-bottom-color: var(--accent);
+  box-shadow: inset 0 -3px 0 var(--accent);
   color: var(--text);
 }
 
@@ -540,12 +542,6 @@ table {
   border-top: var(--border-w) solid var(--line);
   color: var(--muted);
   font-size: var(--fs-xs);
-}
-
-.hero-meta b {
-  margin-right: 0.2rem;
-  color: var(--dim);
-  font-weight: 700;
 }
 
 .demo-download {
@@ -947,6 +943,16 @@ table {
   text-align: left;
 }
 
+.mini-table th,
+.mini-table td {
+  text-align: center;
+}
+
+.mini-table th:first-child,
+.mini-table td:first-child {
+  text-align: left;
+}
+
 .score-table td,
 .mini-table td {
   padding: 0.35rem;
@@ -1042,6 +1048,7 @@ table {
 
 .cheater-card {
   min-width: 0;
+  padding: var(--space-2);
   overflow: hidden;
   overflow: clip;
   border-left: 4px solid var(--line-hi);
@@ -1061,15 +1068,14 @@ table {
 
 .cheater-head {
   display: flex;
-  width: 100%;
-  max-width: 100%;
   min-width: 0;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
+  margin: 0 0 var(--space-2);
   padding: var(--space-3);
   background: var(--bg-2);
-  border-bottom: 1px solid var(--line);
+  border: 1px solid var(--line-soft);
 }
 
 .cheater-id {
@@ -1219,15 +1225,20 @@ table {
 
 .adjustment-list {
   display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-1);
   list-style: none;
 }
 
 .adjustment-list li {
-  display: grid;
-  gap: 0.1rem;
-  padding-left: var(--space-2);
-  border-left: 2px solid var(--warning-border);
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: var(--space-2);
+  border: 1px solid var(--line-soft);
+  border-left: 3px solid var(--warning);
+  background: var(--bg-1);
 }
 
 .adjustment-list b {
@@ -1318,6 +1329,7 @@ select {
 .tl-section {
   position: relative;
   min-width: 0;
+  padding: var(--space-2);
   overflow: hidden;
   overflow: clip;
   background: var(--panel);
@@ -1352,15 +1364,14 @@ select {
 
 .tl-head {
   display: grid;
-  width: 100%;
-  max-width: 100%;
   min-width: 0;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-2) var(--space-3);
+  margin: 0 0 var(--space-2);
   padding: var(--space-2) var(--space-3);
   background: var(--bg-2);
-  border-bottom: 1px solid var(--line);
+  border: 1px solid var(--line-soft);
 }
 
 .tl-head-title,
@@ -1818,6 +1829,7 @@ select {
 }
 
 .player-card {
+  padding: var(--space-2);
   overflow: hidden;
   overflow: clip;
   scroll-margin-top: calc(var(--header-h) + var(--section-head-h) + 4rem);
@@ -1825,14 +1837,13 @@ select {
 
 .player-head {
   display: flex;
-  width: 100%;
-  max-width: 100%;
   min-width: 0;
   align-items: center;
   gap: var(--space-2);
+  margin: 0 0 var(--space-2);
   padding: var(--space-3);
   background: var(--bg-2);
-  border-bottom: 1px solid var(--line);
+  border: 1px solid var(--line-soft);
 }
 
 .avatar {
@@ -2090,12 +2101,17 @@ select {
   grid-template-columns: 1.35rem minmax(0, 1fr);
   gap: 0.4rem;
   align-items: start;
-  padding: 0.25rem 0;
-  border-bottom: 1px solid var(--line-soft);
+  padding: var(--space-2);
+  border: 1px solid var(--line-soft);
+  background: var(--bg-1);
 }
 
-.channel-item:last-child {
-  border-bottom: 0;
+.channel-item .channel-vals {
+  gap: 0.3rem;
+}
+
+.channel-item .badge {
+  margin: 0;
 }
 
 .channel-rank {
@@ -2201,29 +2217,37 @@ select {
 }
 
 .cue {
-  display: grid;
+  display: flex;
   min-width: 0;
-  grid-template-columns: auto minmax(0, 1fr);
-  grid-template-areas:
-    "time round"
-    "body body"
-    "tick tick";
-  align-items: center;
-  gap: 0.25rem 0.5rem;
+  flex-direction: column;
+  gap: var(--space-2);
   padding: var(--space-2);
   border: 1px solid var(--line-soft);
   background: var(--bg-1);
   font-size: var(--fs-xs);
 }
 
+.cue-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-bottom: var(--space-1);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.cue-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
 .cue-time {
-  grid-area: time;
   color: var(--muted);
   font-family: var(--font-mono);
 }
 
 .cue-round {
-  grid-area: round;
   overflow: hidden;
   color: var(--muted);
   text-overflow: ellipsis;
@@ -2243,7 +2267,6 @@ select {
 }
 
 .cue-body {
-  grid-area: body;
   display: flex;
   min-width: 0;
   flex-wrap: wrap;
@@ -2251,9 +2274,12 @@ select {
   gap: 0.25rem;
 }
 
-.tick-copy {
-  grid-area: tick;
-  justify-self: start;
+.cue-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--line-soft);
 }
 
 .cue.cue-strong {
@@ -2368,36 +2394,6 @@ select {
 }
 
 /* ---------------------------------- index --------------------------------- */
-
-.index-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
-  align-items: center;
-  gap: clamp(1rem, 3vw, 2.5rem);
-  margin-top: clamp(1rem, 2vw, 1.6rem);
-  padding: clamp(1rem, 2vw, 1.8rem);
-}
-
-.index-logo {
-  width: 100%;
-  max-width: 360px;
-  border: 1px solid var(--line);
-  background: var(--panel-2);
-}
-
-.index-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1.2rem;
-  margin-top: var(--space-2);
-  color: var(--muted);
-  font-size: var(--fs-sm);
-}
-
-.index-stats b {
-  color: var(--text);
-  font-family: var(--font-mono);
-}
 
 .index-groups {
   display: flex;
@@ -2570,15 +2566,15 @@ select {
     grid-template-columns: 1fr;
   }
 
-  .index-hero {
-    grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
-  }
-
   .round-strip {
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
   .cue-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .adjustment-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -2672,12 +2668,8 @@ select {
     grid-template-columns: 1fr;
   }
 
-  .index-hero {
+  .adjustment-list {
     grid-template-columns: 1fr;
-  }
-
-  .index-logo {
-    max-width: 260px;
   }
 
   .index-grid {
@@ -2875,6 +2867,7 @@ select {
   align-items: stretch;
   gap: 0.4rem;
   margin-left: auto;
+  padding: 2px 0;
 }
 
 .topsearch input {

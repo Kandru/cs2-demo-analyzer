@@ -74,7 +74,6 @@ type FooterView struct {
 // AssetView holds inlined brand assets as trusted data URIs.
 type AssetView struct {
 	BrandMark  template.URL
-	Logo       template.URL
 	Favicon    template.URL
 	AppleTouch template.URL
 }

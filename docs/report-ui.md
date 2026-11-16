@@ -31,6 +31,9 @@ Both pages share the same topbar, footer, icon sprite and component templates in
 `templates/components.gohtml`. The report brand links back to `index.html` when
 an index is generated. There is no “All reports” link inside the header.
 
+The index page has no hero panel; it starts directly with the grouped report
+list.
+
 Anchors: `#overview`, `#scoreboard`, `#cheaters`, `#rounds`, `#players`,
 `#player-<slug>`, `#cheater-<slug>`, `#round-<startTick>`, `#warmup`.
 
@@ -77,12 +80,12 @@ One card per flagged or review-level player.
 
 - Verdict, likelihood and meter in the header; team, rounds and K/D/A are
   badges.
-- Ranked signal list with label, evidence bar, raw value, confidence, samples
-  and zone.
-- Score adjustments are always visible when present. Each has a readable title
-  and a plain-language explanation.
+- Ranked signal cards with label, evidence bar, raw value, labelled evidence,
+  confidence and sample badges, and zone.
+- Score adjustments are cards with a readable title and a plain-language
+  explanation.
 - All review cues with round links and `demo_gototick <tick>` copy buttons,
-  laid out as cards.
+  laid out as cards with a header, badge body and footer.
 - “Open full analysis” is a `.button` in the card footer, bottom-left.
 - “Watchlist” is the only term used for this feature.
 - The short “Statistic calculation only. No Proof.” subtext stays visible.
@@ -141,7 +144,6 @@ round panels.
 The project logo and favicon are inlined as data URIs:
 
 - `brand-mark.png` - 64x64 icon crop, topbar and footer
-- `logo.jpg` - 560x313 wide logo, index hero
 - `favicon-32.png` - browser tab icon
 - `apple-touch-icon.png` - 152x152 touch icon
 

@@ -32,9 +32,6 @@ type IndexView struct {
 	GeneratedAt string
 	CSS         template.CSS
 	Groups      []IndexServerGroup
-	Count       int
-	Servers     int
-	Newest      string
 	Chrome      *ChromeView
 	Footer      *FooterView
 	Assets      *AssetView
@@ -92,17 +89,6 @@ func RenderIndex(w io.Writer, v *IndexView) error {
 	v.Assets = reportAssets
 	if v.Description == "" {
 		v.Description = "CS2 match reports generated " + byline
-	}
-	if v.Servers == 0 {
-		v.Servers = len(v.Groups)
-	}
-	if v.Newest == "" {
-		for _, group := range v.Groups {
-			if len(group.Entries) > 0 {
-				v.Newest = group.Entries[0].Played
-				break
-			}
-		}
 	}
 	v.Chrome = &ChromeView{
 		BrandHref:  IndexFileName,

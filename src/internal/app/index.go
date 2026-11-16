@@ -118,7 +118,6 @@ func (p *Processor) writeIndex(dir string) error {
 		Version:     version.Short(),
 		GeneratedAt: time.Now().Format("2006.01.02 15:04"),
 		Groups:      groupIndexEntries(entries),
-		Count:       len(entries),
 	}
 	var buf bytes.Buffer
 	if err := html.RenderIndex(&buf, view); err != nil {

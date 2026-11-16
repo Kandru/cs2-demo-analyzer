@@ -34,12 +34,8 @@ var faviconPNG []byte
 //go:embed assets/apple-touch-icon.png
 var appleTouchPNG []byte
 
-//go:embed assets/logo.jpg
-var logoJPEG []byte
-
 var reportAssets = &AssetView{
 	BrandMark:  dataURI("image/png", brandMarkPNG),
-	Logo:       dataURI("image/jpeg", logoJPEG),
 	Favicon:    dataURI("image/png", faviconPNG),
 	AppleTouch: dataURI("image/png", appleTouchPNG),
 }
