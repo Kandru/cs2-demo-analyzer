@@ -20,6 +20,8 @@ Self-contained, flat Battlelog-style report renderer.
   filters, expand/collapse, and tick copying.
 - Every cheat card carries the “statistical signal, not proof” disclaimer.
   Timestamped cues are review aids, not proof of cheating.
+- Render cue labels, ranks and values from `CheatMoment.Label/Rank/ValueText`.
+  Do not add a per-kind switch; unknown kinds fall back to the raw kind.
 - Preserve anchors: `#overview`, `#scoreboard`, `#cheaters`, `#rounds`,
   `#players`, `#player-<slug>`, `#cheater-<slug>`, `#round-<tick>`, `#warmup`.
 - Keep the dark palette tokens; no light mode.

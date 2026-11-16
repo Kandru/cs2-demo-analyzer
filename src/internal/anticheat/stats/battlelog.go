@@ -41,13 +41,16 @@ type BattlelogAdjustment struct {
 // BattlelogMoment is one timestamped review cue recorded by a collector.
 // Values mirror the channel that produced the signal.
 type BattlelogMoment struct {
-	Kind     string
-	Tick     int
-	Value    float64
-	Unit     string
-	Opponent string
-	Weapon   string
-	Detail   string
+	Kind      string
+	Label     string
+	Rank      int
+	ValueText string
+	Tick      int
+	Value     float64
+	Unit      string
+	Opponent  string
+	Weapon    string
+	Detail    string
 }
 
 // BattlelogPlayerReport is the full detector verdict for one player.
@@ -105,13 +108,16 @@ func battlelogMoments(ps *PlayerStats) []BattlelogMoment {
 	out := make([]BattlelogMoment, 0, len(ps.Moments))
 	for _, m := range ps.Moments {
 		out = append(out, BattlelogMoment{
-			Kind:     m.Kind,
-			Tick:     m.Tick,
-			Value:    m.Value,
-			Unit:     m.Unit,
-			Opponent: m.Opponent,
-			Weapon:   m.Weapon,
-			Detail:   m.Detail,
+			Kind:      m.Kind,
+			Label:     m.Label,
+			Rank:      m.Rank,
+			ValueText: m.ValueText,
+			Tick:      m.Tick,
+			Value:     m.Value,
+			Unit:      m.Unit,
+			Opponent:  m.Opponent,
+			Weapon:    m.Weapon,
+			Detail:    m.Detail,
 		})
 	}
 	sort.SliceStable(out, func(i, j int) bool {

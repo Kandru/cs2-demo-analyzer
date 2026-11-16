@@ -40,7 +40,7 @@ func testMatch() *model.Match {
 				Cheat: &model.CheatReport{Available: true, Likelihood: 62, Flagged: true, Narrative: "Snap and pre-aim signals are elevated.",
 					Channels:    []model.CheatChannel{{ID: "hs", Label: "Headshot rate", Score: 0, Confidence: 0.9, Zone: "clean", Raw: 48, Unit: "%", Samples: 20, HasData: true}},
 					Adjustments: []model.Adjustment{{Label: "Evidence stacking boost", Detail: "two channels"}},
-					Moments:     []model.CheatMoment{{Kind: "snap", Tick: 120, Seconds: 1.875, Round: 1, Value: 2.4, Unit: "°/ms", Opponent: "victim", Weapon: "AK-47"}}},
+					Moments:     []model.CheatMoment{{Kind: "snap", Label: "Snap", Rank: 2, ValueText: "2.40 °/ms", Tick: 120, Seconds: 1.875, Round: 1, Value: 2.4, Unit: "°/ms", Opponent: "victim", Weapon: "AK-47"}}},
 				Weapons:    map[string]*model.WeaponStats{"AK-47": {Name: "AK-47", Kills: 15, Shots: 150, Hits: 45, Accuracy: 30}},
 				RoundStats: map[int]*model.RoundStat{1: {Side: model.SideT, Kills: 2, Damage: 200, EquipValue: 4000, Survived: true}},
 				SideStats:  map[model.Side]*model.PlayerStats{model.SideT: {Rounds: 10, Kills: 10, Deaths: 5, Assists: 2, Damage: 900, ADR: 90, HSPercent: 40}},
@@ -60,8 +60,8 @@ func testMatch() *model.Match {
 func TestCheatMomentsMergeByTickAndFeedWatchList(t *testing.T) {
 	m := testMatch()
 	m.Players[0].Cheat.Moments = append(m.Players[0].Cheat.Moments,
-		model.CheatMoment{Kind: "ttd_sub100", Tick: 120, Value: 90, Unit: "ms", Opponent: "victim", Weapon: "AK-47"},
-		model.CheatMoment{Kind: "preaim", Tick: 300, Value: 3.2, Unit: "°", Opponent: "other", Weapon: "AK-47"},
+		model.CheatMoment{Kind: "ttd_sub100", Label: "Sub-100 ms", Rank: 3, ValueText: "90 ms", Tick: 120, Value: 90, Unit: "ms", Opponent: "victim", Weapon: "AK-47"},
+		model.CheatMoment{Kind: "preaim", Label: "Pre-aim", Rank: 3, ValueText: "3.2°", Tick: 300, Value: 3.2, Unit: "°", Opponent: "other", Weapon: "AK-47"},
 	)
 	v := NewView(m, "test")
 	if len(v.Cheaters) != 1 {

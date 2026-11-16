@@ -12,5 +12,7 @@ Pure domain and JSON contract. No behavior, no parser imports.
 - Keep JSON tags stable; the HTML/JSON sidecar depend on them.
 - Methods are lookup helpers only (`PlayerByID`, `TeamByID`, `RoundByNumber`);
   no I/O, no computation.
+- `CheatMoment.Label/Rank/ValueText` are additive detector metadata. Reporters
+  must use them instead of switching on `Kind`.
 
 When changing the contract, update `docs/report-schema.md` and the store schema.

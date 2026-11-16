@@ -61,9 +61,12 @@ IDs: `damage_speed`, `reaction`, `preaim`, `accuracy`, `head_accuracy`,
 Adjustments: `label`, `detail`.
 
 `CheatMoment`: `kind` (`snap`, `ttd`, `ttd_sub100`, `preaim`, `recoil`,
-`wallbang`, `smoke`, `noscope`), `tick`, `round` (0 = warmup/pre-match),
+`wallbang`, `smoke`, `noscope`), `label`, `rank` (1 info, 2 mild, 3 strong),
+`valueText` (display string), `tick`, `round` (0 = warmup/pre-match),
 `seconds` (demo clock), `value`, `unit`, `opponent`, `weapon`, `detail`.
-These are additive review cues, not scoring inputs. `round`/`seconds` are
+`label`, `rank` and `valueText` are additive presentation metadata supplied by
+the detector's evidence spec; reporters can render a cue without a per-kind
+switch. These are review cues, not scoring inputs. `round`/`seconds` are
 filled by `internal/analysis` from the battlelog round model.
 
 ## `Round`

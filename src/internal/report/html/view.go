@@ -654,54 +654,22 @@ func momentLocation(m *model.Match, mv *MomentView, seconds float64) {
 }
 
 func momentReason(rm model.CheatMoment) (MomentReason, int) {
-	reason := MomentReason{Kind: rm.Kind, Detail: rm.Detail}
-	rank := 1
-	switch rm.Kind {
-	case "snap":
-		reason.Label = "Snap"
-		reason.Value = fmt.Sprintf("%.2f °/ms", rm.Value)
-		rank = 2
-	case "ttd_sub100":
-		reason.Label = "Sub-100 ms"
-		reason.Value = fmt.Sprintf("%.0f ms", rm.Value)
-		rank = 3
-	case "ttd":
-		reason.Label = "Reaction"
-		reason.Value = fmt.Sprintf("%.0f ms", rm.Value)
-		rank = 2
-	case "preaim":
-		reason.Label = "Pre-aim"
-		reason.Value = fmt.Sprintf("%.1f°", rm.Value)
-		rank = 3
-	case "recoil":
-		reason.Label = "Recoil"
-		reason.Value = fmt.Sprintf("%.2f°", rm.Value)
-		rank = 2
-	case "wallbang":
-		reason.Label = "Wallbang"
-		if rm.Value > 1 {
-			reason.Value = fmt.Sprintf("%.0f layers", rm.Value)
-		} else {
-			reason.Value = "1 layer"
-		}
-		rank = 3
-	case "smoke":
-		reason.Label = "Through smoke"
-		reason.Value = "kill"
-		rank = 2
-	case "noscope":
-		reason.Label = "No-scope"
-		reason.Value = "kill"
-		rank = 2
-	default:
-		if rm.Kind == "" {
-			reason.Label = "Cue"
-		} else {
-			reason.Label = rm.Kind
-		}
-		reason.Value = "signal"
+	label := rm.Label
+	if label == "" {
+		label = rm.Kind
 	}
-	return reason, rank
+	if label == "" {
+		label = "Cue"
+	}
+	value := rm.ValueText
+	if value == "" {
+		value = "signal"
+	}
+	rank := rm.Rank
+	if rank < 1 {
+		rank = 1
+	}
+	return MomentReason{Kind: rm.Kind, Label: label, Value: value, Detail: rm.Detail}, rank
 }
 
 func momentClass(rank int) string {

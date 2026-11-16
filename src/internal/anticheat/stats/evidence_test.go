@@ -48,7 +48,13 @@ func TestBattlelogMomentsArePublishedAndSorted(t *testing.T) {
 	if rep.Moments[0].Kind != "ttd" || rep.Moments[0].Tick != 100 {
 		t.Fatalf("moments not sorted by tick: %+v", rep.Moments)
 	}
+	if rep.Moments[0].Label != "Reaction" || rep.Moments[0].Rank != 2 || rep.Moments[0].ValueText != "88 ms" {
+		t.Fatalf("moment metadata not populated: %+v", rep.Moments[0])
+	}
 	if rep.Moments[1].Kind != "preaim" {
 		t.Fatalf("unexpected second moment: %+v", rep.Moments[1])
+	}
+	if rep.Moments[1].Label != "Pre-aim" || rep.Moments[1].Rank != 3 || rep.Moments[1].ValueText != "4.2°" {
+		t.Fatalf("preaim metadata not populated: %+v", rep.Moments[1])
 	}
 }

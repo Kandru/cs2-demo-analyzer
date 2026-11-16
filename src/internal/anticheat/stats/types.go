@@ -58,14 +58,19 @@ type PlayerStats struct {
 
 // EvidenceMoment is one timestamped detector observation that a reviewer can
 // jump to in the demo. Values mirror the channel that produced the signal.
+// Label, Rank and ValueText are filled from the registered EvidenceSpec by
+// AddMoment so the report does not need a per-kind switch.
 type EvidenceMoment struct {
-	Kind     string
-	Tick     int
-	Value    float64
-	Unit     string
-	Opponent string
-	Weapon   string
-	Detail   string
+	Kind      string
+	Label     string
+	Rank      int
+	ValueText string
+	Tick      int
+	Value     float64
+	Unit      string
+	Opponent  string
+	Weapon    string
+	Detail    string
 }
 
 const (
@@ -83,6 +88,26 @@ const (
 func (ps *PlayerStats) AddMoment(m EvidenceMoment) {
 	if ps == nil || m.Kind == "" || m.Tick < 0 {
 		return
+	}
+	if spec := evidenceSpec(m.Kind); spec != nil {
+		if m.Label == "" {
+			m.Label = spec.Label
+		}
+		if m.Rank == 0 {
+			m.Rank = spec.Rank
+		}
+		if m.ValueText == "" && spec.ValueText != nil {
+			m.ValueText = spec.ValueText(m.Value)
+		}
+	}
+	if m.Label == "" {
+		m.Label = m.Kind
+	}
+	if m.Rank < 1 {
+		m.Rank = 1
+	}
+	if m.ValueText == "" {
+		m.ValueText = "signal"
 	}
 	kindIdx := make([]int, 0, 8)
 	for i, existing := range ps.Moments {

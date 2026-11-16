@@ -291,16 +291,21 @@ type CheatReport struct {
 
 // CheatMoment is one timestamped review cue from the detector. Round and
 // Seconds are filled by the analysis merge from the battlelog round model.
+// Label, Rank and ValueText are detector-supplied presentation metadata so
+// reporters do not need a per-kind switch.
 type CheatMoment struct {
-	Kind     string  `json:"kind"`
-	Tick     int     `json:"tick"`
-	Round    int     `json:"round,omitempty"`
-	Seconds  float64 `json:"seconds,omitempty"`
-	Value    float64 `json:"value,omitempty"`
-	Unit     string  `json:"unit,omitempty"`
-	Opponent string  `json:"opponent,omitempty"`
-	Weapon   string  `json:"weapon,omitempty"`
-	Detail   string  `json:"detail,omitempty"`
+	Kind      string  `json:"kind"`
+	Label     string  `json:"label,omitempty"`
+	Rank      int     `json:"rank,omitempty"`
+	ValueText string  `json:"valueText,omitempty"`
+	Tick      int     `json:"tick"`
+	Round     int     `json:"round,omitempty"`
+	Seconds   float64 `json:"seconds,omitempty"`
+	Value     float64 `json:"value,omitempty"`
+	Unit      string  `json:"unit,omitempty"`
+	Opponent  string  `json:"opponent,omitempty"`
+	Weapon    string  `json:"weapon,omitempty"`
+	Detail    string  `json:"detail,omitempty"`
 }
 
 // Grade is a category skill grade from the detector.
