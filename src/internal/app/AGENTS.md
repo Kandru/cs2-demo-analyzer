@@ -4,11 +4,19 @@ CLI parsing, discovery, and per-demo pipeline.
 
 ## Invariants
 
-- `Processor.Process` order: hash → parse → anti-cheat → analysis → render →
-  atomic write → manifest → optional index refresh.
+- `Processor.Process` order: stat → plan outputs → hash → parse → anti-cheat →
+  analysis → build `report.Document` → render → atomic writes → manifest →
+  optional index refresh.
+- `Processor.Plan` reserves every discovered output path before parallel work
+  in `analyze`; this keeps same-basename collisions deterministic, including
+  for skipped demos.
+- `analyze` and `watch` both skip when artifact headers match (HTML, plus JSON
+  when `--json` is enabled). `--force` bypasses; unversioned `dev` builds never
+  reuse output. Cached failures come from the manifest.
+- Artifact freshness lives in `internal/report`; do not reimplement header
+  parsing here. Skip and process must share one `headerFor` builder.
 - Always write the HTML even if the detector fails.
 - Per-demo timeout is applied inside `Process`.
-- `analyze` never uses the cache to skip; `watch` does via `Processor.Skip`.
 - Failures are isolated: analyze continues and exits 1 if any failed; watch logs
   and continues.
 - Outputs default next to the demo; `--output` is a single shared directory.
@@ -16,9 +24,11 @@ CLI parsing, discovery, and per-demo pipeline.
   `--demo-download` opts in to relative links across directories.
 - `index.html` is written when `--index` is set or when reports sit next to their
   demos. Index entries come from the directory scan plus the store mapping and
-  cached match metadata (map, end score, server, played time). Cards are grouped
-  by server and sorted newest first; metadata-less reports fall back to the
-  report basename and file mtime.
+  match metadata read from each report header (map, end score, server, played
+  time); the manifest is a legacy fallback. Cards are grouped by server and
+  sorted newest first; metadata-less reports fall back to the report basename
+  and file mtime. Analyze refreshes planned directories at the end of a run so
+  skipped-only directories keep a current index.
 - When an index is enabled, the detail report header links back to `index.html`.
   The report renderer receives this through `View.IndexHref`.
 - `update` is the only command that writes the binary. `--update` on

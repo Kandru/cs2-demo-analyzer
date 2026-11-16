@@ -1,15 +1,18 @@
 # Report UI
 
 The report is one self-contained HTML file (inline CSS/JS/SVG, no network
-requests, no external fonts). The visual language is inspired by the BF3/BF4
-Battlelog, without copying EA assets: flat dark-navy surfaces, 1 px steel
-borders, hard corners, orange accents, condensed uppercase labels, and dense
-numeric tables.
+requests, no external fonts). The file starts with `<!doctype html>` and a
+`<!--cs2-demo-analyzer:{...}-->` metadata comment used to decide whether the
+report is current. The comment is not shown to readers.
+
+The visual language is inspired by the BF3/BF4 Battlelog, without copying EA
+assets: flat dark-navy surfaces, 1 px steel borders, hard corners, orange
+accents, condensed uppercase labels, and dense numeric tables.
 
 ## Page structure
 
 ```
-top bar (brand → report index when available, section tabs, map/mode, All reports link)
+top bar (brand → report index when available, section tabs, search, map/mode, All reports link)
 match banner (map, mode, score, winner, date, players, tickrate, version)
 Overview (tiles, flat round-history strip, team comparison, cheat watch, warnings)
 Scoreboard (two team tables + totals)
@@ -56,6 +59,14 @@ dense but never below 12 px in tables.
 - **Match banner**: compact replacement for the old hero. Map/mode/date on the
   left, start-side teams around the score in the centre, winner + warnings on
   the right, metadata strip below. No perspective grid, glow, or oversized art.
+- **Search** (JS enhancement): the top bar search filters player cards, player
+  pills, cheat-watch cards and round panels by name, alias, team, SteamID,
+  map/round text and detector narrative/channel labels. It reports live result
+  counts, opens matching round panels, clears with Escape, and focuses with `/`.
+  Without JavaScript the field is hidden and all content stays visible.
+- **Anchors** account for the sticky top bar via `scroll-padding-top` and
+  `scroll-margin-top`, so section and player links land on the heading instead
+  of the previous section.
 - **Tiles**: label/value/sub with a linked cheat-flags tile.
 - **Round history**: flat one-cell-per-round strip, coloured by winning side,
   with a buy-type underline and a flag marker for rounds with flagged activity.
@@ -110,9 +121,10 @@ dense but never below 12 px in tables.
 
 ## Extending the UI
 
-1. Add fields to `report/html/view.go` (presentation-only) or `model` (contract).
+1. Add fields to `report/html/view.go` (presentation-only) or `model` (contract,
+   then extend `report.Header` if the field should appear in index metadata).
 2. Render in `templates/report.gohtml`; escape everything by default.
 3. Add styles to `assets/style.css` using tokens.
 4. Only add JS in `assets/app.js` if the page still works without it.
-5. Update this document and `docs/report-schema.md` when the data contract
-   changes.
+5. Update this document and `docs/report-schema.md` when the data contract or
+   artifact header changes.

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/Kandru/cs2-demo-analyzer/internal/model"
@@ -79,6 +80,7 @@ type PlayerView struct {
 	DamageSpeedDisplay  string
 	ReactionDisplay     string
 	PreaimDisplay       string
+	Search              string
 }
 
 // PlayerRoundView is one row in the per-round table.
@@ -168,6 +170,7 @@ type CheaterView struct {
 	TopChannels []ChannelView
 	TopMoments  []*MomentView
 	MomentCount int
+	Search      string
 }
 
 // MomentView is one merged review cue (all detector reasons at one tick).
@@ -219,6 +222,7 @@ type RoundView struct {
 	HasFlag     bool
 	Economy     []EconomyView
 	Events      []EventView
+	Search      string
 }
 
 // EconomyView is a team economy chip.
@@ -346,6 +350,12 @@ func buildPlayer(m *model.Match, p *model.Player) *PlayerView {
 		pv.TeamName = pv.Team.Name
 		pv.Side = string(pv.Team.StartSide)
 	}
+	terms := []string{p.ID, p.Name, p.Slug, p.ClanTag, pv.TeamName}
+	terms = append(terms, p.Aliases...)
+	if p.SteamID64 != 0 {
+		terms = append(terms, strconv.FormatUint(p.SteamID64, 10))
+	}
+	pv.Search = searchKey(terms...)
 	for _, r := range m.Rounds {
 		if r.Pregame {
 			continue
@@ -441,6 +451,19 @@ func buildPlayer(m *model.Match, p *model.Player) *PlayerView {
 		return pv.Weapons[i].Name < pv.Weapons[j].Name
 	})
 	pv.Cheat = buildCheat(p.Cheat)
+	if p.Cheat != nil {
+		cheatTerms := []string{p.Cheat.Narrative, p.Cheat.OverallGrade}
+		if pv.Cheat != nil {
+			cheatTerms = append(cheatTerms, pv.Cheat.Verdict)
+		}
+		for _, g := range p.Cheat.Grades {
+			cheatTerms = append(cheatTerms, g.Category, g.Label, g.Grade)
+		}
+		for _, ch := range p.Cheat.Channels {
+			cheatTerms = append(cheatTerms, ch.ID, ch.Label, ch.Zone, ch.Description)
+		}
+		pv.Search = searchKey(append([]string{pv.Search}, cheatTerms...)...)
+	}
 	if p.Cheat != nil && len(p.Cheat.Moments) > 0 {
 		pv.Moments = buildMoments(m, p.Cheat.Moments)
 		pv.MomentCount = len(pv.Moments)
@@ -540,6 +563,7 @@ func buildCheaters(players []*PlayerView) []*CheaterView {
 			TopChannels: topChannels(pv.Cheat.Channels, 3),
 			TopMoments:  topMoments(pv.Moments, 10),
 			MomentCount: pv.MomentCount,
+			Search:      searchKey(pv.Search, pv.Cheat.Verdict),
 		})
 	}
 	sort.SliceStable(out, func(i, j int) bool {
@@ -838,6 +862,14 @@ func buildRounds(m *model.Match) []*RoundView {
 			rv.Economy = append(rv.Economy, ev)
 		}
 		rv.Events = buildEvents(r.Events, m)
+		winner := "draw"
+		if t := m.TeamByID(r.WinnerTeamID); t != nil {
+			winner = t.Name
+		}
+		rv.Search = searchKey("round", strconv.Itoa(r.Number), rv.Label, r.Reason, r.Message, winner, rv.ChipClass)
+		if r.Overtime {
+			rv.Search += " overtime ot"
+		}
 		out = append(out, rv)
 	}
 	return out
@@ -1054,6 +1086,21 @@ func initials(name string) string {
 		out += string(r1[0])
 	}
 	return strings.ToUpper(out)
+}
+
+func searchKey(parts ...string) string {
+	var b strings.Builder
+	for _, part := range parts {
+		part = strings.ToLower(strings.TrimSpace(part))
+		if part == "" {
+			continue
+		}
+		if b.Len() > 0 {
+			b.WriteByte(' ')
+		}
+		b.WriteString(part)
+	}
+	return b.String()
 }
 
 func compact(in ...string) []string {

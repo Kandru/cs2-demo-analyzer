@@ -318,12 +318,12 @@ Flags:
   -o, --output DIR       output directory (default: next to each demo)
       --recursive        scan directories recursively (default true)
       --workers N        parallel workers (default min(4, CPU))
-      --json             also write <demo>.json
+      --json             also write <demo>.json (document is always built)
       --cheat            run anti-cheat detector (default true)
       --aim              collect aim stats (default true)
       --index            also write index.html in each report directory
       --demo-download    link demos outside the report directory for download
-      --force            reprocess unchanged demos
+      --force            reprocess unchanged demos (headers/cache bypass)
       --update           self-update to the latest release before running
       --timeout 15m      per-demo timeout
       --quiet / --verbose
@@ -345,10 +345,13 @@ Environment:
   CS2_DEMO_ANALYZER_UPDATE    true/false (update before analyze/watch)
 
 Output:
-  <demo>.html  self-contained dark match report
-  <demo>.json  optional machine-readable sidecar (--json)
+  <demo>.html  self-contained dark match report (version header at the top)
+  <demo>.json  optional machine-readable sidecar (--json); same header
   index.html   report index when --index or the report sits next to its demo
-  <output>/.cs2-demo-analyzer/manifest.json  watch cache
+  <output>/.cs2-demo-analyzer/manifest.json  failure cache and index metadata
+
+Analyze reuses reports whose embedded header matches the current version,
+options and demo file. Use --force after unversioned local changes.
 
 Exit codes: 0 success, 1 processing failure, 2 usage error.
 `)

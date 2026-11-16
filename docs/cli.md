@@ -18,12 +18,12 @@ cs2-demo-analyzer help
 | `-o, --output DIR` | demo directory | Where reports are written. Created if missing. |
 | `--recursive` | `true` | Walk input directories recursively. |
 | `--workers N` | `min(4, CPU)` (analyze), `1` (watch) | Parallel processors. Each demo uses substantial RAM while the anti-cheat pass runs. |
-| `--json` | `false` | Write `<demo>.json` next to the HTML. |
+| `--json` | `false` | Write `<demo>.json` next to the HTML. The canonical report document is always built in memory; this only controls the disk sidecar. |
 | `--index` | `false` | Write an `index.html` listing reports in each report directory. Also automatic when reports are written next to their demos. |
 | `--demo-download` | `false` | Link the source demo for download even when it lives outside the report directory. Same-directory links are always enabled. |
 | `--cheat` | `true` | Run the vendored anti-cheat detector (second parse pass). |
 | `--aim` | `true` | Collect aim statistics. |
-| `--force` | `false` | Reprocess unchanged demos (watch cache bypass). On `update`, reinstall the latest release even when versions match. |
+| `--force` | `false` | Reprocess unchanged demos (bypasses the artifact header check and watch cache). On `update`, reinstall the latest release even when versions match. |
 | `--update` | `false` | `analyze`, `watch`: check GitHub and self-update before running. A failed update warns but does not stop processing. |
 | `--check` | `false` | `update`: only print current/latest versions; never write the binary. |
 | `--timeout` | `15m` | Per-demo timeout, including both parse passes. |
@@ -50,14 +50,20 @@ Flags override environment values.
 ## Output
 
 - `<base>.html` — self-contained report. `<base>` strips `.dem`,
-  `.dem.gz`, `.dem.bz2`.
+  `.dem.gz`, `.dem.bz2`. It starts with `<!doctype html>` and a
+  `<!--cs2-demo-analyzer:{...}-->` header comment carrying the tool version,
+  schema, report options and demo fingerprint.
 - `<base>.json` — optional sidecar, schema documented in
-  `docs/report-schema.md`.
+  `docs/report-schema.md`. Its first key is the same `header` object.
 - `index.html` — self-contained list of reports in a report directory. Written
   when `--index` is set or when a report is written next to its demo.
 - `<manifest-dir>/.cs2-demo-analyzer/manifest.json` — watch cache. Manifest dir is
   `--output` if set, otherwise the first input directory (or CWD for a single
   file input).
+
+Both report artifacts are reused only while the header matches the current tool
+version, schema, report options and demo file (size+mtime+fingerprint). Delete a
+report or pass `--force` to rebuild it.
 
 Each report links its source `.dem` as a download when the demo is in the same
 directory as the report (the default output layout). Use `--demo-download` to
@@ -69,22 +75,28 @@ the later one gets a short source-hash suffix: `match-a1b2c3.html`.
 
 ## Analyze behavior
 
-- Always processes every discovered demo; the manifest is used for output-name
-  collision tracking, not for skipping.
-- Continues after individual failures and prints `analyzed N demo(s), M failed`.
+- Scans every discovered demo but reuses up-to-date reports. A report is current
+  when its HTML (and JSON when `--json` is enabled) carries a matching header.
+- `--force` reprocesses everything; changing the tool version, schema, or
+  `--cheat`/`--aim`/`--demo-download` also invalidates.
+- Continues after individual failures and prints
+  `analyzed N demo(s), S skipped, M failed`.
 - Exit `1` if anything failed or the context was cancelled.
+- Index pages are rewritten at the end of the run, including directories whose
+  demos were all skipped.
 
 ## Watch behavior
 
 - Scans on start, on fsnotify events (debounced), and every `--interval`.
 - A file must have the same size and mtime on two consecutive scans before it
   is queued. This prevents parsing downloads in progress.
-- Successful demos are skipped while size, mtime, tool version, schema version,
-  report options, and the report file are unchanged.
+- Successful demos are skipped while the artifact headers match the current
+  tool version, schema, report options, demo size/mtime and demo fingerprint.
+  The JSON sidecar is required when `--json` is enabled.
 - Report indexes are refreshed on startup for cached reports, then after each
   successful analysis.
-- Failed demos are cached as well; they are retried only when the file changes
-  or with `--force`.
+- Failed demos are cached in the manifest as well; they are retried only when
+  the file changes or with `--force`.
 - Files matching `.dem`, `.dem.gz`, `.dem.bz2` (case-insensitive) are eligible.
 - Hidden directories (`.git`, `.cs2-demo-analyzer`, …) are skipped.
 - SIGINT/SIGTERM stops scanning, drains in-flight work, and saves the manifest.

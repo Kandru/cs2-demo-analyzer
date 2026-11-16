@@ -19,15 +19,19 @@ queued. This handles downloads/copies still in progress. With the defaults
 
 ## Cache / skip
 
-`manifest.json` stores per absolute path: size, mtime, SHA-256, report paths,
-tool version, schema version, status, error, timestamp.
+Successful output is self-describing: the HTML comment and the JSON `header`
+store the tool version stamp, data schema, report options, demo-path
+fingerprint, and demo size/mtime. Skip when **all** match:
 
-Skip when **all** match:
+- the HTML report exists and its header is current,
+- if `--json` is enabled, the JSON sidecar exists and its header is current,
+- demo size and mtime are unchanged,
+- tool version, schema version, and report options are unchanged.
 
-- entry status is `ok`,
-- size and mtime are unchanged,
-- tool version and schema version match,
-- the HTML report still exists.
+A missing manifest does not force a re-parse. The manifest remains the cache for
+failures and for report-index metadata: it stores per absolute path the size,
+mtime, SHA-256, report paths, tool version, schema version, status, error,
+timestamp, and match summary.
 
 Broken demos are cached as `error` and skipped until the file changes or
 `--force` is used. This prevents a corrupt file from being reparsed every scan.

@@ -154,6 +154,27 @@ func TestRenderHeaderWithoutIndexUsesOverview(t *testing.T) {
 	}
 }
 
+func TestRenderIncludesSearchableData(t *testing.T) {
+	var buf bytes.Buffer
+	if err := Render(&buf, testDocument(nil, "test"), Options{}); err != nil {
+		t.Fatal(err)
+	}
+	page := buf.String()
+	for _, want := range []string{
+		`id="topsearch"`,
+		`id="report-search"`,
+		`id="search-status"`,
+		`data-target="player-kalle-000001"`,
+		`data-search="1 &lt;b&gt;kalle&lt;/b&gt; kalle-000001 alpha`,
+		`data-search="round 1 round 1 bomb exploded`,
+		"search-hidden",
+	} {
+		if !strings.Contains(page, want) {
+			t.Errorf("missing %q in rendered report", want)
+		}
+	}
+}
+
 func TestRenderContainsCoreSectionsAndEscapesNames(t *testing.T) {
 	m := testMatch()
 	m.Players[0].Name = `<script>alert(1)</script>`

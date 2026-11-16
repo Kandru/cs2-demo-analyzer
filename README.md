@@ -46,8 +46,8 @@ history or player database.
 | Aim profile | Damage speed, reaction, preaim, accuracy, head accuracy, counter-strafe, spray, and a weighted composite rating with grade |
 | Cheat analysis | Ten scored detector channels with raw value, score, confidence, zone, plus narrative and score modifiers |
 | Review cues | Timestamped suspicious moments linked to the round timeline and copyable as `demo_gototick <tick>` |
-| Match navigation | Round history strip, player links, cheat-watch cards, demo download, and an optional report index |
-| Outputs | Self-contained HTML, optional JSON sidecar, optional `index.html`, watch cache manifest |
+| Match navigation | Round history strip, player links, cheat-watch cards, report search, demo download, and an optional report index |
+| Outputs | Self-contained HTML, always-built report document with an optional JSON sidecar, optional `index.html`, watch cache manifest |
 
 The aim profile and the cheat detector are independent. Aim metrics describe
 performance and do **not** feed the cheat score.
@@ -190,12 +190,12 @@ command-line flags  >  CS2_DEMO_ANALYZER_* environment variables  >  defaults
 | `-o, --output DIR` | demo directory | `analyze`, `watch` | Report output directory. Created if missing. |
 | `--recursive` | `true` | `analyze`, `watch` | Recurse into input subdirectories. Use `--recursive=false` for one level. |
 | `--workers N` | `min(4, CPU)` / `1` | `analyze`, `watch` | Parallel demo processors. Each worker uses substantial memory. `watch` defaults to `1`. |
-| `--json` | `false` | `analyze`, `watch` | Write a JSON sidecar next to each HTML report. |
+| `--json` | `false` | `analyze`, `watch` | Write a JSON sidecar next to each HTML report. The report document is always built; this only controls the disk copy. |
 | `--index` | `false` | `analyze`, `watch` | Write `index.html` listing reports in each report directory. Automatic when reports sit next to their demos. |
 | `--demo-download` | `false` | `analyze`, `watch` | Link the source demo for download even when it is outside the report directory. Same-directory links are always enabled. |
 | `--cheat` | `true` | `analyze`, `watch` | Run the anti-cheat detector as a second parse pass. Disable with `--cheat=false`. |
 | `--aim` | `true` | `analyze`, `watch` | Collect aim statistics. Disable with `--aim=false`. |
-| `--force` | `false` | `analyze`, `watch`, `update` | Reprocess unchanged demos and bypass `watch` cache entries; on `update`, reinstall the latest release. |
+| `--force` | `false` | `analyze`, `watch`, `update` | Reprocess unchanged demos even when report headers are current; on `update`, reinstall the latest release. |
 | `--update` | `false` | `analyze`, `watch` | Check GitHub and self-update before running. A failed update warns but does not stop processing. |
 | `--check` | `false` | `update` | Only report whether a newer release is available. |
 | `--timeout` | `15m` | `analyze`, `watch` | Per-demo timeout, including both parse passes. |
@@ -228,8 +228,9 @@ cs2-demo-analyzer analyze --workers 2
 ### Output layout
 
 - `<base>.html` — self-contained report. `<base>` strips `.dem`, `.dem.gz`,
-  and `.dem.bz2`.
-- `<base>.json` — optional machine-readable sidecar (`--json`).
+  and `.dem.bz2`. Starts with a `<!--cs2-demo-analyzer:{...}-->` version header.
+- `<base>.json` — optional machine-readable sidecar (`--json`); first key is the
+  same `header` object.
 - `index.html` — report list for a report directory, grouped by server and
   sorted newest first.
 - `<manifest-dir>/.cs2-demo-analyzer/manifest.json` — `watch` cache.
@@ -239,6 +240,11 @@ directory receives an `index.html`, it uses the same self-contained design and
 shared stylesheet as the reports, and each detailed report links back to the
 index. Demo download links point at the original `.dem` path; move or delete
 demos accordingly.
+
+Reports are reused while the embedded header matches the current tool version,
+data schema, report options (`--cheat`, `--aim`, `--demo-download`) and demo
+file (size, mtime, path fingerprint). Upgrade the tool or pass `--force` to
+rebuild. Deleting a requested artifact also triggers a rebuild.
 
 The `watch` manifest directory is `--output` when set, otherwise the first
 input directory, or the current directory for a single-file input.
@@ -295,10 +301,10 @@ cs2-demo-analyzer watch --input ./demos --output ./reports
 ```
 
 A new file is queued only after its size and modification time are stable on
-two consecutive scans, so downloads in progress are not parsed. Successful
-reports are skipped while the demo, tool version, report options, and report
-file are unchanged. Broken demos are cached and retried only when the file
-changes or `--force` is used.
+two consecutive scans, so downloads in progress are not parsed. Reports are
+skipped while their embedded version header, report options and demo file are
+unchanged. Broken demos are cached and retried only when the file changes or
+`--force` is used.
 
 ### Tune the watcher
 
@@ -393,8 +399,8 @@ docker run --rm --user "$(id -u):$(id -g)" \
 | `make release` | Cross-compile all release archives into `dist/` in Docker. |
 | `make release-local` | Cross-compile all release archives with a local Go toolchain. |
 | `make docker-build` | Build the runtime Docker image. |
-| `make analyze` | Analyze everything in `./stuff` into `./reports`. |
-| `make watch` | Watch `./stuff` and write reports into `./reports`. |
+| `make analyze` | Analyze everything in `./stuff` into `./reports`. Pass flags with `ARGS`, e.g. `make analyze ARGS="--json --index"`. |
+| `make watch` | Watch `./stuff` and write reports into `./reports`. Pass flags with `ARGS`. |
 | `make version` | Print `VERSION`. |
 | `make version-bump` | Increment the `YY.MM.BuildNr` version. |
 | `make clean` | Remove `dist/` and local caches. |

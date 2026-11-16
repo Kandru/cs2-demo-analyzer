@@ -15,18 +15,25 @@ internal/app.Processor
    │
    ├─ internal/analysis   merge cheat data + recompute summary/team totals
    │
-   ├─ internal/report/html (template + embedded CSS/JS) ──► self-contained HTML
-   └─ internal/report/jsondata (optional) ──► JSON sidecar
+   ├─ internal/report     canonical Document + self-describing Header
+   │     ├─ internal/report/html (template + embedded CSS/JS) ──► HTML report
+   │     └─ JSON encoding (optional disk write via --json)   ──► JSON sidecar
    │
    ▼
 internal/store  atomic writes + .cs2-demo-analyzer/manifest.json cache
-internal/app    optional index.html + demo download links per report directory
+internal/app    output planning, skip decisions, optional index.html + demo links
 ```
 
 This is deliberately **two parse passes**: the match parser owns the event
 timeline in one pass, and the vendored anti-cheat analyzer runs separately so
 its event handlers and global state cannot interfere with the report. A 65 MB
 demo takes roughly 9–11 s on a modern CPU (both passes included).
+
+A report is built once as `report.Document` (header + `model.Match`). The HTML
+renderer consumes that document directly; the same document is encoded as JSON
+only when `--json` asks for a disk sidecar. Both artifacts start with the same
+version header, so no parse is needed to decide whether cached output is
+current.
 
 ## Package boundaries
 
@@ -40,9 +47,9 @@ demo takes roughly 9–11 s on a modern CPU (both passes included).
 | `internal/anticheat/stats` | Collectors + first-party detection registry (`detect_*`, `mod_*`) | app/report |
 | `internal/anticheat/stats`, `.../analyzer` | Vendored upstream code; only integration patches allowed | app/report |
 | `internal/analysis` | Cheat merge, summary/team totals, validation | parser internals |
-| `internal/report/html` | View model + template + assets | store |
-| `internal/report/jsondata` | Placeholder for future format-specific transforms | report |
-| `internal/store` | Manifest, skip logic, output naming, atomic I/O | parser |
+| `internal/report` | Canonical document, artifact header, JSON encoding, freshness probes | parser, anticheat, app |
+| `internal/report/html` | View model + template + assets; consumes `report.Document` | store, parser, app |
+| `internal/store` | Manifest, output planning/reservation, cached failures, atomic I/O | parser, report |
 | `internal/watch` | Discovery loop, settle window, worker queue | report |
 | `internal/app` | CLI, wiring, processor, output index | report internals |
 | `internal/demofile` | Demo extension checks, report base names, sibling lookup | parser, report, app |
@@ -94,8 +101,9 @@ demo takes roughly 9–11 s on a modern CPU (both passes included).
 5. **New cheat modifier**: add `mod_<id>.go` with `Apply`, `Publish` and
    `Adjustments`, then register it at the correct stage (boosts → discount →
    stacking/co-occurrence → floor → overrides).
-6. **New output format**: implement a renderer in `internal/report/<format>` and
-   call it from `app.Processor`; keep the `model` contract unchanged.
+6. **New output format**: encode it from `report.Document` in a renderer
+   package, add its header probe to `report`, and require it in
+   `app.Processor`'s artifact plan. Keep the `model` contract unchanged.
 7. **New watcher source** (S3/SFTP): implement the `watch.Processor` boundary
    and feed it paths; do not put I/O into the parser.
 8. **New release platform**: add it to `RELEASE_TARGETS` in the `Makefile` and
@@ -117,6 +125,19 @@ collect_*.go ──► detect_<id>.go ──► combine ──► mod_<id>.go �
 The registry order is a contract; formulas and thresholds live in the feature
 file, never in the pipeline. `internal/aim` follows the same pattern with
 `MetricSpec` and `docs/aim/`.
+
+## Report cache
+
+- `report.Header` is embedded in every JSON sidecar (`header` first key) and in
+  an HTML comment immediately after the doctype.
+- Freshness compares header format, tool version stamp, schema version, report
+  options, a demo-path fingerprint, demo size and mtime.
+- `app.Processor` plans output paths before workers start, checks enabled
+  artifacts, and skips only when the HTML (and JSON when enabled) is current.
+- The manifest is an optimization and audit log: it caches failures and index
+  metadata. Missing or corrupt manifests do not force a re-parse.
+- Unversioned `dev` builds disable reuse; release builds use the release
+  version, so `--force` is the escape hatch after local code changes.
 
 ## Failure model
 

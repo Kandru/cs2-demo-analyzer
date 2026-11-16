@@ -23,6 +23,11 @@
       <a href="#rounds">Rounds</a>
       <a href="#players">Players</a>
     </nav>
+    <div class="topsearch" id="topsearch" role="search" hidden>
+      <label class="sr-only" for="report-search">Search this report</label>
+      <input id="report-search" type="search" placeholder="Search players, rounds, cues" autocomplete="off" spellcheck="false">
+      <span id="search-status" class="search-status" role="status" aria-live="polite"></span>
+    </div>
     <div class="topmeta">
       {{if .IndexHref}}<a class="nav-back" href="{{.IndexHref}}">All reports</a>{{end}}
       <span class="tag">{{.Match.Map}}</span>
@@ -235,7 +240,7 @@
     {{if .Cheaters}}
     <div class="cheater-list">
       {{range .Cheaters}}
-      <article class="cheater-card {{.Cheat.VerdictClass}}" id="cheater-{{.Player.Player.Slug}}">
+      <article class="cheater-card {{.Cheat.VerdictClass}}" id="cheater-{{.Player.Player.Slug}}" data-search="{{.Search}}">
         <header class="cheater-head">
           <div class="cheater-id">
             <span class="avatar {{.Player.Side}}">{{.Player.Initials}}</span>
@@ -351,7 +356,7 @@
     </div>
 
     {{if .Warmup}}
-    <details class="round warmup" id="warmup" open>
+    <details class="round warmup" id="warmup" data-search="warmup practice before the first round" open>
       <summary class="round-summary">
         <span class="round-name">Warmup</span>
         <span class="round-reason">before the first official round</span>
@@ -367,7 +372,7 @@
     {{end}}
 
     {{range .Rounds}}
-    <details class="round {{.ChipClass}} {{if .HasFlag}}has-flag{{end}}" id="{{.Anchor}}" {{if eq .Round.Number 1}}open{{end}}>
+    <details class="round {{.ChipClass}} {{if .HasFlag}}has-flag{{end}}" id="{{.Anchor}}" data-search="{{.Search}}" {{if eq .Round.Number 1}}open{{end}}>
       <summary class="round-summary">
         <span class="round-name">{{.Label}}{{if .HasFlag}}<span class="flag-dot" title="Flagged activity this round">⚑</span>{{end}}</span>
         <span class="round-reason">{{.Round.Reason}}</span>
@@ -402,11 +407,11 @@
     </div>
 
     <div class="player-pills">
-      {{range .Players}}<a href="#{{.Anchor}}" class="pill {{if .Flagged}}flagged{{end}}">{{.Player.Name}}</a>{{end}}
+      {{range .Players}}<a href="#{{.Anchor}}" class="pill {{if .Flagged}}flagged{{end}}" data-target="{{.Anchor}}">{{.Player.Name}}</a>{{end}}
     </div>
 
     {{range .Players}}
-    <article class="player-card" id="{{.Anchor}}">
+    <article class="player-card" id="{{.Anchor}}" data-search="{{.Search}}">
       <header class="player-head">
         <div class="avatar {{if .Team}}{{.Side}}{{end}}">{{.Initials}}</div>
         <div class="player-id">

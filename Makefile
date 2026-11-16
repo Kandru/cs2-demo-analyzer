@@ -38,6 +38,9 @@ DOCKER_RUN = docker run --rm \
 	-e GOCACHE=/cache/go-build \
 	$(DOCKER_GO_IMAGE)
 
+# Extra CLI flags for `make analyze` / `make watch`, e.g. ARGS="--json --index".
+ARGS ?=
+
 .PHONY: help build build-local test test-cover fmt vet tidy tidy-check audit release release-local docker-build run analyze watch version version-bump clean check-docker check-install
 
 help: ## Show this help (default)
@@ -50,6 +53,8 @@ help: ## Show this help (default)
 	@printf '  make release                       # all release archives + SHA256SUMS\n'
 	@printf '  make release-local                 # same, using the local Go toolchain\n'
 	@printf '  make run ARGS="watch --input ./demos --output ./reports"\n'
+	@printf '  make analyze ARGS="--json --index"  # analyze ./stuff into ./reports\n'
+	@printf '  make watch ARGS="--cheat=false"    # watch ./stuff into ./reports\n'
 	@printf '  make version-bump                 # bump YY.MM.BuildNr in VERSION\n\n'
 	@printf 'Version: %s (%s)\n\n' '$(VERSION)' '$(COMMIT)'
 
@@ -115,19 +120,19 @@ run: check-docker ## Run the container with ./demos and ./reports mounted
 		-v "$(CURDIR)/reports":/out \
 		$(BINARY):latest $(ARGS)
 
-analyze: docker-build ## Analyze every demo in ./stuff into ./reports
+analyze: docker-build ## Analyze every demo in ./stuff into ./reports (ARGS="--json --index")
 	@mkdir -p reports
 	docker run --rm $(DOCKER_USER_ARG) \
 		-v "$(CURDIR)/stuff":/demos:ro \
 		-v "$(CURDIR)/reports":/out \
-		$(BINARY):latest analyze --input /demos --output /out
+		$(BINARY):latest analyze --input /demos --output /out $(ARGS)
 
-watch: docker-build ## Watch ./stuff and write reports into ./reports
+watch: docker-build ## Watch ./stuff and write reports into ./reports (ARGS="--cheat=false")
 	@mkdir -p reports
 	docker run --rm -it $(DOCKER_USER_ARG) \
 		-v "$(CURDIR)/stuff":/demos:ro \
 		-v "$(CURDIR)/reports":/out \
-		$(BINARY):latest watch --input /demos --output /out
+		$(BINARY):latest watch --input /demos --output /out $(ARGS)
 
 version: ## Print the current version
 	@cat VERSION

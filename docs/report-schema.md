@@ -1,13 +1,45 @@
 # Report data schema (version 1)
 
-The HTML report and the optional `--json` sidecar share `model.Match`. The
-schema version is `model.SchemaVersion` (currently `1`) and is stored in the
-manifest so template/schema changes invalidate cached reports.
+The HTML report and the optional `--json` sidecar share one canonical
+`report.Document`: a `header` object followed by `model.Match` fields. The data
+schema version is `model.SchemaVersion` (currently `1`).
+
+Every artifact is self-describing. The header is always the first JSON key and
+an HTML comment immediately after the doctype:
+
+```html
+<!doctype html>
+<!--cs2-demo-analyzer:{"format":1,"toolVersion":"26.11.1",...}-->
+```
+
+Readers can therefore decide whether a file is current by reading a few
+kilobytes. See “Artifact header” below.
+
+## Artifact header
+
+| Field | Type | Notes |
+|---|---|---|
+| `format` | int | Header format (`report.HeaderFormat`, currently `1`) |
+| `toolVersion` | string | `version.CacheKey()`; `dev+<commit>` for dev builds |
+| `schemaVersion` | int | Mirrors `model.SchemaVersion` |
+| `options` | string | `cheat=…;aim=…;demo-download=…` |
+| `demoKey` | string | Short fingerprint of the absolute demo path |
+| `demoName` | string | Source file name (escaped; informational) |
+| `demoSize` | int64 | Source file size |
+| `demoModUnixNano` | int64 | Source mtime |
+| `generatedAt` | RFC3339 | Render time |
+| `partial` | bool | Parser produced a partial match |
+| `map`, `serverName`, `score`, `hasScore`, `playedAt` | — | Index metadata; not part of freshness |
+
+Freshness ignores presentation fields (`generatedAt`, map/server/score/played)
+and compares format, tool version, schema version, options, `demoKey`, demo
+size and demo mtime. A missing or corrupt header marks the artifact stale.
 
 ## Root: `Match`
 
 | Field | Type | Notes |
 |---|---|---|
+| `header` | object | Artifact identity; always first (see above) |
 | `schemaVersion` | int | 1 |
 | `id` | string | short hash of demo name/map/mtime |
 | `demoPath`, `demoName`, `demoSize`, `demoHash` | string/int64 | source metadata |
@@ -97,8 +129,10 @@ team stats (kills/deaths/assists/damage/ADR/HS%/aim rating).
 
 ## Compatibility rules
 
+- The `header` object is additive: existing Match consumers can ignore it.
 - Additive fields are non-breaking; keep `schemaVersion` unless a consumer would
   misinterpret old data.
-- Renaming/removing fields requires a schema bump and a manifest invalidation.
+- Renaming/removing fields requires a schema bump and invalidation of cached
+  artifacts (the header comparison handles this through `schemaVersion`).
 - Keep raw detector metrics in `CheatChannel` even when score/zone are present;
   the UI relies on them for transparency.

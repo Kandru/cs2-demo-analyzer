@@ -1,6 +1,6 @@
 /* CS2 Demo Analyzer — progressive enhancement. The report is fully readable
-   without JavaScript; this only adds navigation, filtering, folding, and
-   copying demo tick commands. */
+   without JavaScript; this only adds navigation, search, filtering, folding,
+   and copying demo tick commands. */
 (function () {
   "use strict";
 
@@ -11,6 +11,17 @@
 
   function setActive(id) {
     navLinks.forEach((a) => a.classList.toggle("active", a.getAttribute("href") === "#" + id));
+  }
+
+  function openHashTarget() {
+    if (!location.hash) return;
+    let target = null;
+    try {
+      target = document.querySelector(location.hash);
+    } catch (_) {
+      return;
+    }
+    if (target && target.tagName === "DETAILS") target.open = true;
   }
 
   if ("IntersectionObserver" in window) {
@@ -25,6 +36,19 @@
     );
     sections.forEach((s) => observer.observe(s));
   }
+
+  // Keep the active tab in sync immediately, even before the observer fires.
+  navLinks.forEach((a) => {
+    a.addEventListener("click", () => {
+      const href = a.getAttribute("href") || "";
+      if (href.charAt(0) === "#") setActive(href.slice(1));
+    });
+  });
+  window.addEventListener("hashchange", () => {
+    const id = location.hash.replace(/^#/, "");
+    if (id) setActive(id);
+    openHashTarget();
+  });
 
   document.querySelectorAll("details.round").forEach((d) => {
     d.addEventListener("toggle", () => {
@@ -92,6 +116,90 @@
   if (expand) expand.addEventListener("click", () => document.querySelectorAll("details.round").forEach((d) => (d.open = true)));
   if (collapse) collapse.addEventListener("click", () => document.querySelectorAll("details.round").forEach((d) => (d.open = false)));
 
+  // Report search: filters player cards, cheat watch cards and rounds by their
+  // pre-computed data-search text. All content stays visible without JS.
+  const searchWrap = document.getElementById("topsearch");
+  const searchBox = document.getElementById("report-search");
+  const searchStatus = document.getElementById("search-status");
+  if (searchWrap && searchBox) {
+    searchWrap.hidden = false;
+
+    const playerCards = Array.from(document.querySelectorAll(".player-card[data-search]"));
+    const cheaterCards = Array.from(document.querySelectorAll(".cheater-card[data-search]"));
+    const roundPanels = Array.from(document.querySelectorAll("details.round[data-search]"));
+    const pills = Array.from(document.querySelectorAll(".player-pills .pill[data-target]"));
+
+    const searchMatches = (el, query) => !query || (el.dataset.search || "").indexOf(query) !== -1;
+
+    function applySearch() {
+      const query = searchBox.value.trim().toLowerCase();
+      const active = query.length > 0;
+      let players = 0;
+      let rounds = 0;
+
+      playerCards.forEach((card) => {
+        const ok = searchMatches(card, query);
+        card.classList.toggle("search-hidden", !ok);
+        if (ok && active) players++;
+      });
+
+      pills.forEach((pill) => {
+        const card = document.getElementById(pill.dataset.target || "");
+        const ok = !active || (card && !card.classList.contains("search-hidden"));
+        pill.classList.toggle("search-hidden", !ok);
+      });
+
+      cheaterCards.forEach((card) => {
+        card.classList.toggle("search-hidden", !searchMatches(card, query));
+      });
+
+      roundPanels.forEach((panel) => {
+        const ok = searchMatches(panel, query);
+        panel.classList.toggle("search-hidden", !ok);
+        if (ok && active) {
+          rounds++;
+          panel.open = true;
+        }
+      });
+
+      if (!active) {
+        searchStatus.textContent = "";
+        return;
+      }
+      const parts = [];
+      if (playerCards.length) parts.push(players + (players === 1 ? " player" : " players"));
+      if (roundPanels.length) parts.push(rounds + (rounds === 1 ? " round" : " rounds"));
+      searchStatus.textContent = parts.join(" · ");
+    }
+
+    searchBox.addEventListener("input", applySearch);
+    searchBox.addEventListener("search", applySearch);
+    searchBox.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        searchBox.value = "";
+        applySearch();
+        searchBox.blur();
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return;
+      const target = e.target;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      e.preventDefault();
+      searchBox.focus();
+      searchBox.select();
+    });
+  }
+
   // Copy "demo_gototick <tick>" so the reviewer can jump in-game. Without JS
   // the tick number is still visible and selectable.
   function copyText(text) {
@@ -131,15 +239,17 @@
   });
 
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && playerFilter) {
+    if (e.key !== "Escape") return;
+    if (playerFilter) {
       player = "";
       playerFilter.value = "";
       applyFilter();
     }
+    if (searchBox) {
+      searchBox.value = "";
+      searchBox.dispatchEvent(new Event("input"));
+    }
   });
 
-  if (location.hash) {
-    const target = document.querySelector(location.hash);
-    if (target && target.tagName === "DETAILS") target.open = true;
-  }
+  openHashTarget();
 })();

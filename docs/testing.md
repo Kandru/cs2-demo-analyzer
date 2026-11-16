@@ -27,7 +27,9 @@ toolchain described in [dependencies.md](dependencies.md).
 | Cheat detections | `internal/anticheat/stats/detect_*_test.go`, `registry_test.go` | one test per signal, registry contract |
 | Detection docs | `internal/anticheat/stats/docs_sync_test.go` | every registered feature has a page |
 | Aim metrics | `internal/aim/metrics_test.go`, `docs_sync_test.go` | anchors, medians, no-damage degradation, doc sync |
-| HTML report | `internal/report/html/render_test.go`, `index_test.go` | template compiles, core sections render, names are escaped, index links |
+| HTML report | `internal/report/html/render_test.go`, `index_test.go` | template compiles, metadata header, core sections render, search data, names are escaped, index links |
+| Report document | `internal/report/report_test.go` | header-first JSON, HTML/JSON header probes, round trip, freshness matrix, comment safety |
+| Artifact cache | `internal/app/processor_test.go` | version/option/size invalidation, missing JSON, cached failures, collision-safe planning, index metadata from headers |
 | Index/demo links | `internal/app/index_test.go` | same-directory and opt-in links, index entries |
 | Demo filenames | `internal/demofile/demofile_test.go` | supported extensions, base names, sibling lookup |
 | Sizes | `internal/units/units_test.go` | IEC byte formatting |
@@ -52,10 +54,10 @@ CS2_DEMO_ANALYZER_GOLDEN_OUT=/tmp/before.metrics \
 go test ./internal/anticheat/stats -run TestGoldenDemoMetrics
 ```
 
-Diff the JSON sidecars (ignore `analyzedAt`/`fileTime`) and the metric dumps
-after the refactor. Additive JSON fields are allowed; scores, channels, flags,
-weights and HTML should be unchanged unless the change is explicitly a
-calibration or schema change.
+Diff the JSON sidecars (ignore the `header.generatedAt`/`analyzedAt`/`fileTime`
+fields) and the metric dumps after the refactor. Additive JSON fields are
+allowed; scores, channels, flags, weights and HTML should be unchanged unless
+the change is explicitly a calibration or schema change.
 
 ## Demo-backed checks (manual/opt-in)
 
@@ -72,7 +74,8 @@ calibration or schema change.
      `demo_gototick <tick>` reaches the corresponding moment,
    - aim samples (`n=`) are non-trivial before trusting a rating,
    - HTML opens offline and filters work,
-   - JSON sidecar has `schemaVersion: 1`.
+   - JSON sidecar starts with a `header` object and `schemaVersion: 1`; the HTML
+     starts with the matching metadata comment.
 
 Regression demos worth keeping locally:
 
