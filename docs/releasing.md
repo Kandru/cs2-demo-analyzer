@@ -38,6 +38,23 @@ All targets use `golang:1.27` in Docker; no local Go installation is needed.
 Release artifacts are `.tar.gz` (including the Windows `.exe` inside) plus
 `SHA256SUMS`, `README.md`, and `VERSION` in each archive.
 
+## Updater and installer contract
+
+`cs2-demo-analyzer update` and `install.sh` depend on the release layout:
+
+- tag name is the plain `YY.MM.BuildNr` version (an optional `v` prefix is
+  accepted by the updater);
+- archive names are
+  `cs2-demo-analyzer-<version>-<os>-<arch>.tar.gz`;
+- the executable inside is `cs2-demo-analyzer` (`cs2-demo-analyzer.exe` on
+  Windows) under one top-level directory;
+- `SHA256SUMS` is attached to the same release and lists every archive by
+  basename.
+
+Do not rename assets or drop `SHA256SUMS` without updating
+`src/internal/update` and `install.sh`. The workflow keeps the newest five
+releases because the updater only reads `/releases/latest`.
+
 ## GitHub Actions
 
 `.github/workflows/release.yaml`:

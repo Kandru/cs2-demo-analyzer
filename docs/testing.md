@@ -8,6 +8,7 @@ make test-cover    # coverage summary
 make vet
 make fmt
 make build
+make check-install # validate install.sh syntax
 ```
 
 Local Go 1.27+ can use `cd src && go test ./...`; CI/Docker is the supported
@@ -28,6 +29,7 @@ path and the one used by the Makefile.
 | Demo filenames | `internal/demofile/demofile_test.go` | supported extensions, base names, sibling lookup |
 | Sizes | `internal/units/units_test.go` | IEC byte formatting |
 | Cache/store | `internal/store/store_test.go` | output naming, collisions, skip/invalidations, atomic writes |
+| Self-update | `internal/update/update_test.go` | version compare, asset selection, checksums, archive extraction, atomic replace |
 | Discovery | `internal/app/discover_test.go` | recursive/non-recursive filters, env path lists |
 | Watcher | `internal/watch/watch_test.go` | settle-before-queue |
 
@@ -90,3 +92,5 @@ PR rather than checking the file in.
 - [ ] no false-positive flags on the clean reference demo
 - [ ] `VERSION` bumped with the correct month
 - [ ] workflow succeeds and assets include `SHA256SUMS`
+- [ ] `sh -n install.sh` passes
+- [ ] `cs2-demo-analyzer update --check` sees the new release and the expected archive name

@@ -54,7 +54,22 @@ performance and do **not** feed the cheat score.
 
 ## Installation
 
-### Option 1: prebuilt release binaries
+### Option 1: Linux install script
+
+Install the latest release into `/opt/cs2-demo-analyzer` with a
+`/usr/local/bin/cs2-demo-analyzer` symlink:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Kandru/cs2-demo-analyzer/main/install.sh | sudo sh
+# or
+wget -qO- https://raw.githubusercontent.com/Kandru/cs2-demo-analyzer/main/install.sh | sudo sh
+```
+
+The script detects `amd64`, `arm64`, or `386`, verifies `SHA256SUMS`, and
+installs the static binary. See [docs/install.md](docs/install.md) for pinning,
+custom directories, upgrade, and uninstall.
+
+### Option 2: prebuilt release binaries
 
 Download the archive for your platform from the
 [GitHub releases page](https://github.com/Kandru/cs2-demo-analyzer/releases).
@@ -82,7 +97,7 @@ download before running it:
 grep 'linux-amd64.tar.gz' SHA256SUMS | sha256sum -c -
 ```
 
-### Option 2: Docker
+### Option 3: Docker
 
 There is no published registry image; build it from this repository. The
 runtime image is small and contains only the static binary, CA certificates,
@@ -117,7 +132,7 @@ The container runs as root by default so bind-mounted output directories work
 on any host. Add `--user "$(id -u):$(id -g)"` if you prefer to run as your own
 UID.
 
-### Option 3: Docker Compose
+### Option 4: Docker Compose
 
 The included `docker-compose.yml` watches `./demos` and writes to `./reports`:
 
@@ -130,7 +145,7 @@ docker compose logs -f
 Edit the volume list in `docker-compose.yml` if your demo and report
 directories live elsewhere. Keep `--workers` low for large GOTV demos.
 
-### Option 4: build from source
+### Option 5: build from source
 
 The normal build path uses Docker, so no local Go toolchain is required:
 
@@ -178,7 +193,9 @@ command-line flags  >  CS2_DEMO_ANALYZER_* environment variables  >  defaults
 | `--demo-download` | `false` | `analyze`, `watch` | Link the source demo for download even when it is outside the report directory. Same-directory links are always enabled. |
 | `--cheat` | `true` | `analyze`, `watch` | Run the anti-cheat detector as a second parse pass. Disable with `--cheat=false`. |
 | `--aim` | `true` | `analyze`, `watch` | Collect aim statistics. Disable with `--aim=false`. |
-| `--force` | `false` | `analyze`, `watch` | Reprocess unchanged demos and bypass `watch` cache entries. |
+| `--force` | `false` | `analyze`, `watch`, `update` | Reprocess unchanged demos and bypass `watch` cache entries; on `update`, reinstall the latest release. |
+| `--update` | `false` | `analyze`, `watch` | Check GitHub and self-update before running. A failed update warns but does not stop processing. |
+| `--check` | `false` | `update` | Only report whether a newer release is available. |
 | `--timeout` | `15m` | `analyze`, `watch` | Per-demo timeout, including both parse passes. |
 | `--interval` | `5s` | `watch` | Fallback rescan interval. |
 | `--debounce` | `2s` | `watch` | Settle/debounce window before scanning. |
@@ -196,6 +213,7 @@ command-line flags  >  CS2_DEMO_ANALYZER_* environment variables  >  defaults
 | `CS2_DEMO_ANALYZER_DEMO_DOWNLOAD` | `true`/`false` for demo download links. |
 | `CS2_DEMO_ANALYZER_CHEAT` | `true`/`false` to enable or disable anti-cheat analysis. |
 | `CS2_DEMO_ANALYZER_AIM` | `true`/`false` to enable or disable aim statistics. |
+| `CS2_DEMO_ANALYZER_UPDATE` | `true`/`false`; update before `analyze`/`watch`. |
 
 Flags override environment values. For example:
 
@@ -326,6 +344,24 @@ cs2-demo-analyzer analyze --quiet ./demos
 cs2-demo-analyzer analyze --verbose ./demos
 ```
 
+### Check for or install an update
+
+```sh
+# report current/latest without changing anything
+cs2-demo-analyzer update --check
+
+# install the latest release (root-owned installs need sudo)
+sudo cs2-demo-analyzer update
+
+# update before a batch run
+cs2-demo-analyzer analyze --update ./demos
+```
+
+Ordinary `analyze`/`watch` runs never contact the network. The updater selects
+the archive for your OS/architecture, verifies `SHA256SUMS`, and atomically
+replaces the current binary. Windows self-update is not supported; use the
+release archive instead.
+
 ### Docker one-shot and watcher
 
 ```sh
@@ -349,6 +385,7 @@ docker run --rm \
 | `make build-local` | Build with a local Go toolchain. |
 | `make test` | Run all Go tests in Docker. |
 | `make fmt` / `make vet` | Format or vet Go code in Docker. |
+| `make check-install` | Validate `install.sh` shell syntax. |
 | `make release` | Cross-compile all release archives into `dist/`. |
 | `make docker-build` | Build the runtime Docker image. |
 | `make analyze` | Analyze everything in `./stuff` into `./reports`. |
@@ -422,6 +459,7 @@ cues. The flag threshold is a likelihood of 50.
 | Document | Contents |
 |---|---|
 | [docs/README.md](docs/README.md) | Documentation index and reading order |
+| [docs/install.md](docs/install.md) | Linux installer, self-update, upgrade and uninstall |
 | [docs/cli.md](docs/cli.md) | Complete CLI reference, environment variables, exit codes |
 | [docs/watching.md](docs/watching.md) | Watch lifecycle, cache, manifest, Docker mounts |
 | [docs/architecture.md](docs/architecture.md) | Pipeline and package boundaries |

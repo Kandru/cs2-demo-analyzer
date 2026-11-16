@@ -29,7 +29,8 @@ aim stats and a vendored anti-cheat analysis.
 ## Layout
 
 ```
-Makefile, Dockerfile, docker-compose.yml, VERSION, .github/workflows/release.yaml
+Makefile, Dockerfile, docker-compose.yml, install.sh, VERSION,
+.github/workflows/release.yaml
 docs/                     global documentation
 src/cmd/cs2-demo-analyzer/    CLI entrypoint
 src/internal/app/         CLI + processor orchestration
@@ -41,6 +42,7 @@ src/internal/anticheat/   vendored detector + adapter
 src/internal/analysis/    merge + summary
 src/internal/report/html/ template + embedded CSS/JS
 src/internal/store/       manifest + atomic output
+src/internal/update/      GitHub release check + self-update
 src/internal/watch/       fsnotify/polling watcher
 src/internal/version/     ldflags version
 ```

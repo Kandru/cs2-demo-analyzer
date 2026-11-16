@@ -27,6 +27,7 @@ Start here, then follow the doc for the area you are changing.
 
 | Doc | Contents |
 |---|---|
+| [install.md](install.md) | Linux installer, self-update, upgrade and uninstall |
 | [watching.md](watching.md) | Watch lifecycle, manifest, Docker mounts |
 | [report-ui.md](report-ui.md) | Sections, design tokens, accessibility |
 | [testing.md](testing.md) | Test layers, docs-sync checks, demo harness |

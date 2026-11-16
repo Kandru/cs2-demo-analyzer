@@ -31,7 +31,7 @@ DOCKER_RUN = docker run --rm \
 
 RELEASE_TARGETS := linux/amd64 linux/arm64 linux/386 windows/amd64 windows/arm64 darwin/amd64 darwin/arm64
 
-.PHONY: help build build-local test test-cover fmt vet tidy release docker-build run analyze watch version version-bump clean check-docker
+.PHONY: help build build-local test test-cover fmt vet tidy release docker-build run analyze watch version version-bump clean check-docker check-install
 
 help: ## Show this help (default)
 	@printf '\nCS2 Demo Analyzer — make targets\n\n'
@@ -47,6 +47,9 @@ help: ## Show this help (default)
 check-docker:
 	@command -v docker >/dev/null 2>&1 || { echo "docker is required but not installed"; exit 1; }
 
+check-install: ## Validate install.sh syntax
+	@sh -n install.sh
+
 build: check-docker ## Build linux/amd64 binary into dist/ (Docker)
 	@mkdir -p $(DIST)
 	$(DOCKER_RUN) go build $(GOFLAGS) -ldflags '$(LDFLAGS)' -o /workspace/$(DIST)/$(BINARY) ./cmd/$(BINARY)
@@ -56,7 +59,7 @@ build-local: ## Build with a local Go toolchain (development only)
 	@mkdir -p $(DIST)
 	cd src && CGO_ENABLED=0 go build $(GOFLAGS) -ldflags '$(LDFLAGS)' -o ../$(DIST)/$(BINARY) ./cmd/$(BINARY)
 
-test: check-docker ## Run all tests in Docker
+test: check-docker check-install ## Run all tests in Docker
 	$(DOCKER_RUN) go test ./...
 
 test-cover: check-docker ## Run tests with coverage summary
