@@ -202,6 +202,9 @@ type state struct {
 	teamsByID   map[int]*model.Team
 	playersByID map[string]*model.Player
 	playerSlugs map[string]bool
+	globalSeen  map[string]int
+	lastTTeam   int
+	lastCTTeam  int
 
 	current       *roundBuilder
 	official      int
@@ -250,6 +253,7 @@ func newState(ctx context.Context, m *model.Match, p dem.Parser, opts Options) *
 		teamsByID:   map[int]*model.Team{},
 		playersByID: map[string]*model.Player{},
 		playerSlugs: map[string]bool{},
+		globalSeen:  map[string]int{},
 	}
 }
 
@@ -272,6 +276,10 @@ func (s *state) installHandlers() {
 	p.RegisterEventHandler(func(e events.BombDefused) { s.onBombDefused(e) })
 	p.RegisterEventHandler(func(e events.BombExplode) { s.onBombExplode(e) })
 	p.RegisterEventHandler(func(e events.GrenadeProjectileThrow) { s.onGrenade(e) })
+	p.RegisterEventHandler(func(e events.PlayerConnect) { s.onPlayerConnect(e.Player) })
+	p.RegisterEventHandler(func(e events.BotConnect) { s.onPlayerConnect(e.Player) })
+	p.RegisterEventHandler(func(e events.PlayerDisconnected) { s.onPlayerDisconnected(e.Player) })
+	p.RegisterEventHandler(func(e events.PlayerTeamChange) { s.onPlayerTeamChange(e) })
 	p.RegisterEventHandler(func(e events.IsWarmupPeriodChanged) {
 		// The authoritative round transition is handled in onRoundStart.
 		if e.NewIsWarmupPeriod {
@@ -355,6 +363,7 @@ func (s *state) onRoundStart(e events.RoundStart) {
 	}
 
 	s.live = true
+	s.detectTeamSwap()
 	if !s.warmupEnded {
 		s.m.Warmup.EndOffset = s.offset()
 		s.m.Warmup.Duration = s.m.Warmup.EndOffset - s.m.Warmup.StartOffset
@@ -795,6 +804,107 @@ func (s *state) syncTick() {
 	if s.p != nil {
 		s.lastTick = s.p.CurrentFrame()
 	}
+}
+
+// addGlobalEvent records a match-level lifecycle event. Its offset is absolute
+// demo time so the report can place it on the continuous match timeline.
+func (s *state) addGlobalEvent(e *model.Event) *model.Event {
+	s.syncTick()
+	key := fmt.Sprintf("%s|%s|%s|%s", e.Type, e.ActorID, e.OldSide, e.NewSide)
+	if tick, ok := s.globalSeen[key]; ok && tick == s.lastTick {
+		return e
+	}
+	s.globalSeen[key] = s.lastTick
+	s.eventSeq++
+	e.Seq = s.eventSeq
+	e.Tick = s.lastTick
+	e.Offset = s.offset()
+	s.m.Events = append(s.m.Events, e)
+	return e
+}
+
+func (s *state) onPlayerConnect(p *common.Player) {
+	if p == nil || p.IsUnknown {
+		return
+	}
+	name := p.Name
+	if name == "" {
+		name = fmt.Sprintf("Player %d", p.EntityID)
+	}
+	s.addGlobalEvent(&model.Event{Type: "player_connect", ActorID: playerID(p), ActorName: name})
+}
+
+func (s *state) onPlayerDisconnected(p *common.Player) {
+	if p == nil || p.IsUnknown {
+		return
+	}
+	name := p.Name
+	if name == "" {
+		name = fmt.Sprintf("Player %d", p.EntityID)
+	}
+	s.addGlobalEvent(&model.Event{Type: "player_disconnect", ActorID: playerID(p), ActorName: name})
+}
+
+func (s *state) onPlayerTeamChange(e events.PlayerTeamChange) {
+	if e.Player == nil || e.Player.IsUnknown {
+		return
+	}
+	oldSide, newSide := sideString(e.OldTeam), sideString(e.NewTeam)
+	if oldSide == newSide {
+		return
+	}
+	// Halftime swaps fire one PlayerTeamChange per player. Represent those as
+	// one team_swap marker instead of ten noisy rows.
+	if (oldSide == model.SideT || oldSide == model.SideCT) && (newSide == model.SideT || newSide == model.SideCT) {
+		return
+	}
+	if oldSide == model.SideUnknown && newSide == model.SideUnknown {
+		return
+	}
+	name := e.Player.Name
+	if name == "" {
+		name = fmt.Sprintf("Player %d", e.Player.EntityID)
+	}
+	s.addGlobalEvent(&model.Event{
+		Type:      "team_change",
+		ActorID:   playerID(e.Player),
+		ActorName: name,
+		OldSide:   oldSide,
+		NewSide:   newSide,
+	})
+}
+
+// detectTeamSwap emits one halftime/overtime marker when the stable teams
+// exchange sides. Stable team IDs are resolved through the roster because the
+// live TeamState ID is side-based and not reliable after a switch.
+func (s *state) detectTeamSwap() {
+	gs := s.p.GameState()
+	tState := gs.Team(common.TeamTerrorists)
+	ctState := gs.Team(common.TeamCounterTerrorists)
+	if tState == nil || ctState == nil {
+		return
+	}
+	tID := s.teamIDForState(tState)
+	ctID := s.teamIDForState(ctState)
+	if tID == 0 || ctID == 0 || tID == ctID {
+		return
+	}
+	if s.lastTTeam != 0 && s.lastCTTeam != 0 && s.lastTTeam == ctID && s.lastCTTeam == tID {
+		tName, ctName := "Terrorists", "Counter-Terrorists"
+		if team := s.m.TeamByID(tID); team != nil && team.Name != "" {
+			tName = team.Name
+		}
+		if team := s.m.TeamByID(ctID); team != nil && team.Name != "" {
+			ctName = team.Name
+		}
+		s.addGlobalEvent(&model.Event{
+			Type:    "team_swap",
+			OldSide: model.SideT,
+			NewSide: model.SideCT,
+			Text:    fmt.Sprintf("%s now CT - %s now T", ctName, tName),
+		})
+	}
+	s.lastTTeam, s.lastCTTeam = tID, ctID
 }
 
 func (s *state) addEvent(e *model.Event) {

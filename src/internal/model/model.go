@@ -55,12 +55,15 @@ type Match struct {
 	Players       []*Player `json:"players"`
 	Rounds        []*Round  `json:"rounds"`
 	Warmup        *Warmup   `json:"warmup,omitempty"`
-	Summary       *Summary  `json:"summary,omitempty"`
-	Warnings      []string  `json:"warnings,omitempty"`
-	Partial       bool      `json:"partial,omitempty"`
-	ParseError    string    `json:"parseError,omitempty"`
-	ParserVersion string    `json:"parserVersion,omitempty"`
-	ToolVersion   string    `json:"toolVersion,omitempty"`
+	// Events stores match-level lifecycle events (connects, disconnects,
+	// team changes and side swaps). Offset is the absolute demo time.
+	Events        []*Event `json:"events,omitempty"`
+	Summary       *Summary `json:"summary,omitempty"`
+	Warnings      []string `json:"warnings,omitempty"`
+	Partial       bool     `json:"partial,omitempty"`
+	ParseError    string   `json:"parseError,omitempty"`
+	ParserVersion string   `json:"parserVersion,omitempty"`
+	ToolVersion   string   `json:"toolVersion,omitempty"`
 }
 
 // Warmup contains kill/event activity before the first official round.
@@ -193,12 +196,16 @@ type WeaponStats struct {
 	Accuracy  float64 `json:"accuracyPercent,omitempty"`
 }
 
-// Event is one timeline entry in a round or the warmup.
+// Event is one timeline entry in a round, the warmup, or the match-level
+// lifecycle stream. Round/warmup offsets are relative to their section;
+// Match.Events offsets are absolute demo seconds.
 type Event struct {
 	Seq           int     `json:"seq"`
 	Tick          int     `json:"tick"`
 	Offset        float64 `json:"offsetSeconds"`
 	Type          string  `json:"type"`
+	OldSide       Side    `json:"oldSide,omitempty"`
+	NewSide       Side    `json:"newSide,omitempty"`
 	ActorID       string  `json:"actorId,omitempty"`
 	ActorName     string  `json:"actorName,omitempty"`
 	VictimID      string  `json:"victimId,omitempty"`
