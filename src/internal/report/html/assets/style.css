@@ -59,7 +59,7 @@ section[id],
 [id^="player-"],
 [id^="cheater-"],
 [id^="round-"] {
-  scroll-margin-top: calc(var(--header-h) + var(--space-4));
+  scroll-margin-top: var(--header-h);
 }
 
 [id^="player-"] {
@@ -1243,7 +1243,7 @@ table {
 
 .adjustment-list {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-1);
   list-style: none;
 }
@@ -1916,6 +1916,7 @@ select {
   justify-content: flex-end;
   gap: 0.35rem;
   margin-left: auto;
+  align-self: flex-end;
 }
 
 .aim-badge {
@@ -2232,7 +2233,7 @@ select {
 
 .cue-list {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-1);
   list-style: none;
 }
@@ -2330,43 +2331,8 @@ select {
   font-size: var(--fs-xs);
 }
 
-.round-table {
-  width: 100%;
-  min-width: 40rem;
-  table-layout: fixed;
-}
-
-.round-table .col-round {
-  width: 4.5rem;
-}
-
-.round-table .col-side {
-  width: 4.5rem;
-}
-
-.round-table .col-stat {
-  width: 3rem;
-}
-
-.round-table .col-dmg {
-  width: 4.5rem;
-}
-
-.round-table .col-equip {
-  width: 5.5rem;
-}
-
-.round-table .col-result {
-  width: 8rem;
-}
-
 .round-table th,
-.round-table td {
-  overflow: hidden;
-  text-align: center;
-  text-overflow: ellipsis;
-}
-
+.round-table td,
 .round-table th:first-child,
 .round-table td:first-child {
   text-align: center;
@@ -2706,7 +2672,7 @@ select {
   }
 
   .round-strip {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .tl-row {

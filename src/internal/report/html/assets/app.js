@@ -67,6 +67,12 @@
 
     window.addEventListener("scroll", requestUpdate, { passive: true });
     window.addEventListener("resize", requestUpdate);
+    navLinks.forEach((link) => {
+      link.addEventListener("click", () => {
+        const id = (link.getAttribute("href") || "").replace(/^#/, "");
+        if (id) setActive(id);
+      });
+    });
     updateActive();
   }
 

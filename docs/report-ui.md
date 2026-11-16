@@ -126,7 +126,7 @@ round panels.
   bulleted signal list. Each adjustment has a title and explanation. The short
   “Statistic calculation only. No Proof.” subtext stays visible.
 - “When to look” shows every cue as a card in a three-column grid.
-- The per-round table uses fixed column widths; the Round column stays narrow.
+- The per-round table uses the same auto layout and centred cells as the weapons table.
 - Per-round rows link to the timeline round anchor.
 
 ## Footer

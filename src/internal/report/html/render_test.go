@@ -380,7 +380,6 @@ func TestRenderUsesCompactCopyAndSharedStickyTools(t *testing.T) {
 		"3 detector channels showed strong agreement",
 		">Report vtest</a>",
 		`class="mini-table round-table"`,
-		`<col class="col-round">`,
 	} {
 		if !strings.Contains(page, want) {
 			t.Errorf("missing %q", want)

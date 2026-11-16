@@ -185,8 +185,8 @@ state adds `is-alert`.
 - Round result chips use team identity colours; round alternation uses
   `--round-a` / `--round-b`.
 - Purchases render in `.tl-buys` with `.buy-team`, `.buy-list` and badges.
-- The round table uses `table-layout: fixed` with a `colgroup`; never let the
-  Round column take an equal share of the table.
+- The per-round table uses the same auto layout and centred cells as the
+  weapons table; no fixed `colgroup` widths.
 
 ### Watchlist card
 

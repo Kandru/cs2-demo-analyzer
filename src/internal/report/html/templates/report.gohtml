@@ -423,16 +423,6 @@
           <div class="table-scroll">
           <table class="mini-table round-table">
             <caption class="sr-only">Per-round statistics</caption>
-            <colgroup>
-              <col class="col-round">
-              <col class="col-side">
-              <col class="col-stat">
-              <col class="col-stat">
-              <col class="col-stat">
-              <col class="col-dmg">
-              <col class="col-equip">
-              <col class="col-result">
-            </colgroup>
             <thead><tr><th scope="col">Round</th><th scope="col">Side</th><th scope="col">K</th><th scope="col">D</th><th scope="col">A</th><th scope="col">DMG</th><th scope="col">Equip</th><th scope="col">Result</th></tr></thead>
             <tbody>
             {{range .Rounds}}<tr><td><a href="#{{.Anchor}}">{{.Number}}</a></td><td><i class="side-dot {{lower .Side}}" aria-hidden="true"></i> {{.Side}}</td><td>{{.Kills}}</td><td>{{.Deaths}}</td><td>{{.Assists}}</td><td>{{.Damage}}</td><td>{{.EquipValue}}</td><td class="{{.ResultClass}}">{{.Result}}{{if .KAST}} - KAST{{end}}</td></tr>{{end}}
