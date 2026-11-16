@@ -7,7 +7,7 @@ toolchain go1.27.4
 require (
 	github.com/fsnotify/fsnotify v1.10.1
 	github.com/markus-wa/demoinfocs-golang/v5 v5.3.0
-	github.com/oklog/ulid/v2 v2.1.1
+	github.com/oklog/ulid/v2 v2.1.2
 )
 
 require (
