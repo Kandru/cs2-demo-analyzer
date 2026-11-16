@@ -20,18 +20,28 @@ const ManifestVersion = 1
 
 // Entry is the cached analysis state for one demo.
 type Entry struct {
-	Path          string    `json:"path"`
-	Size          int64     `json:"size"`
-	ModTime       int64     `json:"mtimeUnixNano"`
-	Hash          string    `json:"sha256,omitempty"`
-	HTMLPath      string    `json:"htmlPath,omitempty"`
-	JSONPath      string    `json:"jsonPath,omitempty"`
-	AnalyzedAt    time.Time `json:"analyzedAt,omitempty"`
-	ToolVersion   string    `json:"toolVersion,omitempty"`
-	ReportOptions string    `json:"reportOptions,omitempty"`
-	SchemaVersion int       `json:"schemaVersion,omitempty"`
-	Status        string    `json:"status,omitempty"` // ok | error
-	Error         string    `json:"error,omitempty"`
+	Path          string      `json:"path"`
+	Size          int64       `json:"size"`
+	ModTime       int64       `json:"mtimeUnixNano"`
+	Hash          string      `json:"sha256,omitempty"`
+	HTMLPath      string      `json:"htmlPath,omitempty"`
+	JSONPath      string      `json:"jsonPath,omitempty"`
+	AnalyzedAt    time.Time   `json:"analyzedAt,omitempty"`
+	ToolVersion   string      `json:"toolVersion,omitempty"`
+	ReportOptions string      `json:"reportOptions,omitempty"`
+	SchemaVersion int         `json:"schemaVersion,omitempty"`
+	Status        string      `json:"status,omitempty"` // ok | error
+	Error         string      `json:"error,omitempty"`
+	Meta          *ReportMeta `json:"meta,omitempty"`
+}
+
+// ReportMeta is match-level metadata cached for report index pages.
+type ReportMeta struct {
+	Map        string    `json:"map,omitempty"`
+	ServerName string    `json:"serverName,omitempty"`
+	Score      [2]int    `json:"score,omitempty"`
+	HasScore   bool      `json:"hasScore,omitempty"`
+	PlayedAt   time.Time `json:"playedAt,omitempty"`
 }
 
 type manifestFile struct {
@@ -147,7 +157,7 @@ func (s *Store) Entry(path string) (Entry, bool) {
 }
 
 // MarkOK records a successful analysis.
-func (s *Store) MarkOK(path string, size int64, modTime time.Time, hash, reportOptions, html, jsonPath, toolVersion string) {
+func (s *Store) MarkOK(path string, size int64, modTime time.Time, hash, reportOptions, html, jsonPath, toolVersion string, meta ReportMeta) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.entries[path] = &Entry{
@@ -162,6 +172,7 @@ func (s *Store) MarkOK(path string, size int64, modTime time.Time, hash, reportO
 		ReportOptions: reportOptions,
 		SchemaVersion: schemaVersion,
 		Status:        "ok",
+		Meta:          &meta,
 	}
 	s.outputs[html] = path
 }

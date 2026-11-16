@@ -230,13 +230,15 @@ cs2-demo-analyzer analyze --workers 2
 - `<base>.html` — self-contained report. `<base>` strips `.dem`, `.dem.gz`,
   and `.dem.bz2`.
 - `<base>.json` — optional machine-readable sidecar (`--json`).
-- `index.html` — report list for a report directory.
+- `index.html` — report list for a report directory, grouped by server and
+  sorted newest first.
 - `<manifest-dir>/.cs2-demo-analyzer/manifest.json` — `watch` cache.
 
 Reports go next to each demo unless `--output` is set. When the report
-directory receives an `index.html`, it uses the same self-contained design as
-the reports. Demo download links point at the original `.dem` path; move or
-delete demos accordingly.
+directory receives an `index.html`, it uses the same self-contained design and
+shared stylesheet as the reports, and each detailed report links back to the
+index. Demo download links point at the original `.dem` path; move or delete
+demos accordingly.
 
 The `watch` manifest directory is `--output` when set, otherwise the first
 input directory, or the current directory for a single-file input.

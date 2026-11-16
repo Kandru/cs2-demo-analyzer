@@ -29,6 +29,7 @@ type View struct {
 	Cheaters     []*CheaterView
 	RoundStrip   []RoundStripView
 	DemoDownload *DemoLink
+	IndexHref    string
 }
 
 // DemoLink is a direct download link for a source demo.

@@ -29,6 +29,12 @@ Self-contained, flat report renderer.
   perspective/glow), and preserve the orange accent.
 - Score/round tables need horizontal scroll, not tiny text.
 - The layout must work from ~320 px to 4K without a fixed content-width cap.
+- The index and report share `assets/style.css`; do not add a separate index
+  stylesheet or inline overrides.
+- Index cards show map + end score, server + played time, and optional demo
+  download; group by server and keep newest-first ordering.
+- The report brand links to `index.html` when `View.IndexHref` is set; fall back
+  to `#overview` otherwise.
 
 ## Extending
 

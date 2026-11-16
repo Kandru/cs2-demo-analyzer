@@ -9,7 +9,7 @@ numeric tables.
 ## Page structure
 
 ```
-top bar (brand, section tabs, map/mode)
+top bar (brand → report index when available, section tabs, map/mode, All reports link)
 match banner (map, mode, score, winner, date, players, tickrate, version)
 Overview (tiles, flat round-history strip, team comparison, cheat watch, warnings)
 Scoreboard (two team tables + totals)
@@ -19,10 +19,15 @@ Players (pills, cards: stats, sides, aim, cheat, review cues, weapons, per-round
 footer (generated/version/parser, untrusted-input + probabilistic notice)
 ```
 
-When a report directory also receives an `index.html`, it uses the same dark
-design tokens: a list of report cards with an “Open report” link and an optional
-“Download demo” link. The match banner shows the demo download link when the
-source `.dem` is reachable (same directory, or `--demo-download`).
+The report index footer links **CS2 Demo Analyzer** to the project repository and
+shows the version next to it followed by the generation timestamp.
+
+When a report directory also receives an `index.html`, it uses the same shared
+stylesheet and dark design tokens as the detailed reports. Reports are grouped
+by server, newest first by played date/time, and each card shows the map name,
+end score, server name, played date, and an optional “Download demo” link. The
+detail page brand links back to `index.html` whenever an index is generated;
+the header also exposes an “All reports” link on wider screens.
 
 Anchors: `#overview`, `#scoreboard`, `#cheaters`, `#rounds`, `#players`,
 `#player-<slug>`, `#cheater-<slug>`, `#round-<startTick>`, `#warmup`.
@@ -96,6 +101,7 @@ dense but never below 12 px in tables.
 - ≤1200 px: banner stacks, dashboard and player body become one column.
 - ≤900 px: scoreboard/detail grids stack; channel zone hidden.
 - ≤640 px: compact tab bar, 2-column tiles, compact round summary, cue rows wrap.
+  The report index becomes a single column with wrapping map/server names.
 - ≤420 px: single-column tiles, narrow cue rows.
 - ≥1700 px: wider grids and round cells; ≥2200/3000 px: larger root scale and
   wider content so 4K displays are filled without microscopic text.

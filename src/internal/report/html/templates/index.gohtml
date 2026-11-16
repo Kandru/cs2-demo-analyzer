@@ -21,7 +21,7 @@
       <a href="{{.IndexFile}}" class="active">Reports</a>
     </nav>
     <div class="topmeta">
-      <span>{{len .Entries}} report(s)</span>
+      <span>{{.Count}} report(s)</span>
     </div>
   </div>
 </header>
@@ -30,23 +30,39 @@
   <section class="section" aria-labelledby="reports-title">
     <div class="section-head">
       <h2 id="reports-title">Match reports</h2>
-      <span class="section-note">Generated {{.GeneratedAt}} · v{{.Version}}</span>
+      <span class="section-note">Newest first · grouped by server</span>
     </div>
 
-    {{if .Entries}}
-    <div class="index-grid">
-      {{range .Entries}}
-      <article class="index-card">
-        <a class="index-report" href="{{.Href}}">
-          <span class="index-name">{{.Name}}</span>
-          <span class="index-meta">Open report{{if .Modified}} · {{.Modified}}{{end}}</span>
-        </a>
-        {{with .Demo}}
-        <a class="index-demo" href="{{.Href}}" download="{{.Name}}" title="Download {{.Name}}">Download demo{{if .Size}} · {{.Size}}{{end}}</a>
-        {{else}}
-        <span class="index-demo muted">Demo not linked</span>
-        {{end}}
-      </article>
+    {{if .Groups}}
+    <div class="index-groups">
+      {{range $i, $group := .Groups}}
+      <section class="index-group" aria-labelledby="index-server-{{$i}}">
+        <div class="index-group-head">
+          <h3 id="index-server-{{$i}}">{{$group.Name}}</h3>
+          <span>{{len $group.Entries}} report(s)</span>
+        </div>
+        <div class="index-grid">
+          {{range $group.Entries}}
+          <article class="index-card">
+            <a class="index-report" href="{{.Href}}">
+              <span class="index-line">
+                <span class="index-name">{{.Name}}</span>
+                {{with .Score}}<span class="index-score">{{.}}</span>{{end}}
+              </span>
+              <span class="index-meta">
+                {{if .ServerName}}<span class="index-server">{{.ServerName}}</span>{{end}}
+                {{if .Played}}<span class="index-date">{{if .ServerName}} · {{end}}{{.Played}}</span>{{end}}
+              </span>
+            </a>
+            {{with .Demo}}
+            <a class="index-demo" href="{{.Href}}" download="{{.Name}}" title="Download {{.Name}}">Download demo{{if .Size}} · {{.Size}}{{end}}</a>
+            {{else}}
+            <span class="index-demo muted">Demo not linked</span>
+            {{end}}
+          </article>
+          {{end}}
+        </div>
+      </section>
       {{end}}
     </div>
     {{else}}
@@ -56,8 +72,7 @@
 </main>
 
 <footer class="footer wrap">
-  <span>CS2 Demo Analyzer v{{.Version}}</span>
-  <span>Self-contained index · no external assets</span>
+  <span><a href="{{.RepoURL}}" rel="noopener noreferrer">CS2 Demo Analyzer</a> v{{.Version}} — generated {{.GeneratedAt}}</span>
 </footer>
 </body>
 </html>

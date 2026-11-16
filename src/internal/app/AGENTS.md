@@ -15,7 +15,12 @@ CLI parsing, discovery, and per-demo pipeline.
 - Demo download links are automatic only when report and demo share a directory;
   `--demo-download` opts in to relative links across directories.
 - `index.html` is written when `--index` is set or when reports sit next to their
-  demos. Index entries come from the directory scan plus the store mapping.
+  demos. Index entries come from the directory scan plus the store mapping and
+  cached match metadata (map, end score, server, played time). Cards are grouped
+  by server and sorted newest first; metadata-less reports fall back to the
+  report basename and file mtime.
+- When an index is enabled, the detail report header links back to `index.html`.
+  The report renderer receives this through `View.IndexHref`.
 - `update` is the only command that writes the binary. `--update` on
   analyze/watch is best-effort: check/apply failures log a warning and never
   block processing. Normal runs make no network calls.

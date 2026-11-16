@@ -2,6 +2,7 @@ package app
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -92,8 +93,9 @@ func (p *Processor) writeIndex(dir string) error {
 	view := &html.IndexView{
 		Title:       "Match reports",
 		Version:     version.Short(),
-		GeneratedAt: time.Now().Format("2006-01-02 15:04 MST"),
-		Entries:     entries,
+		GeneratedAt: time.Now().Format("2006.01.02 15:04"),
+		Groups:      groupIndexEntries(entries),
+		Count:       len(entries),
 	}
 	var buf bytes.Buffer
 	if err := html.RenderIndex(&buf, view); err != nil {
@@ -125,20 +127,89 @@ func (p *Processor) indexEntries(dir string) ([]html.IndexEntry, error) {
 		if !ok {
 			demoPath = demofile.FindSibling(full)
 		}
+		meta := store.ReportMeta{}
+		if demoPath != "" {
+			if cached, ok := p.store.Entry(demoPath); ok && cached.Meta != nil {
+				meta = *cached.Meta
+			}
+		}
+		playedAt := meta.PlayedAt
+		if playedAt.IsZero() && demoPath != "" {
+			if demoInfo, err := os.Stat(demoPath); err == nil {
+				playedAt = demoInfo.ModTime()
+			}
+		}
+		if playedAt.IsZero() {
+			playedAt = info.ModTime()
+		}
+		displayName := html.MapLabel(meta.Map)
+		if displayName == "" {
+			displayName = strings.TrimSuffix(name, filepath.Ext(name))
+		}
+		score := ""
+		if meta.HasScore {
+			score = fmt.Sprintf("%d : %d", meta.Score[0], meta.Score[1])
+		}
 		entries = append(entries, html.IndexEntry{
-			Href:     name,
-			Name:     strings.TrimSuffix(name, filepath.Ext(name)),
-			Modified: info.ModTime().Format("2006-01-02 15:04"),
-			Demo:     p.demoLink(full, demoPath),
+			Href:       name,
+			Name:       displayName,
+			Score:      score,
+			ServerName: strings.TrimSpace(meta.ServerName),
+			Played:     playedAt.Format("2006-01-02 15:04"),
+			PlayedAt:   playedAt,
+			Demo:       p.demoLink(full, demoPath),
 		})
 	}
-	sort.SliceStable(entries, func(i, j int) bool {
-		if entries[i].Modified != entries[j].Modified {
-			return entries[i].Modified > entries[j].Modified
-		}
-		return entries[i].Href < entries[j].Href
-	})
+	sortIndexEntries(entries)
 	return entries, nil
+}
+
+func sortIndexEntries(entries []html.IndexEntry) {
+	sort.SliceStable(entries, func(i, j int) bool {
+		a, b := entries[i], entries[j]
+		if !a.PlayedAt.Equal(b.PlayedAt) {
+			return a.PlayedAt.After(b.PlayedAt)
+		}
+		if a.ServerName != b.ServerName {
+			return a.ServerName < b.ServerName
+		}
+		if a.Name != b.Name {
+			return a.Name < b.Name
+		}
+		return a.Href < b.Href
+	})
+}
+
+// groupIndexEntries groups sorted entries by server, preserving the newest-first
+// order. Unknown servers are kept together at the end of the page.
+func groupIndexEntries(entries []html.IndexEntry) []html.IndexServerGroup {
+	groups := make([]html.IndexServerGroup, 0, 4)
+	byName := map[string]int{}
+	for _, entry := range entries {
+		key := entry.ServerName
+		if key == "" {
+			key = "Unknown server"
+		}
+		if i, ok := byName[key]; ok {
+			groups[i].Entries = append(groups[i].Entries, entry)
+			continue
+		}
+		byName[key] = len(groups)
+		groups = append(groups, html.IndexServerGroup{Name: key, Entries: []html.IndexEntry{entry}})
+	}
+	unknown := -1
+	for i := range groups {
+		if groups[i].Name == "Unknown server" {
+			unknown = i
+			break
+		}
+	}
+	if unknown >= 0 && unknown != len(groups)-1 {
+		g := groups[unknown]
+		groups = append(groups[:unknown], groups[unknown+1:]...)
+		groups = append(groups, g)
+	}
+	return groups
 }
 
 func sameDir(a, b string) bool {

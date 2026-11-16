@@ -13,7 +13,7 @@
 
 <header class="topbar">
   <div class="wrap topbar-inner">
-    <a class="brand" href="#overview" aria-label="CS2 Demo Analyzer home">
+    <a class="brand" href="{{if .IndexHref}}{{.IndexHref}}{{else}}#overview{{end}}" aria-label="{{if .IndexHref}}Back to report index{{else}}CS2 Demo Analyzer home{{end}}">
       <span class="brand-mark">CS2</span>
       <span class="brand-word">DEMO ANALYZER</span>
     </a>
@@ -25,6 +25,7 @@
       <a href="#players">Players</a>
     </nav>
     <div class="topmeta">
+      {{if .IndexHref}}<a class="nav-back" href="{{.IndexHref}}">All reports</a>{{end}}
       <span class="tag">{{.Match.Map}}</span>
       <span>{{.Match.Mode}}</span>
     </div>

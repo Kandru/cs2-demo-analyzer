@@ -7,8 +7,10 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Kandru/cs2-demo-analyzer/internal/config"
+	"github.com/Kandru/cs2-demo-analyzer/internal/report/html"
 	"github.com/Kandru/cs2-demo-analyzer/internal/store"
 )
 
@@ -38,47 +40,85 @@ func TestDemoLink(t *testing.T) {
 	}
 }
 
-func TestCollectIndexEntries(t *testing.T) {
+func TestCollectIndexEntriesUsesMetadataAndSortsNewestFirst(t *testing.T) {
 	dir := t.TempDir()
 	p := testProcessor()
-	demo := filepath.Join(dir, "match.dem")
-	report := filepath.Join(dir, "match.html")
-	if err := os.WriteFile(demo, []byte("demo"), 0o644); err != nil {
-		t.Fatal(err)
+
+	addReport := func(name, demoName string, mod time.Time, meta *store.ReportMeta) {
+		t.Helper()
+		demo := filepath.Join(dir, demoName)
+		report := filepath.Join(dir, name+".html")
+		if err := os.WriteFile(demo, []byte("demo"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(report, []byte("report"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chtimes(report, mod, mod); err != nil {
+			t.Fatal(err)
+		}
+		p.store.ReserveOutput(report, demo)
+		if meta != nil {
+			p.store.MarkOK(demo, 1, mod, "", "", report, "", "v", *meta)
+		}
 	}
-	if err := os.WriteFile(report, []byte("report"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(dir, "other.html"), []byte("other"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	p.store.ReserveOutput(report, demo)
+
+	addReport("alpha", "alpha.dem", time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC), &store.ReportMeta{
+		Map: "de_mirage", ServerName: "Alpha Server", Score: [2]int{13, 7}, HasScore: true,
+		PlayedAt: time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC),
+	})
+	addReport("bravo", "bravo.dem", time.Date(2026, 11, 16, 9, 0, 0, 0, time.UTC), &store.ReportMeta{
+		Map: "de_nuke", ServerName: "Bravo Server", Score: [2]int{10, 13}, HasScore: true,
+		PlayedAt: time.Date(2026, 11, 16, 9, 0, 0, 0, time.UTC),
+	})
+	// Newest file mtime but no metadata: it still sorts by fallback time and is
+	// grouped as unknown.
+	addReport("unknown", "unknown.dem", time.Date(2026, 11, 17, 8, 0, 0, 0, time.UTC), nil)
 
 	entries, err := p.indexEntries(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(entries) != 2 {
-		t.Fatalf("got %d entries, want 2: %+v", len(entries), entries)
+	if len(entries) != 3 {
+		t.Fatalf("got %d entries, want 3: %+v", len(entries), entries)
 	}
-	byName := map[string]int{}
-	for i, e := range entries {
-		byName[e.Href] = i
+	if got := []string{entries[0].Href, entries[1].Href, entries[2].Href}; got[0] != "unknown.html" || got[1] != "bravo.html" || got[2] != "alpha.html" {
+		t.Fatalf("unexpected order: %v", got)
 	}
-	i, ok := byName["match.html"]
-	if !ok {
-		t.Fatalf("match.html missing: %+v", entries)
+	bravo := entries[1]
+	if bravo.Name != "Nuke" || bravo.Score != "10 : 13" || bravo.ServerName != "Bravo Server" {
+		t.Fatalf("metadata not rendered into entry: %+v", bravo)
 	}
-	e := entries[i]
-	if e.Demo == nil || e.Demo.Href != "match.dem" || e.Demo.Name != "match.dem" || e.Demo.Size != "4 B" {
-		t.Fatalf("demo link not resolved: %+v", e)
+	if bravo.Played != "2026-11-16 09:00" {
+		t.Fatalf("played time = %q", bravo.Played)
 	}
-	j, ok := byName["other.html"]
-	if !ok {
-		t.Fatalf("other.html missing: %+v", entries)
+	if bravo.Demo == nil || bravo.Demo.Href != "bravo.dem" || bravo.Demo.Size != "4 B" {
+		t.Fatalf("demo link not resolved: %+v", bravo)
 	}
-	if entries[j].Demo != nil {
-		t.Fatalf("unexpected demo link: %+v", entries[j])
+	if entries[0].Name != "unknown" || entries[0].ServerName != "" || entries[0].Score != "" {
+		t.Fatalf("fallback entry should use the report basename: %+v", entries[0])
+	}
+}
+
+func TestGroupIndexEntriesKeepsUnknownServerLast(t *testing.T) {
+	entries := []html.IndexEntry{
+		{Href: "a.html", Name: "A", ServerName: "", PlayedAt: time.Date(2026, 11, 17, 0, 0, 0, 0, time.UTC)},
+		{Href: "b.html", Name: "B", ServerName: "Bravo", PlayedAt: time.Date(2026, 11, 16, 0, 0, 0, 0, time.UTC)},
+		{Href: "c.html", Name: "C", ServerName: "Alpha", PlayedAt: time.Date(2026, 11, 15, 0, 0, 0, 0, time.UTC)},
+		{Href: "d.html", Name: "D", ServerName: "Bravo", PlayedAt: time.Date(2026, 11, 14, 0, 0, 0, 0, time.UTC)},
+	}
+	groups := groupIndexEntries(entries)
+	if len(groups) != 3 {
+		t.Fatalf("got %d groups, want 3: %+v", len(groups), groups)
+	}
+	if groups[0].Name != "Bravo" || len(groups[0].Entries) != 2 {
+		t.Fatalf("Bravo group = %+v", groups[0])
+	}
+	if groups[1].Name != "Alpha" {
+		t.Fatalf("Alpha group = %+v", groups[1])
+	}
+	if groups[2].Name != "Unknown server" {
+		t.Fatalf("unknown group should be last: %+v", groups[2])
 	}
 }
 
@@ -94,6 +134,10 @@ func TestWriteIndex(t *testing.T) {
 		t.Fatal(err)
 	}
 	p.store.ReserveOutput(report, demo)
+	p.store.MarkOK(demo, 1, time.Now(), "", "", report, "", "v", store.ReportMeta{
+		Map: "de_mirage", ServerName: "Test Server", Score: [2]int{13, 7}, HasScore: true,
+		PlayedAt: time.Date(2026, 11, 16, 12, 11, 0, 0, time.UTC),
+	})
 	if err := p.writeIndex(dir); err != nil {
 		t.Fatal(err)
 	}
@@ -102,9 +146,18 @@ func TestWriteIndex(t *testing.T) {
 		t.Fatal(err)
 	}
 	page := string(data)
-	for _, want := range []string{"Match reports", "match.html", "Download demo", "match.dem"} {
+	for _, want := range []string{
+		"Match reports", "match.html", "Download demo", "match.dem",
+		"Mirage", "13 : 7", "Test Server", "2026-11-16 12:11",
+		`href="https://github.com/Kandru/cs2-demo-analyzer"`, "generated ",
+	} {
 		if !strings.Contains(page, want) {
 			t.Errorf("missing %q in index", want)
+		}
+	}
+	for _, unwanted := range []string{"Self-contained index", "no external assets", "Generated 2026"} {
+		if strings.Contains(page, unwanted) {
+			t.Errorf("removed text %q still present", unwanted)
 		}
 	}
 }

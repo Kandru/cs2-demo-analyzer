@@ -91,6 +91,10 @@ func (p *Processor) Process(ctx context.Context, path string) error {
 
 	view := html.NewView(m, version.Short())
 	view.DemoDownload = p.demoLink(htmlPath, path)
+	indexed := p.indexEnabled(htmlPath, path)
+	if indexed {
+		view.IndexHref = html.IndexFileName
+	}
 	var buf bytes.Buffer
 	if err := html.Render(&buf, view); err != nil {
 		p.recordError(path, info, err)
@@ -116,8 +120,8 @@ func (p *Processor) Process(ctx context.Context, path string) error {
 		}
 	}
 
-	p.store.MarkOK(path, info.Size(), info.ModTime(), hash, p.reportOptions(htmlPath, path), htmlPath, jsonPath, version.Short())
-	if p.indexEnabled(htmlPath, path) {
+	p.store.MarkOK(path, info.Size(), info.ModTime(), hash, p.reportOptions(htmlPath, path), htmlPath, jsonPath, version.Short(), reportMeta(m, info.ModTime()))
+	if indexed {
 		if err := p.writeIndex(filepath.Dir(htmlPath)); err != nil {
 			p.log.Warn("could not write index", "demo", path, "error", err)
 		}
@@ -143,6 +147,22 @@ func (p *Processor) Process(ctx context.Context, path string) error {
 		p.log.Warn("report is partial", "demo", filepath.Base(path), "error", m.ParseError)
 	}
 	return nil
+}
+
+func reportMeta(m *model.Match, fallback time.Time) store.ReportMeta {
+	meta := store.ReportMeta{
+		Map:        m.Map,
+		ServerName: m.ServerName,
+		PlayedAt:   m.FileTime,
+	}
+	if meta.PlayedAt.IsZero() {
+		meta.PlayedAt = fallback
+	}
+	if m.Summary != nil {
+		meta.Score = m.Summary.Score
+		meta.HasScore = true
+	}
+	return meta
 }
 
 func (p *Processor) recordError(path string, info os.FileInfo, err error) {

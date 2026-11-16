@@ -13,6 +13,8 @@ Manifest cache, output naming, atomic writes.
 - Output names are sanitized (`safeName`); default is
   `<demo-base>.html` next to the demo.
 - Shared-output basename collisions get a short source hash.
+- Successful entries cache `ReportMeta` (map, server, end score, played time)
+  for index pages. Metadata is additive; older manifests remain readable.
 - Keep `schemaVersion` in sync with `model.SchemaVersion`.
 - Manifest access is mutex-protected (`watch` workers).
 

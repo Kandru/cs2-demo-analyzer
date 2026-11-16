@@ -33,7 +33,7 @@ func TestOutputPathCollision(t *testing.T) {
 	a := filepath.Join(out, "a", "match.dem")
 	b := filepath.Join(out, "b", "match.dem")
 	pa := s.OutputPath(a, out, ".html")
-	s.MarkOK(a, 1, time.Unix(1, 0), "", "", pa, "", "v")
+	s.MarkOK(a, 1, time.Unix(1, 0), "", "", pa, "", "v", ReportMeta{})
 	pb := s.OutputPath(b, out, ".html")
 	if pa == pb {
 		t.Fatalf("collision not disambiguated: %q", pa)
@@ -55,7 +55,7 @@ func TestSkip(t *testing.T) {
 		t.Fatal(err)
 	}
 	mod := time.Unix(100, 0)
-	s.MarkOK(demo, 1, mod, "h", "", html, "", "1.0")
+	s.MarkOK(demo, 1, mod, "h", "", html, "", "1.0", ReportMeta{})
 	if !s.Skip(demo, 1, mod, "1.0", "", false) {
 		t.Fatal("expected skip for unchanged successful demo")
 	}

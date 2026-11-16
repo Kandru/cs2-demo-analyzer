@@ -82,6 +82,41 @@ func TestCheatMomentsMergeByTickAndFeedWatchList(t *testing.T) {
 	}
 }
 
+func TestRenderHeaderLinksToIndexWhenPresent(t *testing.T) {
+	v := NewView(testMatch(), "test")
+	v.IndexHref = IndexFileName
+	var buf bytes.Buffer
+	if err := Render(&buf, v); err != nil {
+		t.Fatal(err)
+	}
+	page := buf.String()
+	for _, want := range []string{
+		`class="brand" href="index.html"`,
+		`class="nav-back" href="index.html"`,
+		`aria-label="Back to report index"`,
+		"All reports",
+	} {
+		if !strings.Contains(page, want) {
+			t.Errorf("missing %q in report header", want)
+		}
+	}
+}
+
+func TestRenderHeaderWithoutIndexUsesOverview(t *testing.T) {
+	v := NewView(testMatch(), "test")
+	var buf bytes.Buffer
+	if err := Render(&buf, v); err != nil {
+		t.Fatal(err)
+	}
+	page := buf.String()
+	if !strings.Contains(page, `class="brand" href="#overview"`) {
+		t.Fatal("brand should fall back to #overview without an index")
+	}
+	if strings.Contains(page, `class="nav-back"`) || strings.Contains(page, "All reports") {
+		t.Fatal("index link should not render when no index is written")
+	}
+}
+
 func TestRenderContainsCoreSectionsAndEscapesNames(t *testing.T) {
 	m := testMatch()
 	m.Players[0].Name = `<script>alert(1)</script>`
