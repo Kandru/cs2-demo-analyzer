@@ -16,15 +16,15 @@ func TestPlanOutputDefaultsNextToDemo(t *testing.T) {
 		t.Fatal(err)
 	}
 	demo := filepath.Join(dir, "match.dem")
-	got := s.PlanOutput(demo, "", ".html", nil)
+	got := s.PlanOutput(demo, "", ".html")
 	want := filepath.Join(dir, "match.html")
 	if got != want {
 		t.Fatalf("got %q want %q", got, want)
 	}
-	if again := s.PlanOutput(demo, "", ".html", nil); again != want {
+	if again := s.PlanOutput(demo, "", ".html"); again != want {
 		t.Fatalf("replanning changed the path: %q", again)
 	}
-	other := s.PlanOutput(filepath.Join(dir, "other.dem"), "", ".json", nil)
+	other := s.PlanOutput(filepath.Join(dir, "other.dem"), "", ".json")
 	if other != filepath.Join(dir, "other.json") {
 		t.Fatalf("json plan: %q", other)
 	}
@@ -34,7 +34,7 @@ func TestPlanOutputNeverClaimsIndexName(t *testing.T) {
 	dir := t.TempDir()
 	s, _ := Open(dir)
 	demo := filepath.Join(dir, "index.dem")
-	got := s.PlanOutput(demo, "", ".html", nil)
+	got := s.PlanOutput(demo, "", ".html")
 	if strings.EqualFold(filepath.Base(got), "index.html") {
 		t.Fatalf("report must not overwrite the index: %q", got)
 	}
@@ -48,26 +48,11 @@ func TestPlanOutputCollision(t *testing.T) {
 	s, _ := Open(out)
 	a := filepath.Join(out, "a", "match.dem")
 	b := filepath.Join(out, "b", "match.dem")
-	pa := s.PlanOutput(a, out, ".html", nil)
+	pa := s.PlanOutput(a, out, ".html")
 	s.MarkOK(a, 1, time.Unix(1, 0), "", "", pa, "", "v", ReportMeta{})
-	pb := s.PlanOutput(b, out, ".html", nil)
+	pb := s.PlanOutput(b, out, ".html")
 	if pa == pb {
 		t.Fatalf("collision not disambiguated: %q", pa)
-	}
-	if !strings.Contains(pb, "match-") {
-		t.Fatalf("unexpected collision name: %q", pb)
-	}
-}
-
-func TestPlanOutputOccupiedCallback(t *testing.T) {
-	out := t.TempDir()
-	s, _ := Open(out)
-	a := filepath.Join(out, "a", "match.dem")
-	b := filepath.Join(out, "b", "match.dem")
-	pa := s.PlanOutput(a, out, ".html", nil)
-	pb := s.PlanOutput(b, out, ".html", func(path string) bool { return path == pa })
-	if pa == pb {
-		t.Fatalf("occupied candidate was reused: %q", pa)
 	}
 	if !strings.Contains(pb, "match-") {
 		t.Fatalf("unexpected collision name: %q", pb)

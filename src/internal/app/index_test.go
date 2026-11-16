@@ -47,7 +47,7 @@ func TestCollectIndexEntriesUsesMetadataAndSortsNewestFirst(t *testing.T) {
 	addReport := func(demoName string, mod time.Time, meta *store.ReportMeta) {
 		t.Helper()
 		demo := filepath.Join(dir, demoName)
-		report := p.store.PlanOutput(demo, "", ".html", nil)
+		report := p.store.PlanOutput(demo, "", ".html")
 		if err := os.WriteFile(demo, []byte("demo"), 0o644); err != nil {
 			t.Fatal(err)
 		}

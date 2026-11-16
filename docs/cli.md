@@ -52,7 +52,7 @@ Flags override environment values.
 - `<base>.html` — self-contained report. `<base>` strips `.dem`,
   `.dem.gz`, `.dem.bz2`. It starts with `<!doctype html>` and a
   `<!--cs2-demo-analyzer:{...}-->` header comment carrying the tool version,
-  schema, report options and demo fingerprint.
+  schema, report options, demo size and mtime.
 - `<base>.json` — optional sidecar, schema documented in
   `docs/report-schema.md`. Its first key is the same `header` object.
 - `index.html` — self-contained list of reports in a report directory. Written
@@ -62,7 +62,7 @@ Flags override environment values.
   file input).
 
 Both report artifacts are reused only while the header matches the current tool
-version, schema, report options and demo file (size+mtime+fingerprint). Delete a
+version, schema, report options and demo file (size+mtime). Delete a
 report or pass `--force` to rebuild it.
 
 Each report links its source `.dem` as a download when the demo is in the same
@@ -91,7 +91,7 @@ the later one gets a short source-hash suffix: `match-a1b2c3.html`.
 - A file must have the same size and mtime on two consecutive scans before it
   is queued. This prevents parsing downloads in progress.
 - Successful demos are skipped while the artifact headers match the current
-  tool version, schema, report options, demo size/mtime and demo fingerprint.
+  tool version, schema, report options, and demo size/mtime.
   The JSON sidecar is required when `--json` is enabled.
 - Report indexes are refreshed on startup for cached reports, then after each
   successful analysis.

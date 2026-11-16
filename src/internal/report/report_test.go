@@ -18,7 +18,6 @@ func testHeader() Header {
 		ToolVersion:     "26.11.1",
 		SchemaVersion:   model.SchemaVersion,
 		Options:         Options{Cheat: true, Aim: true, DemoDownload: true}.String(),
-		DemoKey:         DemoKey("/demos/match.dem"),
 		DemoSize:        1234,
 		DemoModUnixNano: 987654321,
 		GeneratedAt:     time.Date(2026, 11, 16, 12, 0, 0, 0, time.UTC),
@@ -144,7 +143,6 @@ func TestMatchesIgnoresPresentationFields(t *testing.T) {
 		"tool":         func(h *Header) { h.ToolVersion = "older" },
 		"schema":       func(h *Header) { h.SchemaVersion++ },
 		"options":      func(h *Header) { h.Options = "cheat=false" },
-		"demo key":     func(h *Header) { h.DemoKey = "other" },
 		"demo size":    func(h *Header) { h.DemoSize++ },
 		"demo modtime": func(h *Header) { h.DemoModUnixNano++ },
 	} {
@@ -176,16 +174,6 @@ func TestFresh(t *testing.T) {
 	}
 	if Fresh(filepath.Join(dir, "missing.html"), testHeader()) {
 		t.Fatal("missing report must not be fresh")
-	}
-}
-
-func TestDemoKeyIsStableAndDistinct(t *testing.T) {
-	a := DemoKey("/demos/a.dem")
-	if a != DemoKey("/demos/a.dem") {
-		t.Fatal("demo key must be stable")
-	}
-	if a == DemoKey("/demos/b.dem") {
-		t.Fatal("different demos must have different keys")
 	}
 }
 

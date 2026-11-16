@@ -27,8 +27,9 @@ CLI parsing, discovery, and per-demo pipeline.
   match metadata read from each report header (map, end score, server, played
   time); the manifest is a legacy fallback. Cards are grouped by server and
   sorted newest first; metadata-less reports fall back to the report basename
-  and file mtime. Analyze refreshes planned directories at the end of a run so
-  skipped-only directories keep a current index.
+  and file mtime. Analyze refreshes planned directories once after all workers
+  finish so the index reflects every successful output; watch refreshes after
+  each successful analysis.
 - When an index is enabled, the detail report header links back to `index.html`.
   The report renderer receives this through `View.IndexHref`.
 - `update` is the only command that writes the binary. `--update` on

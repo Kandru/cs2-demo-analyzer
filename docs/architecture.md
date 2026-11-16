@@ -131,7 +131,7 @@ file, never in the pipeline. `internal/aim` follows the same pattern with
 - `report.Header` is embedded in every JSON sidecar (`header` first key) and in
   an HTML comment immediately after the doctype.
 - Freshness compares header format, tool version stamp, schema version, report
-  options, a demo-path fingerprint, demo size and mtime.
+  options, demo size and mtime.
 - `app.Processor` plans output paths before workers start, checks enabled
   artifacts, and skips only when the HTML (and JSON when enabled) is current.
 - The manifest is an optimization and audit log: it caches failures and index

@@ -244,7 +244,7 @@ demos accordingly.
 Reports are reused while the embedded header matches the current tool version,
 data schema, report options (`--cheat`, `--aim`, `--demo-download`, `--index`)
 and demo
-file (size, mtime, path fingerprint). Upgrade the tool or pass `--force` to
+file (size and mtime). Upgrade the tool or pass `--force` to
 rebuild. Deleting a requested artifact also triggers a rebuild.
 
 The `watch` manifest directory is `--output` when set, otherwise the first

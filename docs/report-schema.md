@@ -23,15 +23,14 @@ kilobytes. See “Artifact header” below.
 | `toolVersion` | string | `version.CacheKey()`; `dev+<commit>` for dev builds |
 | `schemaVersion` | int | Mirrors `model.SchemaVersion` |
 | `options` | string | `cheat=…;aim=…;demo-download=…;index=…` |
-| `demoKey` | string | Short fingerprint of the absolute demo path |
 | `demoSize` | int64 | Source file size |
 | `demoModUnixNano` | int64 | Source mtime |
 | `generatedAt` | RFC3339 | Render time |
 | `map`, `serverName`, `score`, `hasScore`, `playedAt` | — | Index metadata; not part of freshness |
 
 Freshness ignores presentation fields (`generatedAt`, map/server/score/played)
-and compares format, tool version, schema version, options, `demoKey`, demo
-size and demo mtime. A missing or corrupt header marks the artifact stale.
+and compares format, tool version, schema version, options, demo size and demo
+mtime. A missing or corrupt header marks the artifact stale.
 
 ## Root: `Match`
 

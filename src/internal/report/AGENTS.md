@@ -5,7 +5,7 @@ Canonical report document shared by the HTML page and the JSON sidecar.
 ## Files
 
 - `report.go` — `Header`, `Document`, JSON encoding/decoding, HTML/JSON header
-  probes, freshness comparison, demo fingerprint, report options.
+  probes, freshness comparison, report options.
 - `report_test.go` — header layout, round trip, probing, freshness, escaping.
 
 ## Invariants

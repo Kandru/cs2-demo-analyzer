@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
@@ -169,45 +168,21 @@ func TestSkipDisabledWithoutStableVersion(t *testing.T) {
 	}
 }
 
-func TestPlanAvoidsOverwritingAnotherDemosReport(t *testing.T) {
+func TestPlanOverwritesExistingReportOnRegeneration(t *testing.T) {
 	out := t.TempDir()
-	dirA := filepath.Join(out, "a")
-	dirB := filepath.Join(out, "b")
-	for _, dir := range []string{dirA, dirB} {
-		if err := os.MkdirAll(dir, 0o755); err != nil {
-			t.Fatal(err)
-		}
-	}
-	demoA := filepath.Join(dirA, "match.dem")
-	demoB := filepath.Join(dirB, "match.dem")
-	for _, demo := range []string{demoA, demoB} {
-		if err := os.WriteFile(demo, []byte("demo"), 0o644); err != nil {
-			t.Fatal(err)
-		}
+	demo := filepath.Join(out, "match.dem")
+	if err := os.WriteFile(demo, []byte("demo"), 0o644); err != nil {
+		t.Fatal(err)
 	}
 	candidate := filepath.Join(out, "match.html")
-	h := report.Header{Format: report.HeaderFormat, DemoKey: report.DemoKey(demoA)}
-	comment, err := report.HeaderComment(h)
-	if err != nil {
+	if err := os.WriteFile(candidate, []byte("old report"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(candidate, []byte("<!doctype html>\n"+comment+"\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
 	cfg := config.Default()
 	cfg.Output = out
 	p := testProcessorWithConfig(cfg)
-	planA := p.plan(demoA)
-	if planA.HTMLPath != candidate {
-		t.Fatalf("owner should reuse its path: %q", planA.HTMLPath)
-	}
-	planB := p.plan(demoB)
-	if planB.HTMLPath == candidate {
-		t.Fatal("second demo must not reuse another demo's report path")
-	}
-	if !strings.Contains(planB.HTMLPath, "match-") {
-		t.Fatalf("unexpected fallback name: %q", planB.HTMLPath)
+	if got := p.plan(demo).HTMLPath; got != candidate {
+		t.Fatalf("regeneration must overwrite %q, got %q", candidate, got)
 	}
 }
 

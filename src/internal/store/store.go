@@ -179,13 +179,9 @@ func (s *Store) MarkError(path string, size int64, modTime time.Time, err error,
 
 // PlanOutput atomically chooses and reserves the report path for a demo. If
 // outputDir is empty the report is written next to the demo. Basename
-// collisions from different demos are disambiguated with a short source hash.
-//
-// occupied is optional and is called while the store lock is held. It lets the
-// caller mark a candidate as belonging to another demo when the in-memory
-// mapping is not available (for example a one-shot analyze run). Keep the
-// callback cheap: it typically reads a few hundred bytes of a header.
-func (s *Store) PlanOutput(demoPath, outputDir, suffix string, occupied func(string) bool) string {
+// collisions with another demo in this run are disambiguated with a short
+// source hash; re-generating a demo always reuses and overwrites its file.
+func (s *Store) PlanOutput(demoPath, outputDir, suffix string) string {
 	dir := outputDir
 	if dir == "" {
 		dir = filepath.Dir(demoPath)
@@ -195,17 +191,12 @@ func (s *Store) PlanOutput(demoPath, outputDir, suffix string, occupied func(str
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if src, ok := s.outputs[cand]; ok && src == demoPath {
+	owner, claimed := s.outputs[cand]
+	if claimed && owner == demoPath {
 		return cand
 	}
-	taken := func(path string) bool {
-		if src, ok := s.outputs[path]; ok && src != demoPath {
-			return true
-		}
-		return occupied != nil && occupied(path)
-	}
 	// Never let a demo report collide with the generated directory index.
-	if strings.EqualFold(filepath.Base(cand), "index.html") || taken(cand) {
+	if strings.EqualFold(filepath.Base(cand), "index.html") || claimed {
 		h := sha256.Sum256([]byte(demoPath))
 		cand = filepath.Join(dir, fmt.Sprintf("%s-%x%s", base, h[:3], suffix))
 	}

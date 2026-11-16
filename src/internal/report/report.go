@@ -9,13 +9,10 @@ package report
 import (
 	"bufio"
 	"bytes"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -44,7 +41,6 @@ type Header struct {
 	ToolVersion     string    `json:"toolVersion"`
 	SchemaVersion   int       `json:"schemaVersion"`
 	Options         string    `json:"options,omitempty"`
-	DemoKey         string    `json:"demoKey"`
 	DemoSize        int64     `json:"demoSize"`
 	DemoModUnixNano int64     `json:"demoModUnixNano"`
 	GeneratedAt     time.Time `json:"generatedAt"`
@@ -64,7 +60,6 @@ func (h Header) Matches(want Header) bool {
 		h.ToolVersion == want.ToolVersion &&
 		h.SchemaVersion == want.SchemaVersion &&
 		h.Options == want.Options &&
-		h.DemoKey == want.DemoKey &&
 		h.DemoSize == want.DemoSize &&
 		h.DemoModUnixNano == want.DemoModUnixNano
 }
@@ -119,17 +114,6 @@ func HeaderComment(h Header) (string, error) {
 		return "", fmt.Errorf("report header contains unsafe comment characters")
 	}
 	return HeaderPrefix + s + HeaderSuffix, nil
-}
-
-// DemoKey returns a short, stable fingerprint for a demo path. It lets an
-// artifact prove which source file produced it without embedding a local path.
-func DemoKey(demoPath string) string {
-	abs, err := filepath.Abs(demoPath)
-	if err != nil {
-		abs = demoPath
-	}
-	sum := sha256.Sum256([]byte(abs))
-	return hex.EncodeToString(sum[:8])
 }
 
 // ReadHeader reads only the metadata header of an HTML or JSON report.

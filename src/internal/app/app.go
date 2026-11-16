@@ -80,6 +80,7 @@ func runAnalyze(ctx context.Context, args []string) int {
 	}
 	st := store.NewMemory()
 	proc := NewProcessor(cfg, st, logger)
+	proc.SetDeferredIndex(true)
 	for _, d := range demos {
 		proc.Plan(d)
 	}

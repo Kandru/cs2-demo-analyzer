@@ -20,8 +20,8 @@ queued. This handles downloads/copies still in progress. With the defaults
 ## Cache / skip
 
 Successful output is self-describing: the HTML comment and the JSON `header`
-store the tool version stamp, data schema, report options, demo-path
-fingerprint, and demo size/mtime. Skip when **all** match:
+store the tool version stamp, data schema, report options, and demo
+size/mtime. Skip when **all** match:
 
 - the HTML report exists and its header is current,
 - if `--json` is enabled, the JSON sidecar exists and its header is current,

@@ -37,6 +37,17 @@ type Processor struct {
 
 	planMu sync.Mutex
 	plans  map[string]outputPlan
+
+	// deferIndex keeps per-demo Process calls from writing index.html; analyze
+	// refreshes every directory once after all workers finish.
+	deferIndex bool
+}
+
+// SetDeferredIndex controls whether Process refreshes the directory index.
+// Analyze defers index writes to one pass at the end; watch refreshes after
+// each successful analysis.
+func (p *Processor) SetDeferredIndex(deferIndex bool) {
+	p.deferIndex = deferIndex
 }
 
 // NewProcessor creates a processor writing through st.
@@ -57,15 +68,7 @@ func (p *Processor) plan(demoPath string) outputPlan {
 	if plan, ok := p.plans[demoPath]; ok {
 		return plan
 	}
-	key := report.DemoKey(demoPath)
-	htmlPath := p.store.PlanOutput(demoPath, p.cfg.Output, ".html", func(candidate string) bool {
-		h, err := report.ReadHeader(candidate)
-		if err != nil {
-			// Missing, legacy, or unreadable reports are replaced in place.
-			return false
-		}
-		return h.DemoKey != "" && h.DemoKey != key
-	})
+	htmlPath := p.store.PlanOutput(demoPath, p.cfg.Output, ".html")
 	plan := outputPlan{
 		HTMLPath: htmlPath,
 		JSONPath: strings.TrimSuffix(htmlPath, ".html") + ".json",
@@ -164,7 +167,7 @@ func (p *Processor) Process(ctx context.Context, path string) error {
 
 	p.store.MarkOK(path, info.Size(), info.ModTime(), hash, p.reportOptions(plan.HTMLPath, path).String(),
 		plan.HTMLPath, jsonPath, reportVersion(), reportMeta(header))
-	if indexed {
+	if indexed && !p.deferIndex {
 		if err := p.writeIndex(filepath.Dir(plan.HTMLPath)); err != nil {
 			p.log.Warn("could not write index", "demo", path, "error", err)
 		}
@@ -208,7 +211,6 @@ func (p *Processor) headerFor(demoPath string, size int64, mod time.Time, plan o
 		ToolVersion:     reportVersion(),
 		SchemaVersion:   model.SchemaVersion,
 		Options:         p.reportOptions(plan.HTMLPath, demoPath).String(),
-		DemoKey:         report.DemoKey(demoPath),
 		DemoSize:        size,
 		DemoModUnixNano: mod.UnixNano(),
 		GeneratedAt:     time.Now().UTC(),

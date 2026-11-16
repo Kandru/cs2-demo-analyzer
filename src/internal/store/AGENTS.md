@@ -9,9 +9,9 @@ Manifest cache, output naming, atomic writes.
 - Writes are `.tmp` + fsync + rename; readers must never see partial reports.
 - Skip decisions live in `internal/app` and read report headers. The store only
   caches failures (`CachedFailure`) and records manifest metadata.
-- Output names are chosen and reserved atomically with `PlanOutput`; the
-  optional `occupied` callback lets the caller reject a candidate owned by a
-  different demo even when no manifest mapping exists.
+- Output names are chosen and reserved atomically with `PlanOutput`. A demo
+  that is re-generated always reuses its base name; only distinct demos known
+  to the same run or manifest receive a short source-hash suffix.
 - Default is `<demo-base>.html` next to the demo. A demo whose base would
   produce `index.html` is disambiguated so it cannot overwrite the report index.
 - Shared-output basename collisions get a short source hash.
