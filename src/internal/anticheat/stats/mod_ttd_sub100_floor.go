@@ -49,7 +49,7 @@ func applyTTDSub100Floor(st *scoreState) Applied {
 
 var modFloor = &Modifier{
 	ID:    "ttd_sub100_high_floor",
-	Doc:   "docs/detections/ttd_sub100_floor.md",
+	Doc:   "docs/detections/ttd_sub100_high_floor.md",
 	Apply: applyTTDSub100Floor,
 	Publish: func(ps *PlayerStats, a Applied) {
 		if !a.Fired {

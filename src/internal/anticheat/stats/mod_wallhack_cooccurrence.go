@@ -41,7 +41,7 @@ func applyWallhackCoOccurrenceBoost(st *scoreState) Applied {
 
 var modCooccurrence = &Modifier{
 	ID:    "wallhack_co_occurrence_boost",
-	Doc:   "docs/detections/wallhack_cooccurrence.md",
+	Doc:   "docs/detections/wallhack_co_occurrence_boost.md",
 	Apply: applyWallhackCoOccurrenceBoost,
 	Publish: func(ps *PlayerStats, a Applied) {
 		if !a.Fired {

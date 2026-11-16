@@ -8,18 +8,42 @@ at commit `635e8c7a152f3026446463cbe8f0ba2e170ec818` (2026-05-18).
   the binary.
 - It runs as a **second parse pass** so it cannot interfere with the battlelog
   timeline.
-- `stats/battlelog.go` (our file) exposes the published `anti_cheat` metrics in a
-  presentation-neutral form. `internal/anticheat/anticheat.go` maps them to
-  `model.CheatReport`.
+- `stats/battlelog.go` exposes the published metrics in a presentation-neutral
+  form; `internal/anticheat/anticheat.go` maps them to `model.CheatReport`.
 - Upstream has **no license file** at this commit. Confirm redistribution
   permission before publishing binaries/source. See `THIRD_PARTY.md`.
 
+## Detection catalogue
+
+Each signal has its own implementation file, test and documentation page. Start
+at [`docs/detections/README.md`](detections/README.md) for the pipeline, the
+full file map, and the add/remove/change procedure.
+
+The ten scored channels are:
+
+| Channel | Signal | Weight |
+|---|---|---|
+| `hs` | headshot rate | 0.18 |
+| `snap` | P95 snap velocity | 0.10 |
+| `reaction` | median sight→damage time | 0.10 |
+| `ttd_sub100` | sub-100 ms engagement share | 0.10 |
+| `recoil` | spray deviation vs known patterns | 0.10 |
+| `pre_fov` | crosshair-to-enemy angle 200 ms before visibility | 0.22 |
+| `pre_fov_presence` | pre-aim sample asymmetry vs the lobby | 0.10 |
+| `attention` | crosshair-to-nearest-enemy when idle | 0.06 |
+| `back_killed` | share of deaths while looking away | 0.06 |
+| `decoupling` | attention − pre-FOV delta | 0.10 |
+
+Seven modifiers shape the final score: Wingman/Competitive boosts,
+scoreboard-position discount, evidence stacking, wallhack co-occurrence,
+the sub-100 ms floor, and sniper overrides. The ordered registry lives in
+`stats/registry.go`.
+
 ## What the player card shows
 
-- Final `cheat_likelihood` (0–100), threshold 50 %.
-- Flag verdict from upstream (`cheater == Yes`).
-- Per-channel: human-readable raw value, evidence score bar, confidence,
-  zone (`clean/mild/strong/blatant/no data`).
+- Final `cheat_likelihood` (0–100), flag threshold 50%.
+- Flag verdict from the detector (`cheater == Yes`).
+- Per-channel: raw value, score bar, confidence, zone.
 - The detector's narrative paragraph and skill grades.
 - Boosts/discounts/overrides that shaped the final score.
 - Timestamped review cues (match clock, round, tick) that link into the round
@@ -29,86 +53,51 @@ at commit `635e8c7a152f3026446463cbe8f0ba2e170ec818` (2026-05-18).
 Cues are recorded only in the suspicious direction and only when a channel
 crosses its ramp start. They are reviewer navigation aids, never a verdict.
 
-## Upstream method (summary)
+## Scoring model (summary)
 
-Ten channels are combined with a Bayesian log-odds model:
-
-| Channel | Signal |
-|---|---|
-| `hs` | headshot rate |
-| `snap` | P95 view-angle snap velocity |
-| `reaction` | median sight→damage time |
-| `ttd_sub100` | share of sub-100 ms engagements |
-| `recoil` | spray deviation vs known patterns |
-| `pre_fov` | crosshair-to-enemy angle 200 ms before visibility |
-| `pre_fov_presence` | pre-aim sample asymmetry vs the lobby |
-| `attention` | crosshair-to-nearest-enemy when idle |
-| `back_killed` | share of deaths while looking away |
-| `decoupling` | attention − pre-FOV delta |
-
-Scores are lobby-normalized (trimmed mean, 40 % shrinkage), combined, then
-boosted/discounted (Wingman/Competitive/position/evidence stacking/co-occurrence)
-and finally floored/overridden. Flag threshold: `likelihood ≥ 50`.
+1. Each channel produces `score` in `[0, 1]` and `confidence` in `[0, 1]`.
+2. Channels with data are lobby-normalised with a trimmed mean and 40%
+   shrinkage, so one outlier cannot inflate their own baseline.
+3. Scores combine via Bayesian log-odds with a 10% prior. Positive-only
+   channels contribute no negative evidence; bidirectional channels do.
+4. Modifiers apply in registry order, then the likelihood is clamped to 100.
+5. Flag threshold: `likelihood ≥ 50`.
 
 ## Integration patches (deviations from upstream)
 
-These changes are intentional and covered by tests/docs. Upstream logic is
+These changes are intentional and covered by tests/docs. Scoring logic is
 otherwise unchanged.
 
-1. **Snap velocity unit bug fixed** (`snap_collectors.go`).
-   Upstream `angleDiff` returns **degrees**, but the collector multiplied the
-   result by `180/π` again, inflating snap velocity ~57×. A clean player with
-   normal flicks showed ~7.7 °/ms (blatant) instead of ~0.13 °/ms. Removing the
-   double conversion eliminates a major false-positive source.
-
-2. **Sub-100 ms floor requires a real sample** (`cheatscore_overrides.go`).
-   Upstream floored any player at 55 % with ≥3 TTD samples, ≥25 % sub-100 ms
-   and a pre-FOV median ≤10° in an asymmetric lobby. On short/custom lobbies
-   this flagged a clean player (4/17 sub-100, 9.2° preaim). The floor now needs:
-   - ≥20 TTD samples,
-   - ≥5 sub-100 ms engagements,
-   - pre-FOV median ≤9° on ≥8 pre-FOV samples,
-   - lobby asymmetry.
-
-3. **Same-tick TTD discarded** (`reaction_collectors.go`).
-   A sighting and damage in the same tick is a radar-spot artifact, not a
-   reaction. Samples below half a tick are dropped, and a `sub_100ms_count`
-   metric is published for the floor gate.
-
+1. **Snap velocity unit bug fixed** (`snap_collectors.go`). Upstream
+   `angleDiff` returns degrees but multiplied by `180/π` again, inflating snap
+   velocity ~57×. Removing the double conversion eliminates a major
+   false-positive source.
+2. **Sub-100 ms floor tightened** (`mod_ttd_sub100_floor.go`). Upstream
+   floored at 55% with 3 samples; the floor now requires ≥20 TTD samples,
+   ≥5 sub-100 ms events, a ≤9° pre-FOV median on ≥8 samples, and lobby
+   asymmetry. Details in
+   [`ttd_sub100_high_floor.md`](detections/ttd_sub100_high_floor.md).
+3. **Same-tick TTD discarded** (`reaction_collectors.go`). A sighting and
+   damage in the same tick is a radar-spot artifact, not a reaction.
 4. **Debug stdout removed** (`recoil_collectors.go`).
-   Upstream printed a debug block on every run.
-
-5. **Adapter additions** (`battlelog.go`) only; no scoring changes.
-
-6. **Timestamped evidence cues** (`types.go`, `snap_collectors.go`,
-   `reaction_collectors.go`, `behavioral_collectors.go`,
-   `recoil_collectors.go`, new `evidence_collector.go`). Each collector appends
-   an `EvidenceMoment` when the signal crosses the corresponding channel ramp:
-
-   | Cue | Threshold |
-   |---|---|
-   | `snap` | ≥ 2.0 °/ms |
-   | `ttd` / `ttd_sub100` | ≤ 250 ms / ≤ 100 ms |
-   | `preaim` | ≤ 12° pre-FOV angle |
-   | `recoil` | ≤ 0.30° mean spray error, ≥ 3 bullets |
-   | `wallbang`, `smoke`, `noscope` | any qualifying kill |
-
-   Moments carry an additive per-player cap (50/kind, 200 total), never feed
-   the score, and are exposed through `BattlelogReports` → `model.CheatReport`.
-   `internal/analysis` maps their ticks to round numbers and seconds. Scoring
-   output is unchanged; calibration tests must stay green.
+5. **Unused weapon-usage collector removed** and unused reporter code dropped
+   during vendoring.
+6. **Timestamped evidence cues** added per detection; see
+   [`evidence.md`](detections/evidence.md). Cues never feed the score.
+7. **Package reorganisation.** Detection scoring was split from the upstream
+   monolithic files into one file per detection/modifier with a registry. The
+   formulas, weights and thresholds are unchanged; this is structure only.
 
 The vendored code should be updated as a unit when upstream changes. Re-apply
-the patches and re-run `docs/testing.md` checks plus the anti-cheat calibration
-tests.
+the patches and re-run the calibration plus per-detection tests.
 
 ## Calibration tests
 
-`internal/anticheat/stats/calibration_test.go` covers:
-
-- thin sub-100 sample does **not** pin a clean player at 55 %,
-- a large, unambiguous triggerbot profile **does** floor at ≥55 %,
-- `angleDiff` remains degrees (snap-unit regression).
+- `stats/calibration_test.go` covers the sub-100 floor and snap-unit
+  regression.
+- `stats/registry_test.go` pins the channel/modifier surface.
+- `stats/detect_*_test.go` covers each signal independently.
+- `stats/docs_sync_test.go` fails when a registered feature has no page.
 
 ## Limitations
 
@@ -118,10 +107,9 @@ tests.
   visibility, especially for preaim/TTD channels.
 - Short matches, custom lobbies, and unusual game modes reduce confidence.
   Read the sample counts and zones.
-- No cross-demo history: each report is one match. A single-game sample can be
-  noisy; future work can aggregate per SteamID.
-- Warmup is included by the upstream detector (it does not filter warmup),
-  which can add noise. The battlelog timeline excludes it.
+- No cross-demo history: each report is one match.
+- Warmup is included by the upstream detector; the battlelog timeline excludes
+  it.
 
 ## Responsible use
 
