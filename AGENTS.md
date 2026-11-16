@@ -8,8 +8,9 @@ aim stats and a vendored anti-cheat analysis.
 1. `docs/README.md` — documentation index and reading order.
 2. `docs/architecture.md` — pipeline and package boundaries.
 3. `docs/conventions.md` — global rules (errors, escaping, tests, commits).
-4. The `AGENTS.md` in the folder you are editing.
-5. `docs/THIRD_PARTY.md` before touching `src/internal/anticheat`.
+4. `docs/theme.md` — the single colour and theming guideline before touching UI.
+5. The `AGENTS.md` in the folder you are editing.
+6. `docs/THIRD_PARTY.md` before touching `src/internal/anticheat`.
 
 ## Ground rules
 

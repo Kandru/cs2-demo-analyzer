@@ -116,10 +116,15 @@ Never fill a whole card with a team colour. Never use CT blue for links.
 | Token | Value | Role |
 |---|---|---|
 | `--danger` / `--danger-text` | `#e06060` / `#ff9a9a` | flags, errors |
+| `--danger-soft` / `--danger-border` | `rgba(224, 96, 96, 0.14)` / `rgba(224, 96, 96, 0.5)` | error tint and outline |
 | `--warning` / `--warning-text` | `#e08a3c` / `#f3b47a` | review, warnings |
+| `--warning-soft` / `--warning-border` | `rgba(224, 138, 60, 0.14)` / `rgba(224, 138, 60, 0.5)` | warning tint and outline |
 | `--success` / `--success-text` | `#7fc98a` / `#a7e3b0` | clean, positive |
+| `--success-soft` / `--success-border` | `rgba(127, 201, 138, 0.14)` / `rgba(127, 201, 138, 0.5)` | success tint and outline |
 | `--info` / `--info-text` | `#6fa8dc` / `#9cc8ef` | informational labels |
+| `--info-soft` / `--info-border` | `rgba(111, 168, 220, 0.14)` / `rgba(111, 168, 220, 0.5)` | info tint and outline |
 | `--neutral` / `--neutral-text` | `#8f979e` / `#b7bec4` | unknown, unavailable |
+| `--neutral-soft` / `--neutral-border` | `rgba(143, 151, 158, 0.12)` / `rgba(143, 151, 158, 0.42)` | neutral tint and outline |
 
 Each group also has `*-soft` and `*-border` tokens for tinted surfaces and
 outlines. Status colours are independent from team colours.
@@ -154,12 +159,27 @@ team colour.
 |---|---|
 | `--font-ui` | system UI stack, no web fonts |
 | `--font-mono` | timestamps and numeric tables |
-| `--fs-xs` ... `--fs-3xl` | fluid type scale |
+| `--fs-xs` | 0.68rem small labels |
+| `--fs-sm` | 0.78rem table and metadata text |
+| `--fs-base` | 0.92rem body text |
+| `--fs-md` | 1rem emphasis |
+| `--fs-lg` | 1.18rem card headings |
+| `--fs-xl` | 1.5rem reserved large heading |
+| `--fs-2xl` | 2rem reserved display heading |
+| `--fs-3xl` | fluid page title |
 | `--lh-tight` / `--lh-base` | heading and body line height |
-| `--space-1` ... `--space-8` | spacing scale |
+| `--space-1` | 0.25rem |
+| `--space-2` | 0.5rem |
+| `--space-3` | 0.75rem |
+| `--space-4` | 1rem |
+| `--space-5` | 1.5rem |
+| `--space-6` | 2rem |
+| `--space-7` | 3rem |
+| `--space-8` | 4rem |
 | `--radius` | always `0` for hard corners |
 | `--border-w` | bevel border width |
 | `--tap` | minimum interactive target |
+| `--touch-gap` | minimum gap between touch targets |
 | `--content-max` | maximum content width for 4K screens |
 
 Media-query breakpoints are documented here because CSS custom properties

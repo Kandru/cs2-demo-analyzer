@@ -53,7 +53,29 @@ reachability notes, the audit workflow, and the upstream proposals for removing
 Run `cd src && go list -m all` for the complete module graph. License texts are
 available from the respective module caches/repositories.
 
-## Design
+## Vendored CSS: new.css
 
-The dark UI is an original CSS implementation. No EA logos,
-fonts, map screenshots, or other assets are included.
+- Source: <https://github.com/xz/new.css>
+- Location: `src/internal/report/html/assets/vendor/new.css`
+- License: MIT, copyright (c) 2020 Brendan Hersh
+- License text: `src/internal/report/html/assets/vendor/new.css.LICENSE`
+
+`new.css` is used only as a small framework/reset layer. Every visible colour
+is overridden by the first-party `assets/theme.css` token source. The vendored
+file is not edited.
+
+## Design and brand assets
+
+The dark CS 1.6-inspired UI is an original CSS implementation. No EA logos,
+game fonts, map screenshots or other game assets are included.
+
+The project logo and favicon were supplied by the repository owner in
+`docs/assets/`. Optimised, small derivatives are embedded in generated reports:
+
+- `assets/brand-mark.png`
+- `assets/logo.jpg`
+- `assets/favicon-32.png`
+- `assets/apple-touch-icon.png`
+
+The source files are not modified. The report embeds only the optimised copies,
+and an automated test enforces the inline asset budget.

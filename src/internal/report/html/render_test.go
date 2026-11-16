@@ -260,3 +260,87 @@ func TestTimelineFallsBackToEconomyForTeamSwap(t *testing.T) {
 		t.Fatal("fallback team swap event missing")
 	}
 }
+
+func TestRenderTimelineLifecycleRowsAreEscaped(t *testing.T) {
+	m := testMatch()
+	m.Events = []*model.Event{
+		{Type: "player_connect", Offset: 1, ActorName: `<script>connect</script>`},
+		{Type: "team_change", Offset: 2, ActorName: "kalle", OldSide: model.SideSpectator, NewSide: model.SideCT},
+		{Type: "team_swap", Offset: 3, Text: "Teams switched sides"},
+	}
+	var buf bytes.Buffer
+	if err := Render(&buf, testDocument(m, "test"), Options{}); err != nil {
+		t.Fatal(err)
+	}
+	page := buf.String()
+	for _, want := range []string{
+		`data-type="player_connect"`,
+		`&lt;script&gt;connect&lt;/script&gt; connected`,
+		`joined Counter-Terrorists`,
+		`data-type="team_swap"`,
+		`Teams switched sides`,
+		`0:01`,
+	} {
+		if !strings.Contains(page, want) {
+			t.Errorf("missing %q in timeline", want)
+		}
+	}
+	if strings.Contains(page, "<script>connect</script>") {
+		t.Fatal("lifecycle player name was not escaped")
+	}
+}
+
+func TestRenderMetadataFooterAndRemovedDisclaimer(t *testing.T) {
+	var buf bytes.Buffer
+	if err := Render(&buf, testDocument(nil, "test"), Options{IndexHref: IndexFileName}); err != nil {
+		t.Fatal(err)
+	}
+	page := buf.String()
+	for _, want := range []string{
+		`<meta name="author" content="cs2-demo-analyzer from kandru.net">`,
+		`by cs2-demo-analyzer from kandru.net`,
+		`href="https://github.com/Kandru/cs2-demo-analyzer"`,
+		`rel="icon"`,
+		`apple-touch-icon`,
+	} {
+		if !strings.Contains(page, want) {
+			t.Errorf("missing %q in report", want)
+		}
+	}
+	if !strings.Contains(page, `name="description" content="`) || !strings.Contains(page, `by cs2-demo-analyzer from kandru.net">`) {
+		t.Fatal("description metadata is missing the byline")
+	}
+	if strings.Contains(page, "Demo content is untrusted input") {
+		t.Fatal("removed footer disclaimer is still present")
+	}
+}
+
+func TestIndexMetadataAndSharedFooter(t *testing.T) {
+	v := &IndexView{
+		Title:       "Match reports",
+		Version:     "test",
+		GeneratedAt: "2026.11.16 12:11",
+		Count:       1,
+		Groups: []IndexServerGroup{{
+			Name:    "Server",
+			Entries: []IndexEntry{{Href: "match.html", Name: "Mirage", Played: "2026-11-15 12:00"}},
+		}},
+	}
+	var buf bytes.Buffer
+	if err := RenderIndex(&buf, v); err != nil {
+		t.Fatal(err)
+	}
+	page := buf.String()
+	for _, want := range []string{
+		`<meta name="author" content="cs2-demo-analyzer from kandru.net">`,
+		`by cs2-demo-analyzer from kandru.net`,
+		`href="https://github.com/Kandru/cs2-demo-analyzer"`,
+		`rel="icon"`,
+		"CS2 Demo Analyzer",
+		"vtest",
+	} {
+		if !strings.Contains(page, want) {
+			t.Errorf("missing %q in index", want)
+		}
+	}
+}

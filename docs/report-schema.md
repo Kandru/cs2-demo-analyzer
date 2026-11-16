@@ -46,9 +46,27 @@ mtime. A missing or corrupt header marks the artifact stale.
 | `players` | `Player[]` | sorted by team then kills |
 | `rounds` | `Round[]` | pregame rounds have `number: 0`, `pregame: true` |
 | `warmup` | `Warmup?` | omitted if no warmup activity |
+| `events` | `Event[]?` | match-level lifecycle events; offsets are absolute demo seconds |
 | `summary` | `Summary?` | derived; also recomputed after cheat merge |
 | `warnings`, `partial`, `parseError` | — | partial-data reporting |
 | `parserVersion`, `toolVersion` | string | provenance |
+
+## Match lifecycle events
+
+`Match.events` is a separate stream from round and warmup event lists. It is
+optional and backward compatible. Every entry uses the normal `Event` shape and
+an absolute `offsetSeconds`.
+
+| Type | Meaning |
+|---|---|
+| `player_connect` | player or bot connected |
+| `player_disconnect` | player disconnected |
+| `team_change` | player moved between spectator/unassigned and a team, or changed sides outside a halftime swap |
+| `team_swap` | both teams exchanged sides at halftime or in overtime |
+
+`team_change` entries may carry `oldSide` and `newSide`. `team_swap` entries use
+`text` with the new side assignment. Round and warmup `Event` offsets remain
+relative to their section; only `Match.events` offsets are absolute.
 
 ## `Team`
 

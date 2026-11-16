@@ -29,7 +29,8 @@ Start here, then follow the doc for the area you are changing.
 |---|---|
 | [install.md](install.md) | Linux installer, self-update, upgrade and uninstall |
 | [watching.md](watching.md) | Watch lifecycle, manifest, Docker mounts |
-| [report-ui.md](report-ui.md) | Sections, design tokens, accessibility |
+| [report-ui.md](report-ui.md) | Sections, components, timeline, accessibility |
+| [theme.md](theme.md) | Colour tokens, CS2 team colours, AI/human design rules |
 | [testing.md](testing.md) | Test layers, docs-sync checks, demo harness |
 | [releasing.md](releasing.md) | Version scheme and release workflow |
 | [dependencies.md](dependencies.md) | Compiled modules, audit workflow, upstream cleanup |

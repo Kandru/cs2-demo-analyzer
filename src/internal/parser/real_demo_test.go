@@ -24,6 +24,9 @@ func TestParseRealDemo(t *testing.T) {
 	if len(m.Rounds) == 0 {
 		t.Fatal("no rounds")
 	}
+	if len(m.Events) == 0 {
+		t.Fatal("no match lifecycle events")
+	}
 	last := m.Rounds[len(m.Rounds)-1]
 	if last.EndScore[0] == 0 && last.EndScore[1] == 0 {
 		t.Fatalf("scores look unmapped: %v", last.EndScore)

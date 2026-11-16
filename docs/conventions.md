@@ -67,8 +67,11 @@ These rules apply to the whole repository.
 
 ## UI
 
-- Dark only, no light theme. Use the CSS tokens in
-  `report/html/assets/style.css`.
+- Dark only, no light theme. Read [theme.md](theme.md) first.
+- `report/html/assets/theme.css` is the only file with raw colour values. All
+  component CSS, templates and scripts consume tokens.
+- CS2 CT blue and T yellow are team identity only. Gold is the CS 1.6 accent;
+  round alternation uses structural gold/steel.
 - Works with JS disabled: every section and every event must render.
 - Minimum 4.5:1 contrast for body text; do not rely on color alone (badges and
   text accompany team/flag colors).

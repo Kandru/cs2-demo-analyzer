@@ -32,7 +32,10 @@ pass, and the anti-cheat detector is a separate pass in `internal/anticheat`.
 | `RoundEnd` | Winner, reason, score, duration, end event |
 | `RoundEndOfficial` | Safety net if `RoundEnd` was missed |
 | `IsWarmupPeriodChanged` | Switches aim/aggregate collection off during warmup |
-| `TeamSideSwitch` / half changes | Not stored directly; sides are read per player at round start |
+| `PlayerConnect` / `BotConnect` | Match-level `player_connect` lifecycle event |
+| `PlayerDisconnected` | Match-level `player_disconnect` lifecycle event |
+| `PlayerTeamChange` | Match-level `team_change` for spectator/team moves; halftime mass swaps are folded into one `team_swap` |
+| `TeamSideSwitch` / half changes | One `team_swap` lifecycle event, detected from stable roster-mapped team IDs at round start |
 
 ## Round counting and scores
 
@@ -57,6 +60,11 @@ pass, and the anti-cheat detector is a separate pass in `internal/anticheat`.
 All kills/utility before the first official round go to `Match.Warmup`, not to
 player aggregates or aim stats. The report always renders warmup first when
 present. Warmup end is the first official round start.
+
+Lifecycle events are separate: `Match.Events` stores connects, disconnects,
+team changes and side swaps with absolute demo offsets. They are placed before,
+inside or between rounds by the report timeline, so a connection during warmup
+or a halftime team change keeps its real demo timestamp.
 
 ## Stats
 
