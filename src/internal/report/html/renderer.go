@@ -48,9 +48,7 @@ func dataURI(mime string, data []byte) template.URL {
 	return template.URL("data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(data))
 }
 
-func fullCSS() template.CSS {
-	return template.CSS(baseCSS + "\n" + themeCSS + "\n" + styleCSS)
-}
+var reportCSS = template.CSS(baseCSS + "\n" + themeCSS + "\n" + styleCSS)
 
 var reportTemplate = template.Must(
 	template.New("report.gohtml").Funcs(FuncMap()).ParseFS(templatesFS, "templates/components.gohtml", "templates/report.gohtml"),
@@ -75,7 +73,7 @@ func Render(w io.Writer, doc *report.Document, opts Options) error {
 		return err
 	}
 	v := newView(doc, opts)
-	v.CSS = fullCSS()
+	v.CSS = reportCSS
 	v.JS = template.JS(appJS)
 	v.Assets = reportAssets
 	if _, err := io.WriteString(w, "<!doctype html>\n"+comment+"\n"); err != nil {

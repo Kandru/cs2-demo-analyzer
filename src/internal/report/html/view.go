@@ -17,14 +17,11 @@ type View struct {
 	Title        string
 	Description  string
 	Version      string
-	GeneratedAt  string
 	CSS          template.CSS
 	JS           template.JS
 	Match        *model.Match
 	Teams        []*TeamView
 	Players      []*PlayerView
-	Rounds       []*RoundView
-	Warmup       *TimelineView
 	Timeline     []*TimelineSection
 	Summary      *model.Summary
 	TeamStats    []model.TeamStats
@@ -32,7 +29,6 @@ type View struct {
 	Cheaters     []*CheaterView
 	RoundStrip   []RoundStripView
 	DemoDownload *DemoLink
-	IndexHref    string
 	Chrome       *ChromeView
 	Footer       *FooterView
 	Assets       *AssetView
@@ -111,36 +107,28 @@ type TeamView struct {
 
 // PlayerView is the template view of one player.
 type PlayerView struct {
-	Player              *model.Player
-	Team                *model.Team
-	Anchor              string
-	Initials            string
-	TeamName            string
-	Side                string
-	Rounds              []PlayerRoundView
-	Sides               []SideView
-	Weapons             []WeaponView
-	Aim                 []MetricView
-	Cheat               *CheatView
-	Moments             []*MomentView
-	TopMoments          []*MomentView
-	MomentCount         int
-	ShowReview          bool
-	Flagged             bool
-	KDDisplay           string
-	ADRDisplay          string
-	HSDisplay           string
-	AimDisplay          string
-	AimGrade            string
-	ScoreDisplay        string
-	AccuracyDisplay     string
-	HeadAccuracyDisplay string
-	CounterDisplay      string
-	SprayDisplay        string
-	DamageSpeedDisplay  string
-	ReactionDisplay     string
-	PreaimDisplay       string
-	Search              string
+	Player       *model.Player
+	Anchor       string
+	Initials     string
+	TeamName     string
+	Side         string
+	Rounds       []PlayerRoundView
+	Sides        []SideView
+	Weapons      []WeaponView
+	Aim          []MetricView
+	Cheat        *CheatView
+	Moments      []*MomentView
+	TopMoments   []*MomentView
+	MomentCount  int
+	ShowReview   bool
+	Flagged      bool
+	KDDisplay    string
+	ADRDisplay   string
+	HSDisplay    string
+	AimDisplay   string
+	AimGrade     string
+	ScoreDisplay string
+	Search       string
 }
 
 // PlayerRoundView is one row in the per-round table.
@@ -156,7 +144,6 @@ type PlayerRoundView struct {
 	Result      string
 	ResultClass string
 	KAST        bool
-	KD          string
 }
 
 // SideView is a T/CT split row.
@@ -172,22 +159,19 @@ type SideView struct {
 
 // WeaponView is one row in the weapon table.
 type WeaponView struct {
-	Name      string
-	Kills     int
-	Headshots int
-	Damage    int
-	Shots     int
-	Hits      int
-	Accuracy  string
-	HSRate    string
+	Name     string
+	Kills    int
+	Damage   int
+	Shots    int
+	Hits     int
+	Accuracy string
+	HSRate   string
 }
 
 // MetricView is one aim tile.
 type MetricView struct {
-	ID        string
 	Label     string
 	Display   string
-	Score     float64
 	ScorePct  int
 	Samples   int
 	LowSample bool
@@ -197,7 +181,6 @@ type MetricView struct {
 
 // CheatView is the anti-cheat card model.
 type CheatView struct {
-	Report        *model.CheatReport
 	Available     bool
 	Verdict       string
 	VerdictClass  string
@@ -230,7 +213,6 @@ type CheaterView struct {
 	Cheat       *CheatView
 	TopChannels []ChannelView
 	TopMoments  []*MomentView
-	MomentCount int
 	Search      string
 }
 
@@ -270,22 +252,6 @@ type RoundStripView struct {
 	Overtime bool
 }
 
-// RoundView is one round panel.
-type RoundView struct {
-	Round       *model.Round
-	Anchor      string
-	Label       string
-	Time        string
-	Duration    string
-	WinnerClass string
-	Score       string
-	ChipClass   string
-	HasFlag     bool
-	Economy     []EconomyView
-	Events      []EventView
-	Search      string
-}
-
 // EconomyView is a team economy chip.
 type EconomyView struct {
 	TeamName string
@@ -295,16 +261,9 @@ type EconomyView struct {
 	Class    string
 }
 
-// TimelineView is the warmup timeline.
-type TimelineView struct {
-	Duration string
-	Events   []EventView
-}
-
 // EventView is a pre-rendered timeline row.
 type EventView struct {
 	Type         string
-	Time         string
 	AbsoluteTime string
 	RoundTime    string
 	Icon         string
@@ -318,19 +277,17 @@ type EventView struct {
 type EventPart struct {
 	Text string
 	Href string
-	Bold bool
 }
 
 // newView builds the template model from the canonical document.
 func newView(doc *report.Document, opts Options) *View {
 	m := doc.Match
+	generatedAt := doc.Header.GeneratedAt.Local().Format("2006-01-02 15:04 MST")
 	v := &View{
 		Version:      doc.Header.ToolVersion,
-		GeneratedAt:  doc.Header.GeneratedAt.Local().Format("2006-01-02 15:04 MST"),
 		Match:        m,
 		Summary:      m.Summary,
 		DemoDownload: opts.DemoDownload,
-		IndexHref:    opts.IndexHref,
 	}
 	title := m.Map
 	if title == "" {
@@ -345,19 +302,12 @@ func newView(doc *report.Document, opts Options) *View {
 	}
 	v.Teams = buildTeams(m, v.TeamStats)
 	v.Players = buildPlayers(m)
-	v.Rounds = buildRounds(m)
 	v.RoundStrip = buildRoundStrip(m)
 	v.Cheaters = buildCheaters(v.Players)
-	if m.Warmup != nil && len(m.Warmup.Events) > 0 {
-		v.Warmup = &TimelineView{
-			Duration: clock(m.Warmup.Duration),
-			Events:   buildEvents(m.Warmup.Events, m),
-		}
-	}
 	v.Timeline = buildTimeline(m)
 	markFlaggedRounds(v, m)
 	v.Warnings = m.Warnings
-	v.Description = fmt.Sprintf("CS2 match report for %s - %s - by cs2-demo-analyzer from kandru.net", v.Title, m.Mode)
+	v.Description = fmt.Sprintf("CS2 match report for %s - %s - %s", v.Title, m.Mode, byline)
 	v.Chrome = &ChromeView{
 		BrandHref:  chromeHref(opts.IndexHref),
 		BrandLabel: brandLabel(opts.IndexHref),
@@ -376,9 +326,9 @@ func newView(doc *report.Document, opts Options) *View {
 		v.Chrome.BackLabel = "All reports"
 	}
 	v.Footer = &FooterView{
-		RepoURL:       RepoURL,
+		RepoURL:       repoURL,
 		Version:       v.Version,
-		GeneratedAt:   v.GeneratedAt,
+		GeneratedAt:   generatedAt,
 		ParserVersion: m.ParserVersion,
 	}
 	return v
@@ -439,7 +389,6 @@ func buildPlayers(m *model.Match) []*PlayerView {
 func buildPlayer(m *model.Match, p *model.Player) *PlayerView {
 	pv := &PlayerView{
 		Player:       p,
-		Team:         m.TeamByID(p.TeamID),
 		Anchor:       "player-" + p.Slug,
 		Initials:     initials(p.Name),
 		Flagged:      p.Cheat != nil && p.Cheat.Flagged,
@@ -448,9 +397,9 @@ func buildPlayer(m *model.Match, p *model.Player) *PlayerView {
 		HSDisplay:    fmt.Sprintf("%.0f%%", p.Stats.HSPercent),
 		ScoreDisplay: fmt.Sprintf("%d", p.Stats.Score),
 	}
-	if pv.Team != nil {
-		pv.TeamName = pv.Team.Name
-		pv.Side = string(pv.Team.StartSide)
+	if team := m.TeamByID(p.TeamID); team != nil {
+		pv.TeamName = team.Name
+		pv.Side = string(team.StartSide)
 	}
 	terms := []string{p.ID, p.Name, p.Slug, p.ClanTag, pv.TeamName}
 	terms = append(terms, p.Aliases...)
@@ -484,7 +433,6 @@ func buildPlayer(m *model.Match, p *model.Player) *PlayerView {
 			Result:      res,
 			ResultClass: resClass,
 			KAST:        rs.KAST,
-			KD:          ratio(rs.Kills, rs.Deaths),
 		})
 	}
 	for _, side := range []model.Side{model.SideT, model.SideCT} {
@@ -507,32 +455,15 @@ func buildPlayer(m *model.Match, p *model.Player) *PlayerView {
 		pv.AimGrade = p.Aim.Grade
 		for _, mt := range p.Aim.Metrics {
 			pv.Aim = append(pv.Aim, metricView(mt))
-			switch mt.ID {
-			case "accuracy":
-				pv.AccuracyDisplay = mt.Display
-			case "head_accuracy":
-				pv.HeadAccuracyDisplay = mt.Display
-			case "counter_strafe":
-				pv.CounterDisplay = mt.Display
-			case "spray":
-				pv.SprayDisplay = mt.Display
-			case "damage_speed":
-				pv.DamageSpeedDisplay = mt.Display
-			case "reaction":
-				pv.ReactionDisplay = mt.Display
-			case "preaim":
-				pv.PreaimDisplay = mt.Display
-			}
 		}
 	}
 	for _, ws := range p.Weapons {
 		wv := WeaponView{
-			Name:      ws.Name,
-			Kills:     ws.Kills,
-			Headshots: ws.Headshots,
-			Damage:    ws.Damage,
-			Shots:     ws.Shots,
-			Hits:      ws.Hits,
+			Name:   ws.Name,
+			Kills:  ws.Kills,
+			Damage: ws.Damage,
+			Shots:  ws.Shots,
+			Hits:   ws.Hits,
 		}
 		if ws.Shots > 0 {
 			wv.Accuracy = fmt.Sprintf("%.1f%%", ws.Accuracy)
@@ -593,10 +524,8 @@ func metricView(mt model.AimMetric) MetricView {
 		}
 	}
 	return MetricView{
-		ID:        mt.ID,
 		Label:     mt.Label,
 		Display:   plainDashes(mt.Display),
-		Score:     mt.Score,
 		ScorePct:  clampPct(mt.Score),
 		Samples:   mt.Samples,
 		LowSample: mt.LowSample,
@@ -610,7 +539,6 @@ func buildCheat(cr *model.CheatReport) *CheatView {
 		return &CheatView{Available: false, Verdict: "Not analyzed", VerdictClass: "unavailable", Error: "anti-cheat detector was not run"}
 	}
 	cv := &CheatView{
-		Report:        cr,
 		Available:     cr.Available,
 		OverallGrade:  cr.OverallGrade,
 		Grades:        cr.Grades,
@@ -680,7 +608,6 @@ func buildCheaters(players []*PlayerView) []*CheaterView {
 			Cheat:       pv.Cheat,
 			TopChannels: topChannels(pv.Cheat.Channels, 3),
 			TopMoments:  topMoments(pv.Moments, 10),
-			MomentCount: pv.MomentCount,
 			Search:      pv.Search,
 		})
 	}
@@ -852,6 +779,36 @@ func topMoments(in []*MomentView, n int) []*MomentView {
 	return sorted
 }
 
+func roundAnchor(r *model.Round) string {
+	return fmt.Sprintf("round-%d", r.StartTick)
+}
+
+func roundLabel(r *model.Round) string {
+	if r.Pregame {
+		return "Pregame"
+	}
+	label := fmt.Sprintf("Round %d", r.Number)
+	if r.Overtime {
+		label += " (OT)"
+	}
+	return label
+}
+
+func roundWinner(m *model.Match, r *model.Round) string {
+	if t := m.TeamByID(r.WinnerTeamID); t != nil {
+		return t.Name
+	}
+	return "Draw"
+}
+
+func roundSearch(m *model.Match, r *model.Round, label string) string {
+	search := searchKey("round", strconv.Itoa(r.Number), label, r.Reason, r.Message, roundWinner(m, r), teamSideClass(r.Winner))
+	if r.Overtime {
+		search += " overtime ot"
+	}
+	return search
+}
+
 func buildRoundStrip(m *model.Match) []RoundStripView {
 	out := make([]RoundStripView, 0, len(m.Rounds))
 	for _, r := range m.Rounds {
@@ -860,8 +817,8 @@ func buildRoundStrip(m *model.Match) []RoundStripView {
 		}
 		rv := RoundStripView{
 			Number:   r.Number,
-			Label:    fmt.Sprintf("%d", r.Number),
-			Anchor:   fmt.Sprintf("round-%d", r.StartTick),
+			Label:    strconv.Itoa(r.Number),
+			Anchor:   roundAnchor(r),
 			Class:    teamSideClass(r.Winner),
 			Score:    fmt.Sprintf("%d:%d", r.EndScore[0], r.EndScore[1]),
 			Overtime: r.Overtime,
@@ -869,11 +826,7 @@ func buildRoundStrip(m *model.Match) []RoundStripView {
 		if len(r.Economy) > 0 {
 			rv.BuyClass = buyClass(r.Economy[0].BuyType)
 		}
-		winner := "Draw"
-		if t := m.TeamByID(r.WinnerTeamID); t != nil {
-			winner = t.Name
-		}
-		rv.Title = fmt.Sprintf("Round %d - %s %d:%d - %s", r.Number, winner, r.EndScore[0], r.EndScore[1], r.Reason)
+		rv.Title = fmt.Sprintf("%s - %s %d:%d - %s", roundLabel(r), roundWinner(m, r), r.EndScore[0], r.EndScore[1], r.Reason)
 		out = append(out, rv)
 	}
 	return out
@@ -944,7 +897,7 @@ func buildTimeline(m *model.Match) []*TimelineSection {
 			Kind:   "pre",
 			Label:  "Before the first round",
 			Search: searchKey("pre-match", "before the first round"),
-			Time:   pre[0].view.Time,
+			Time:   pre[0].view.AbsoluteTime,
 			Rows:   timelineViews(pre),
 			Class:  "alt-a",
 		})
@@ -1023,25 +976,13 @@ func buildTimeline(m *model.Match) []*TimelineSection {
 			})
 		}
 		sortTimelineEntries(rows)
-		label := fmt.Sprintf("Round %d", r.Number)
-		if r.Pregame {
-			label = "Pregame"
-		} else if r.Overtime {
-			label += " (OT)"
-		}
-		winner := "Draw"
-		if t := m.TeamByID(r.WinnerTeamID); t != nil {
-			winner = t.Name
-		}
-		search := searchKey("round", strconv.Itoa(r.Number), label, r.Reason, r.Message, winner, teamSideClass(r.Winner))
-		if r.Overtime {
-			search += " overtime ot"
-		}
+		label := roundLabel(r)
+		search := roundSearch(m, r, label)
 		sections = append(sections, &TimelineSection{
 			Kind:     "round",
 			Label:    label,
 			Search:   search,
-			Anchor:   fmt.Sprintf("round-%d", r.StartTick),
+			Anchor:   roundAnchor(r),
 			Time:     clock(r.StartOffset),
 			EndTime:  clock(r.EndOffset),
 			Duration: clock(r.Duration),
@@ -1078,7 +1019,7 @@ func buildTimeline(m *model.Match) []*TimelineSection {
 				Kind:   "gap",
 				Label:  label,
 				Search: searchKey(label, "between rounds"),
-				Time:   gap[0].view.Time,
+				Time:   gap[0].view.AbsoluteTime,
 				Rows:   timelineViews(gap),
 				Class:  "gap",
 			})
@@ -1103,7 +1044,7 @@ func buildTimeline(m *model.Match) []*TimelineSection {
 			Kind:   "post",
 			Label:  label,
 			Search: search,
-			Time:   rest[0].view.Time,
+			Time:   rest[0].view.AbsoluteTime,
 			Rows:   timelineViews(rest),
 			Class:  "gap",
 		})
@@ -1129,13 +1070,11 @@ func timelineViews(entries []timelineEntry) []EventView {
 }
 
 func roundClass(r *model.Round) string {
-	classes := []string{teamSideClass(r.Winner), "neutral"}
+	parity := "alt-a"
 	if r.Number%2 == 0 {
-		classes[1] = "alt-b"
-	} else {
-		classes[1] = "alt-a"
+		parity = "alt-b"
 	}
-	return strings.Join(classes, " ")
+	return strings.Join(compact(teamSideClass(r.Winner), parity), " ")
 }
 
 func buildEconomy(r *model.Round, m *model.Match) []EconomyView {
@@ -1228,11 +1167,6 @@ func markFlaggedRounds(v *View, m *model.Match) {
 			}
 		}
 	}
-	for _, rv := range v.Rounds {
-		if rv.Round != nil && flagged[rv.Round.Number] {
-			rv.HasFlag = true
-		}
-	}
 	for i := range v.RoundStrip {
 		v.RoundStrip[i].HasFlag = flagged[v.RoundStrip[i].Number]
 	}
@@ -1293,61 +1227,6 @@ var iconByType = map[string]string{
 	"team_swap":         "swap",
 }
 
-func buildRounds(m *model.Match) []*RoundView {
-	out := make([]*RoundView, 0, len(m.Rounds))
-	for _, r := range m.Rounds {
-		rv := &RoundView{
-			Round:       r,
-			Anchor:      fmt.Sprintf("round-%d", r.StartTick),
-			Time:        clock(r.StartOffset),
-			Duration:    clock(r.Duration),
-			WinnerClass: "loss",
-			Score:       fmt.Sprintf("%d : %d", r.EndScore[0], r.EndScore[1]),
-		}
-		if r.Pregame {
-			rv.Label = "Pregame"
-			rv.ChipClass = "pregame"
-		} else {
-			rv.Label = fmt.Sprintf("Round %d", r.Number)
-			if r.Overtime {
-				rv.Label += " (OT)"
-			}
-			rv.ChipClass = teamSideClass(r.Winner)
-		}
-		for _, e := range r.Economy {
-			ev := EconomyView{Equip: e.EquipmentValue, BuyType: e.BuyType, Class: buyClass(e.BuyType)}
-			if t := m.TeamByID(e.TeamID); t != nil {
-				ev.TeamName = t.Name
-			}
-			ev.Side = string(e.Side)
-			rv.Economy = append(rv.Economy, ev)
-		}
-		rv.Events = buildEvents(r.Events, m)
-		winner := "draw"
-		if t := m.TeamByID(r.WinnerTeamID); t != nil {
-			winner = t.Name
-		}
-		rv.Search = searchKey("round", strconv.Itoa(r.Number), rv.Label, r.Reason, r.Message, winner, rv.ChipClass)
-		if r.Overtime {
-			rv.Search += " overtime ot"
-		}
-		out = append(out, rv)
-	}
-	return out
-}
-
-func buildEvents(events []*model.Event, m *model.Match) []EventView {
-	return buildEventsAt(events, m, 0)
-}
-
-func buildEventsAt(events []*model.Event, m *model.Match, base float64) []EventView {
-	out := make([]EventView, 0, len(events))
-	for _, e := range events {
-		out = append(out, buildEvent(e, m, base))
-	}
-	return out
-}
-
 func buildEvent(e *model.Event, m *model.Match, base float64) EventView {
 	slugs := map[string]string{}
 	for _, p := range m.Players {
@@ -1360,7 +1239,6 @@ func buildEvent(e *model.Event, m *model.Match, base float64) EventView {
 	}
 	ev := EventView{
 		Type:         e.Type,
-		Time:         clock(absolute),
 		AbsoluteTime: clock(absolute),
 		RoundTime:    roundTime,
 		Icon:         iconByType[e.Type],
@@ -1533,22 +1411,6 @@ func eventClass(e *model.Event) string {
 	}
 }
 
-func mapClass(m string) string {
-	m = strings.ToLower(strings.TrimSpace(m))
-	m = strings.TrimPrefix(m, "de_")
-	m = strings.TrimPrefix(m, "cs_")
-	var b strings.Builder
-	for _, r := range m {
-		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
-			b.WriteRune(r)
-		}
-	}
-	if b.Len() == 0 {
-		return "map-generic"
-	}
-	return "map-" + b.String()
-}
-
 func gradeClass(g string) string {
 	switch g {
 	case "A+":
@@ -1645,16 +1507,6 @@ func compact(in ...string) []string {
 	return out
 }
 
-func ratio(a, b int) string {
-	if b == 0 {
-		if a == 0 {
-			return "0.00"
-		}
-		return fmt.Sprintf("%d.00", a)
-	}
-	return fmt.Sprintf("%.2f", float64(a)/float64(b))
-}
-
 func clampPct(v float64) int {
 	if v < 0 {
 		return 0
@@ -1694,20 +1546,16 @@ func clock(seconds float64) string {
 // FuncMap returns template helper functions.
 func FuncMap() template.FuncMap {
 	return template.FuncMap{
-		"clock": clock,
-		"ratio": ratio,
-		"pct": func(v float64) string {
-			return fmt.Sprintf("%.1f%%", v)
-		},
+		"clock":  clock,
+		"author": func() string { return author },
+		"byline": func() string { return byline },
 		"one": func(v float64) string {
 			return fmt.Sprintf("%.1f", v)
 		},
 		"zero": func(v float64) string {
 			return fmt.Sprintf("%.0f", v)
 		},
-		"sideClass":  func(s model.Side) string { return teamSideClass(s) },
 		"lower":      strings.ToLower,
 		"gradeClass": gradeClass,
-		"mapClass":   mapClass,
 	}
 }

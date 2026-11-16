@@ -35,7 +35,7 @@
     <div class="footer-meta">
       <span>generated {{.Footer.GeneratedAt}}</span>
       {{if .Footer.ParserVersion}}<span>parser {{.Footer.ParserVersion}}</span>{{end}}
-      <span>by cs2-demo-analyzer from kandru.net</span>
+      <span>{{byline}}</span>
     </div>
   </div>
 </footer>
@@ -43,10 +43,6 @@
 
 {{define "icon" -}}
 <svg class="ico" aria-hidden="true" focusable="false"><use href="#i-{{.}}"></use></svg>
-{{- end}}
-
-{{define "side-chip" -}}
-<span class="side-chip {{sideClass .}}">{{.}}</span>
 {{- end}}
 
 {{define "event-row" -}}
