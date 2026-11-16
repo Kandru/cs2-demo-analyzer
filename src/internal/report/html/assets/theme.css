@@ -1,0 +1,141 @@
+/* CS2 Demo Analyzer theme tokens.
+ *
+ * This is the only stylesheet allowed to contain raw color values. Every
+ * component stylesheet, template and script must consume the custom
+ * properties below. docs/theme.md documents the roles and contrast targets.
+ *
+ * The visual language is a dark, beveled CS 1.6-inspired interface with CS2
+ * team identity colors. Gold is the primary accent, never a team color.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* surfaces */
+  --bg-0: #090a0b;
+  --bg-1: #0f1113;
+  --bg-2: #15181b;
+  --panel: #181c1f;
+  --panel-2: #1e2327;
+  --panel-3: #252b30;
+  --line-hi: #4a5259;
+  --line: #343a40;
+  --line-soft: #262c31;
+  --line-lo: #050607;
+
+  /* text */
+  --text: #eceff1;
+  --muted: #b7bec4;
+  --dim: #8f979e;
+  --inverse: #0b0d0e;
+
+  /* CS 1.6 HUD gold: interactive accent, never team identity */
+  --accent: #d7c25a;
+  --accent-strong: #f0dd86;
+  --accent-ink: #151203;
+  --accent-soft: rgba(215, 194, 90, 0.14);
+  --accent-border: rgba(215, 194, 90, 0.46);
+
+  /* CS2 team identity: Counter-Terrorists */
+  --team-ct-fill: #5b9bd5;
+  --team-ct-text: #8ec5f2;
+  --team-ct-ink: #081018;
+  --team-ct-soft: rgba(91, 155, 213, 0.16);
+  --team-ct-border: rgba(91, 155, 213, 0.55);
+
+  /* CS2 team identity: Terrorists */
+  --team-t-fill: #e0a73c;
+  --team-t-text: #f2c66d;
+  --team-t-ink: #171006;
+  --team-t-soft: rgba(224, 167, 60, 0.16);
+  --team-t-border: rgba(224, 167, 60, 0.55);
+
+  /* neutral team/spectator identity */
+  --team-spec-fill: #7d858c;
+  --team-spec-text: #b8c0c6;
+  --team-spec-soft: rgba(125, 133, 140, 0.16);
+  --team-spec-border: rgba(125, 133, 140, 0.5);
+
+  /* semantic status */
+  --danger: #e06060;
+  --danger-text: #ff9a9a;
+  --danger-soft: rgba(224, 96, 96, 0.14);
+  --danger-border: rgba(224, 96, 96, 0.5);
+
+  --warning: #e08a3c;
+  --warning-text: #f3b47a;
+  --warning-soft: rgba(224, 138, 60, 0.14);
+  --warning-border: rgba(224, 138, 60, 0.5);
+
+  --success: #7fc98a;
+  --success-text: #a7e3b0;
+  --success-soft: rgba(127, 201, 138, 0.14);
+  --success-border: rgba(127, 201, 138, 0.5);
+
+  --info: #6fa8dc;
+  --info-text: #9cc8ef;
+  --info-soft: rgba(111, 168, 220, 0.14);
+  --info-border: rgba(111, 168, 220, 0.5);
+
+  --neutral: #8f979e;
+  --neutral-text: #b7bec4;
+  --neutral-soft: rgba(143, 151, 158, 0.12);
+  --neutral-border: rgba(143, 151, 158, 0.42);
+
+  /* structural round alternation, intentionally not team colors */
+  --round-a: #d7c25a;
+  --round-a-soft: rgba(215, 194, 90, 0.13);
+  --round-b: #8095b0;
+  --round-b-soft: rgba(128, 149, 176, 0.14);
+
+  /* bevel and focus */
+  --bevel-light: #4a5259;
+  --bevel-dark: #050607;
+  --bevel-inset: rgba(255, 255, 255, 0.07);
+  --bevel-shadow: rgba(0, 0, 0, 0.55);
+  --focus: #f0dd86;
+  --focus-ring: rgba(240, 221, 134, 0.55);
+
+  /* typography */
+  --font-ui: "Segoe UI", Tahoma, Verdana, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --fs-xs: 0.68rem;
+  --fs-sm: 0.78rem;
+  --fs-base: 0.92rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.18rem;
+  --fs-xl: 1.5rem;
+  --fs-2xl: 2rem;
+  --fs-3xl: clamp(2rem, 3vw, 3.4rem);
+  --lh-tight: 1.15;
+  --lh-base: 1.5;
+
+  /* spacing and sizing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --radius: 0;
+  --border-w: 2px;
+  --tap: 2.75rem;
+  --content-max: 3000px;
+  --touch-gap: 0.5rem;
+
+  /* framework overrides: keep new.css as a reset only */
+  --nc-font-sans: var(--font-ui);
+  --nc-font-mono: var(--font-mono);
+  --nc-tx-1: var(--text);
+  --nc-tx-2: var(--text);
+  --nc-bg-1: var(--bg-0);
+  --nc-bg-2: var(--bg-1);
+  --nc-bg-3: var(--bg-2);
+  --nc-lk-1: var(--accent-strong);
+  --nc-lk-2: var(--accent);
+  --nc-lk-tx: var(--accent-ink);
+  --nc-ac-1: var(--accent-soft);
+  --nc-ac-tx: var(--text);
+}
