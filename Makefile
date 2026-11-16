@@ -7,8 +7,9 @@ MODULE          := github.com/Kandru/cs2-demo-analyzer
 VERSION         := $(shell cat VERSION 2>/dev/null || echo dev)
 COMMIT          := $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 BUILD_DATE      := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
-GO_VERSION      := 1.27
-DOCKER_GO_IMAGE ?= golang:$(GO_VERSION)
+GO_VERSION      := 1.27.4
+# Pinned by digest so CI and release builds use the exact audited toolchain.
+DOCKER_GO_IMAGE ?= golang:$(GO_VERSION)@sha256:70bd7ddea8b6cbe5d6943cde279d6b67feb10cc924fb9100d1d8757c1575b280
 GO_MOD_CACHE    ?= cs2-demo-analyzer-go-mod
 GO_BUILD_CACHE  ?= cs2-demo-analyzer-go-build
 DIST            := dist
@@ -29,7 +30,7 @@ DOCKER_RUN = docker run --rm \
 	-e GOOS -e GOARCH \
 	$(DOCKER_GO_IMAGE)
 
-.PHONY: help build build-local test test-cover fmt vet tidy release release-local docker-build run analyze watch version version-bump clean check-docker check-install
+.PHONY: help build build-local test test-cover fmt vet tidy tidy-check audit release release-local docker-build run analyze watch version version-bump clean check-docker check-install
 
 help: ## Show this help (default)
 	@printf '\nCS2 Demo Analyzer — make targets\n\n'
@@ -37,6 +38,7 @@ help: ## Show this help (default)
 	@printf '\nExamples:\n'
 	@printf '  make build                         # linux/amd64 binary in dist/\n'
 	@printf '  make test                          # go test ./... in Docker\n'
+	@printf '  make audit                         # module verify + govulncheck\n'
 	@printf '  make release                       # all release archives + SHA256SUMS\n'
 	@printf '  make release-local                 # same, using the local Go toolchain\n'
 	@printf '  make run ARGS="watch --input ./demos --output ./reports"\n'
@@ -72,6 +74,13 @@ vet: check-docker ## Run go vet in Docker
 
 tidy: check-docker ## Run go mod tidy in Docker
 	$(DOCKER_RUN) go mod tidy
+
+tidy-check: check-docker ## Fail if go.mod/go.sum need tidying
+	$(DOCKER_RUN) go mod tidy -diff
+
+audit: check-docker ## Verify modules and scan for known vulnerabilities
+	$(DOCKER_RUN) go mod verify
+	$(DOCKER_RUN) go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
 
 release: check-docker ## Cross-compile all release archives into dist/ (Docker)
 	@rm -rf $(DIST)
