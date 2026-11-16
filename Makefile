@@ -29,9 +29,7 @@ DOCKER_RUN = docker run --rm \
 	-e GOOS -e GOARCH \
 	$(DOCKER_GO_IMAGE)
 
-RELEASE_TARGETS := linux/amd64 linux/arm64 linux/386 windows/amd64 windows/arm64 darwin/amd64 darwin/arm64
-
-.PHONY: help build build-local test test-cover fmt vet tidy release docker-build run analyze watch version version-bump clean check-docker check-install
+.PHONY: help build build-local test test-cover fmt vet tidy release release-local docker-build run analyze watch version version-bump clean check-docker check-install
 
 help: ## Show this help (default)
 	@printf '\nCS2 Demo Analyzer — make targets\n\n'
@@ -40,6 +38,7 @@ help: ## Show this help (default)
 	@printf '  make build                         # linux/amd64 binary in dist/\n'
 	@printf '  make test                          # go test ./... in Docker\n'
 	@printf '  make release                       # all release archives + SHA256SUMS\n'
+	@printf '  make release-local                 # same, using the local Go toolchain\n'
 	@printf '  make run ARGS="watch --input ./demos --output ./reports"\n'
 	@printf '  make version-bump                 # bump YY.MM.BuildNr in VERSION\n\n'
 	@printf 'Version: %s (%s)\n\n' '$(VERSION)' '$(COMMIT)'
@@ -77,16 +76,12 @@ tidy: check-docker ## Run go mod tidy in Docker
 release: check-docker ## Cross-compile all release archives into dist/ (Docker)
 	@rm -rf $(DIST)
 	@mkdir -p $(DIST)
-	@for target in $(RELEASE_TARGETS); do \
-		os=$${target%/*}; arch=$${target#*/}; \
-		ext=""; [ "$$os" = "windows" ] && ext=".exe"; \
-		name="$(BINARY)-$(VERSION)-$$os-$$arch"; \
-		printf 'building %s...\n' "$$name"; \
-		GOOS=$$os GOARCH=$$arch $(DOCKER_RUN) go build $(GOFLAGS) -ldflags '$(LDFLAGS)' -o /workspace/$(DIST)/$$name/$(BINARY)$$ext ./cmd/$(BINARY) || exit 1; \
-		cp README.md VERSION $(DIST)/$$name/ 2>/dev/null || true; \
-		( cd $(DIST) && tar -czf "$$name.tar.gz" "$$name" && rm -rf "$$name" ) || exit 1; \
-	done
-	@cd $(DIST) && sha256sum *.tar.gz > SHA256SUMS && printf '\nRelease %s artifacts:\n' '$(VERSION)' && ls -lh *.tar.gz SHA256SUMS
+	@sh hack/release.sh /workspace/$(DIST) $(DOCKER_RUN) go build $(GOFLAGS) -ldflags '$(LDFLAGS)'
+
+release-local: ## Cross-compile all release archives into dist/ (local Go toolchain)
+	@rm -rf $(DIST)
+	@mkdir -p $(DIST)
+	@sh hack/release.sh "$(CURDIR)/$(DIST)" go build $(GOFLAGS) -ldflags '$(LDFLAGS)'
 
 docker-build: check-docker ## Build the runtime Docker image
 	docker build \
