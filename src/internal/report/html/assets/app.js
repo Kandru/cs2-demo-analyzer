@@ -1,6 +1,8 @@
-/* CS2 Demo Analyzer — progressive enhancement. The report is fully readable
-   without JavaScript; this only adds navigation, search, filtering, folding,
-   and copying demo tick commands. */
+/* CS2 Demo Analyzer - progressive enhancement.
+ *
+ * The report is fully readable without JavaScript. This only adds navigation
+ * highlighting, timeline filtering, and copying demo tick commands.
+ */
 (function () {
   "use strict";
 
@@ -10,18 +12,15 @@
     .filter(Boolean);
 
   function setActive(id) {
-    navLinks.forEach((a) => a.classList.toggle("active", a.getAttribute("href") === "#" + id));
-  }
-
-  function openHashTarget() {
-    if (!location.hash) return;
-    let target = null;
-    try {
-      target = document.querySelector(location.hash);
-    } catch (_) {
-      return;
-    }
-    if (target && target.tagName === "DETAILS") target.open = true;
+    navLinks.forEach((a) => {
+      const active = a.getAttribute("href") === "#" + id;
+      a.classList.toggle("active", active);
+      if (active) {
+        a.setAttribute("aria-current", "page");
+      } else {
+        a.removeAttribute("aria-current");
+      }
+    });
   }
 
   if ("IntersectionObserver" in window) {
@@ -37,87 +36,8 @@
     sections.forEach((s) => observer.observe(s));
   }
 
-  // Keep the active tab in sync immediately, even before the observer fires.
-  navLinks.forEach((a) => {
-    a.addEventListener("click", () => {
-      const href = a.getAttribute("href") || "";
-      if (href.charAt(0) === "#") setActive(href.slice(1));
-    });
-  });
-  window.addEventListener("hashchange", () => {
-    const id = location.hash.replace(/^#/, "");
-    if (id) setActive(id);
-    openHashTarget();
-  });
-
-  document.querySelectorAll("details.round").forEach((d) => {
-    d.addEventListener("toggle", () => {
-      if (d.open) {
-        try {
-          history.replaceState(null, "", "#" + d.id);
-        } catch (_) {}
-      }
-    });
-  });
-
-  const chips = Array.from(document.querySelectorAll("#round-chips .chip"));
-  chips.forEach((chip) => {
-    chip.addEventListener("click", () => {
-      chips.forEach((c) => c.classList.remove("active"));
-      chip.classList.add("active");
-    });
-  });
-
-  const evtFilterButtons = Array.from(document.querySelectorAll("[data-evt-filter]"));
-  let evtType = "all";
-  const playerFilter = document.getElementById("player-filter");
-  let player = "";
-
-  function typeMatches(type) {
-    if (evtType === "all") return true;
-    if (evtType === "kill") return type === "kill" || type === "teamkill" || type === "suicide";
-    if (evtType === "bomb") return type === "bomb_plant" || type === "bomb_defuse" || type === "bomb_explode";
-    return type === evtType;
-  }
-
-  function applyFilter() {
-    document.querySelectorAll("details.round").forEach((round) => {
-      let visible = 0;
-      round.querySelectorAll(".evt").forEach((evt) => {
-        const players = (evt.dataset.players || "").split(" ").filter(Boolean);
-        const ok = typeMatches(evt.dataset.type) && (!player || players.includes(player));
-        evt.classList.toggle("is-hidden", !ok);
-        if (ok) visible++;
-      });
-      const hasFilter = evtType !== "all" || player !== "";
-      round.classList.toggle("filtered-empty", hasFilter && visible === 0);
-      if (hasFilter && visible > 0) round.open = true;
-    });
-  }
-
-  evtFilterButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      evtFilterButtons.forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      evtType = btn.dataset.evtFilter;
-      applyFilter();
-    });
-  });
-
-  if (playerFilter) {
-    playerFilter.addEventListener("change", () => {
-      player = playerFilter.value;
-      applyFilter();
-    });
-  }
-
-  const expand = document.getElementById("expand-rounds");
-  const collapse = document.getElementById("collapse-rounds");
-  if (expand) expand.addEventListener("click", () => document.querySelectorAll("details.round").forEach((d) => (d.open = true)));
-  if (collapse) collapse.addEventListener("click", () => document.querySelectorAll("details.round").forEach((d) => (d.open = false)));
-
-  // Report search: filters player cards, cheat watch cards and rounds by their
-  // pre-computed data-search text. All content stays visible without JS.
+  // Report search filters player cards, cheat cards and timeline sections by
+  // their pre-computed data-search text. All content stays visible without JS.
   const searchWrap = document.getElementById("topsearch");
   const searchBox = document.getElementById("report-search");
   const searchStatus = document.getElementById("search-status");
@@ -126,9 +46,8 @@
 
     const playerCards = Array.from(document.querySelectorAll(".player-card[data-search]"));
     const cheaterCards = Array.from(document.querySelectorAll(".cheater-card[data-search]"));
-    const roundPanels = Array.from(document.querySelectorAll("details.round[data-search]"));
+    const timelineSections = Array.from(document.querySelectorAll("[data-timeline-section][data-search]"));
     const pills = Array.from(document.querySelectorAll(".player-pills .pill[data-target]"));
-    const roundChips = Array.from(document.querySelectorAll("#round-chips .chip[data-target]"));
 
     const searchMatches = (el, query) => !query || (el.dataset.search || "").indexOf(query) !== -1;
 
@@ -154,19 +73,10 @@
         card.classList.toggle("search-hidden", !searchMatches(card, query));
       });
 
-      roundPanels.forEach((panel) => {
-        const ok = searchMatches(panel, query);
-        panel.classList.toggle("search-hidden", !ok);
-        if (ok && active) {
-          rounds++;
-          panel.open = true;
-        }
-      });
-
-      roundChips.forEach((chip) => {
-        const panel = document.getElementById(chip.dataset.target || "");
-        const ok = !active || (panel && !panel.classList.contains("search-hidden"));
-        chip.classList.toggle("search-hidden", !ok);
+      timelineSections.forEach((section) => {
+        const ok = searchMatches(section, query);
+        section.classList.toggle("search-hidden", !ok);
+        if (ok && active && section.classList.contains("tl-round")) rounds++;
       });
 
       if (!active) {
@@ -175,8 +85,8 @@
       }
       const parts = [];
       if (playerCards.length) parts.push(players + (players === 1 ? " player" : " players"));
-      if (roundPanels.length) parts.push(rounds + (rounds === 1 ? " round" : " rounds"));
-      searchStatus.textContent = parts.join(" · ");
+      if (timelineSections.length) parts.push(rounds + (rounds === 1 ? " round" : " rounds"));
+      searchStatus.textContent = parts.join(" - ");
     }
 
     searchBox.addEventListener("input", applySearch);
@@ -204,6 +114,54 @@
       e.preventDefault();
       searchBox.focus();
       searchBox.select();
+    });
+  }
+
+  const evtFilterButtons = Array.from(document.querySelectorAll("[data-evt-filter]"));
+  let evtType = "all";
+  const playerFilter = document.getElementById("player-filter");
+  let player = "";
+
+  function typeMatches(type) {
+    if (evtType === "all") return true;
+    if (evtType === "kill") return type === "kill" || type === "teamkill" || type === "suicide";
+    if (evtType === "bomb") {
+      return type === "bomb_plant" || type === "bomb_defuse" || type === "bomb_explode";
+    }
+    if (evtType === "lifecycle") {
+      return type === "player_connect" || type === "player_disconnect" || type === "team_change" || type === "team_swap";
+    }
+    if (evtType === "round") return type === "round_end" || type === "freeze_end";
+    return type === evtType;
+  }
+
+  function applyFilter() {
+    const hasFilter = evtType !== "all" || player !== "";
+    document.querySelectorAll("[data-timeline-section]").forEach((section) => {
+      let visible = 0;
+      section.querySelectorAll(".tl-row").forEach((row) => {
+        const players = (row.dataset.players || "").split(" ").filter(Boolean);
+        const ok = typeMatches(row.dataset.type) && (!player || players.includes(player));
+        row.classList.toggle("is-hidden", !ok);
+        if (ok) visible++;
+      });
+      section.classList.toggle("is-empty", hasFilter && visible === 0);
+    });
+  }
+
+  evtFilterButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      evtFilterButtons.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      evtType = btn.dataset.evtFilter;
+      applyFilter();
+    });
+  });
+
+  if (playerFilter) {
+    playerFilter.addEventListener("change", () => {
+      player = playerFilter.value;
+      applyFilter();
     });
   }
 
@@ -258,5 +216,10 @@
     }
   });
 
-  openHashTarget();
+  if (location.hash) {
+    const target = document.querySelector(location.hash);
+    if (target) {
+      target.scrollIntoView({ block: "start" });
+    }
+  }
 })();

@@ -42,6 +42,7 @@ type View struct {
 type ChromeView struct {
 	BrandHref  string
 	BrandLabel string
+	ShowSearch bool
 	Nav        []NavLink
 	Meta       []string
 	BackHref   string
@@ -76,6 +77,7 @@ type AssetView struct {
 type TimelineSection struct {
 	Kind     string
 	Label    string
+	Search   string
 	Anchor   string
 	Time     string
 	EndTime  string
@@ -212,6 +214,7 @@ type CheatView struct {
 // ChannelView is one detector channel row.
 type ChannelView struct {
 	Channel   model.CheatChannel
+	Rank      int
 	ScorePct  int
 	ConfPct   int
 	Raw       string
@@ -358,6 +361,7 @@ func newView(doc *report.Document, opts Options) *View {
 	v.Chrome = &ChromeView{
 		BrandHref:  chromeHref(opts.IndexHref),
 		BrandLabel: brandLabel(opts.IndexHref),
+		ShowSearch: true,
 		Nav: []NavLink{
 			{Href: "#overview", Label: "Overview", Active: true},
 			{Href: "#scoreboard", Label: "Scoreboard"},
@@ -633,6 +637,7 @@ func buildCheat(cr *model.CheatReport) *CheatView {
 	for _, ch := range cr.Channels {
 		cvm := ChannelView{
 			Channel:   ch,
+			Rank:      len(cv.Channels) + 1,
 			ScorePct:  clampPct(ch.Score * 100),
 			ConfPct:   clampPct(ch.Confidence * 100),
 			BarClass:  zoneClass(ch.Zone),
@@ -703,6 +708,9 @@ func topChannels(channels []ChannelView, n int) []ChannelView {
 	})
 	if len(filtered) > n {
 		filtered = filtered[:n]
+	}
+	for i := range filtered {
+		filtered[i].Rank = i + 1
 	}
 	return filtered
 }
@@ -909,11 +917,12 @@ func buildTimeline(m *model.Match) []*TimelineSection {
 	if len(pre) > 0 {
 		sortTimelineEntries(pre)
 		sections = append(sections, &TimelineSection{
-			Kind:  "pre",
-			Label: "Before the first round",
-			Time:  pre[0].view.Time,
-			Rows:  timelineViews(pre),
-			Class: "alt-a",
+			Kind:   "pre",
+			Label:  "Before the first round",
+			Search: searchKey("pre-match", "before the first round"),
+			Time:   pre[0].view.Time,
+			Rows:   timelineViews(pre),
+			Class:  "alt-a",
 		})
 	}
 
@@ -939,6 +948,7 @@ func buildTimeline(m *model.Match) []*TimelineSection {
 		sections = append(sections, &TimelineSection{
 			Kind:     "warmup",
 			Label:    "Warmup",
+			Search:   searchKey("warmup practice before the first round"),
 			Anchor:   "warmup",
 			Time:     clock(warmupStart),
 			EndTime:  end,
@@ -995,9 +1005,18 @@ func buildTimeline(m *model.Match) []*TimelineSection {
 		} else if r.Overtime {
 			label += " (OT)"
 		}
+		winner := "Draw"
+		if t := m.TeamByID(r.WinnerTeamID); t != nil {
+			winner = t.Name
+		}
+		search := searchKey("round", strconv.Itoa(r.Number), label, r.Reason, r.Message, winner, teamSideClass(r.Winner))
+		if r.Overtime {
+			search += " overtime ot"
+		}
 		sections = append(sections, &TimelineSection{
 			Kind:     "round",
 			Label:    label,
+			Search:   search,
 			Anchor:   fmt.Sprintf("round-%d", r.StartTick),
 			Time:     clock(r.StartOffset),
 			EndTime:  clock(r.EndOffset),
@@ -1032,11 +1051,12 @@ func buildTimeline(m *model.Match) []*TimelineSection {
 				label = fmt.Sprintf("After round %d", r.Number)
 			}
 			sections = append(sections, &TimelineSection{
-				Kind:  "gap",
-				Label: label,
-				Time:  gap[0].view.Time,
-				Rows:  timelineViews(gap),
-				Class: "gap",
+				Kind:   "gap",
+				Label:  label,
+				Search: searchKey(label, "between rounds"),
+				Time:   gap[0].view.Time,
+				Rows:   timelineViews(gap),
+				Class:  "gap",
 			})
 		}
 	}
@@ -1050,11 +1070,12 @@ func buildTimeline(m *model.Match) []*TimelineSection {
 	if len(rest) > 0 {
 		sortTimelineEntries(rest)
 		sections = append(sections, &TimelineSection{
-			Kind:  "post",
-			Label: "After the last round",
-			Time:  rest[0].view.Time,
-			Rows:  timelineViews(rest),
-			Class: "gap",
+			Kind:   "post",
+			Label:  "After the last round",
+			Search: searchKey("after the last round", "post-match"),
+			Time:   rest[0].view.Time,
+			Rows:   timelineViews(rest),
+			Class:  "gap",
 		})
 	}
 	return sections
@@ -1303,11 +1324,15 @@ func buildEvent(e *model.Event, m *model.Match, base float64) EventView {
 		slugs[p.ID] = p.Slug
 	}
 	absolute := base + e.Offset
+	roundTime := ""
+	if base != 0 {
+		roundTime = clock(e.Offset)
+	}
 	ev := EventView{
 		Type:         e.Type,
 		Time:         clock(absolute),
 		AbsoluteTime: clock(absolute),
-		RoundTime:    clock(e.Offset),
+		RoundTime:    roundTime,
 		Icon:         iconByType[e.Type],
 		DataPlayers:  strings.Join(compact(e.ActorID, e.VictimID, e.AssisterID), " "),
 		Class:        eventClass(e),

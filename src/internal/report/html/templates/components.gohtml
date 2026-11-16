@@ -1,0 +1,142 @@
+{{define "topbar" -}}
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="{{.Chrome.BrandHref}}" aria-label="{{.Chrome.BrandLabel}}">
+      <img class="brand-mark" src="{{.Assets.BrandMark}}" alt="" width="32" height="32">
+      <span class="brand-word"><b>CS2</b><span>DEMO ANALYZER</span></span>
+    </a>
+    <nav class="mainnav" aria-label="Sections">
+      {{range .Chrome.Nav}}
+      <a href="{{.Href}}" class="{{if .Active}}active{{end}}" {{if .Active}}aria-current="page"{{end}}>{{.Label}}{{if .Count}}<span class="nav-count">{{.Count}}</span>{{end}}</a>
+      {{end}}
+    </nav>
+    {{if .Chrome.ShowSearch}}
+    <div class="topsearch" id="topsearch" role="search" hidden>
+      <label class="sr-only" for="report-search">Search this report</label>
+      <input id="report-search" type="search" placeholder="Search players, rounds, cues" autocomplete="off" spellcheck="false">
+      <span id="search-status" class="search-status" role="status" aria-live="polite"></span>
+    </div>
+    {{end}}
+    <div class="topmeta">
+      {{if .Chrome.BackHref}}<a class="nav-back" href="{{.Chrome.BackHref}}">{{.Chrome.BackLabel}}</a>{{end}}
+      {{range .Chrome.Meta}}<span class="tag">{{.}}</span>{{end}}
+    </div>
+  </div>
+</header>
+{{- end}}
+
+{{define "footer" -}}
+<footer class="footer">
+  <div class="wrap footer-inner">
+    <div class="footer-brand">
+      <img src="{{.Assets.BrandMark}}" alt="" width="28" height="28">
+      <span><a href="{{.Footer.RepoURL}}" rel="noopener noreferrer">CS2 Demo Analyzer</a> v{{.Footer.Version}}</span>
+    </div>
+    <div class="footer-meta">
+      <span>generated {{.Footer.GeneratedAt}}</span>
+      {{if .Footer.ParserVersion}}<span>parser {{.Footer.ParserVersion}}</span>{{end}}
+      <span>by cs2-demo-analyzer from kandru.net</span>
+    </div>
+  </div>
+</footer>
+{{- end}}
+
+{{define "icon" -}}
+<svg class="ico" aria-hidden="true" focusable="false"><use href="#i-{{.}}"></use></svg>
+{{- end}}
+
+{{define "side-chip" -}}
+<span class="side-chip {{sideClass .}}">{{.}}</span>
+{{- end}}
+
+{{define "event-row" -}}
+<li class="tl-row {{.Class}}" data-type="{{.Type}}" data-players="{{.DataPlayers}}">
+  <span class="tl-time">{{.AbsoluteTime}}</span>
+  <span class="tl-node" aria-hidden="true">{{template "icon" .Icon}}</span>
+  <span class="tl-text">{{range .Parts}}{{if .Href}}<a href="{{.Href}}">{{.Text}}</a>{{else}}{{.Text}}{{end}}{{end}}{{range .Badges}}<span class="badge">{{.}}</span>{{end}}</span>
+  {{if .RoundTime}}<span class="tl-rel" title="Round time">{{.RoundTime}}</span>{{end}}
+</li>
+{{- end}}
+
+{{define "timeline-section" -}}
+<section class="tl-section tl-{{.Kind}} {{.Class}}" data-timeline-section data-search="{{.Search}}" {{if .Anchor}}id="{{.Anchor}}"{{end}}>
+  <header class="tl-head">
+    {{if .IsRound}}
+    <span class="tl-round-badge" aria-hidden="true">{{.Number}}</span>
+    <div class="tl-head-title">
+      <h3>{{.Label}}{{if .HasFlag}} <span class="flag-dot" title="Flagged activity this round">&#9873;</span>{{end}}</h3>
+      <span class="tl-head-time">{{.Time}} to {{.EndTime}} - {{.Duration}}</span>
+    </div>
+    <div class="tl-head-result">
+      <span class="result-chip {{.Side}}">{{if eq .Side "CT"}}CT win{{else if eq .Side "T"}}T win{{else}}Draw{{end}}</span>
+      <span class="tl-score">{{.Score}}</span>
+    </div>
+    <p class="tl-reason">{{.Reason}}</p>
+    {{else}}
+    <div class="tl-head-title">
+      <h3>{{.Label}}</h3>
+      <span class="tl-head-time">{{.Time}}{{if .EndTime}} to {{.EndTime}}{{end}}{{if .Duration}} - {{.Duration}}{{end}}</span>
+    </div>
+    {{end}}
+  </header>
+  {{if .Economy}}
+  <div class="tl-econ">
+    {{range .Economy}}
+    <span class="econ {{.Class}}"><i class="side-dot {{lower .Side}}" aria-hidden="true"></i><b>{{.TeamName}}</b><span>{{.BuyType}}</span><em>${{.Equip}}</em></span>
+    {{end}}
+  </div>
+  {{end}}
+  <ol class="tl-rows" role="list">
+    {{range .Rows}}{{template "event-row" .}}{{end}}
+  </ol>
+</section>
+{{- end}}
+
+{{define "moment" -}}
+<li class="cue {{.Class}}">
+  <span class="cue-time">{{.Time}}</span>
+  <span class="cue-round">{{if .RoundAnchor}}<a href="#{{.RoundAnchor}}">{{.RoundLabel}}</a>{{else}}{{.RoundLabel}}{{end}}{{if .RoundTime}} <em>{{.RoundTime}}</em>{{end}}</span>
+  <span class="cue-body">{{range .Reasons}}<span class="cue-tag {{.Kind}}" title="{{.Detail}}"><b>{{.Label}}</b> {{.Value}}</span>{{end}}{{if .Weapon}}<span class="cue-meta">{{.Weapon}}</span>{{end}}{{if .Opponent}}<span class="cue-meta">vs {{.Opponent}}</span>{{end}}</span>
+  <button type="button" class="tick-copy" data-copy="{{.DemoCommand}}" title="Copy {{.DemoCommand}}" aria-label="Copy {{.DemoCommand}}">tick {{.Tick}}</button>
+</li>
+{{- end}}
+
+{{define "cue-list" -}}
+<ol class="cue-list">
+  {{range .}}{{template "moment" .}}{{end}}
+</ol>
+{{- end}}
+
+{{define "channel-list" -}}
+<ol class="channel-list">
+  {{range .}}
+  <li class="channel-item" title="{{.Channel.Description}}">
+    <span class="channel-rank" aria-hidden="true">{{.Rank}}</span>
+    <span class="channel-main">
+      <span class="channel-line"><b>{{.Channel.Label}}</b><span class="zone {{.ZoneClass}}">{{if eq .Zone "no_data"}}no data{{else}}{{.Zone}}{{end}}</span></span>
+      <span class="channel-vals"><span>{{.Raw}}</span><span>{{.ScorePct}}% evidence</span><span>{{.ConfPct}}% conf</span>{{if .Channel.Samples}}<span>n={{.Channel.Samples}}</span>{{end}}</span>
+      <span class="bar channel-bar"><i class="{{.BarClass}}" style="width:{{.ScorePct}}%"></i></span>
+    </span>
+  </li>
+  {{end}}
+</ol>
+{{- end}}
+
+{{define "sprite" -}}
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 3v18M5 4h12l-2.5 4L17 12H5"/></symbol>
+  <symbol id="i-buy" viewBox="0 0 24 24"><path d="M4 7h16v12H4zM8 7V5h8v2M4 12h16"/></symbol>
+  <symbol id="i-kill" viewBox="0 0 24 24"><path d="M4 4l16 16M20 4L4 20M9 4l3 3 3-3M4 9l3 3-3 3M20 9l-3 3 3 3"/></symbol>
+  <symbol id="i-warning" viewBox="0 0 24 24"><path d="M12 3l10 18H2zM12 9v5M12 17h.01"/></symbol>
+  <symbol id="i-bomb" viewBox="0 0 24 24"><circle cx="11" cy="14" r="6"/><path d="M15 6l4-4M16 3h5v5"/></symbol>
+  <symbol id="i-defuse" viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></symbol>
+  <symbol id="i-explosion" viewBox="0 0 24 24"><path d="M12 2l2 6 6-3-3 6 5 3-6 1 2 7-5-4-5 4 2-7-6-1 5-3-3-6 6 3z"/></symbol>
+  <symbol id="i-grenade" viewBox="0 0 24 24"><circle cx="12" cy="14" r="6"/><path d="M9 8l-1-4h8l-1 4M17 5h4"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5-5.8-3-5.8 3 1.1-6.5L2.6 9.8l6.5-.9z"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 01-10 0zM7 6H4v2a3 3 0 003 3M17 6h3v2a3 3 0 01-3 3M12 14v4M8 21h8"/></symbol>
+  <symbol id="i-dot" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-connect" viewBox="0 0 24 24"><path d="M4 12h12M12 6l6 6-6 6M20 4v16"/></symbol>
+  <symbol id="i-disconnect" viewBox="0 0 24 24"><path d="M4 12h12M12 6l6 6-6 6M20 4l-4 16"/></symbol>
+  <symbol id="i-swap" viewBox="0 0 24 24"><path d="M4 8h14l-3-3M20 16H6l3 3"/></symbol>
+</svg>
+{{- end}}

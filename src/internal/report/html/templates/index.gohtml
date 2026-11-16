@@ -5,32 +5,38 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>{{.Title}} · CS2 Demo Analyzer</title>
+<meta name="description" content="{{.Description}}">
+<meta name="author" content="cs2-demo-analyzer from kandru.net">
+<meta name="generator" content="cs2-demo-analyzer v{{.Version}}">
+<title>{{.Title}} - CS2 Demo Analyzer</title>
+<link rel="icon" type="image/png" href="{{.Assets.Favicon}}">
+<link rel="apple-touch-icon" href="{{.Assets.AppleTouch}}">
 <style>{{.CSS}}</style>
 </head>
-<body>
+<body class="index-page">
 <a class="skip-link" href="#main">Skip to content</a>
 
-<header class="topbar">
-  <div class="wrap topbar-inner">
-    <a class="brand" href="{{.IndexFile}}" aria-label="CS2 Demo Analyzer report index">
-      <span class="brand-mark">CS2</span>
-      <span class="brand-word">DEMO ANALYZER</span>
-    </a>
-    <nav class="mainnav" aria-label="Sections">
-      <a href="{{.IndexFile}}" class="active">Reports</a>
-    </nav>
-    <div class="topmeta">
-      <span>{{.Count}} report(s)</span>
-    </div>
-  </div>
-</header>
+{{template "topbar" .}}
 
 <main id="main" class="wrap">
-  <section class="section" aria-labelledby="reports-title">
-    <div class="section-head">
+  <section class="index-hero cs-panel" aria-labelledby="reports-title">
+    <img class="index-logo" src="{{.Assets.Logo}}" alt="" width="560" height="313">
+    <div class="index-hero-text">
+      <span class="eyebrow">Reports</span>
       <h1 id="reports-title">Match reports</h1>
-      <span class="section-note">Newest first · grouped by server</span>
+      <p class="hero-sub">Newest first - grouped by server - by cs2-demo-analyzer from kandru.net</p>
+      <div class="index-stats">
+        <span><b>{{.Count}}</b> report(s)</span>
+        <span><b>{{.Servers}}</b> server(s)</span>
+        {{if .Newest}}<span><b>Newest</b> {{.Newest}}</span>{{end}}
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="reports-title-list">
+    <div class="section-head">
+      <h2 id="reports-title-list">All reports</h2>
+      <span class="section-note">Select a card to open the full match report</span>
     </div>
 
     {{if .Groups}}
@@ -43,7 +49,7 @@
         </div>
         <div class="index-grid">
           {{range $group.Entries}}
-          <article class="index-card">
+          <article class="index-card cs-panel">
             <a class="index-report" href="{{.Href}}">
               <span class="index-line">
                 <span class="index-name">{{.Name}}</span>
@@ -51,11 +57,12 @@
               </span>
               <span class="index-meta">
                 {{if .ServerName}}<span class="index-server">{{.ServerName}}</span>{{end}}
-                {{if .Played}}<span class="index-date">{{if .ServerName}} · {{end}}{{.Played}}</span>{{end}}
+                {{if .Played}}<span class="index-date">{{if .ServerName}} - {{end}}{{.Played}}</span>{{end}}
               </span>
+              <span class="index-open">Open report</span>
             </a>
             {{with .Demo}}
-            <a class="index-demo" href="{{.Href}}" download="{{.Name}}" title="Download {{.Name}}">Download demo{{if .Size}} · {{.Size}}{{end}}</a>
+            <a class="index-demo" href="{{.Href}}" download="{{.Name}}" title="Download {{.Name}}">Download demo{{if .Size}} - {{.Size}}{{end}}</a>
             {{else}}
             <span class="index-demo muted">Demo not linked</span>
             {{end}}
@@ -66,14 +73,16 @@
       {{end}}
     </div>
     {{else}}
-    <p class="muted">No match reports in this directory yet.</p>
+    <div class="cs-panel empty-state">
+      <h3>No match reports yet</h3>
+      <p class="muted">Analyze a demo to create the first report in this directory.</p>
+    </div>
     {{end}}
   </section>
 </main>
 
-<footer class="footer wrap">
-  <span><a href="{{.RepoURL}}" rel="noopener noreferrer">CS2 Demo Analyzer</a> v{{.Version}} — generated {{.GeneratedAt}}</span>
-</footer>
+{{template "footer" .}}
+{{template "sprite" .}}
 </body>
 </html>
 {{- end}}
