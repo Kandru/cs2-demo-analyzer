@@ -15,6 +15,7 @@ import (
 // View is the template model for one report.
 type View struct {
 	Title        string
+	Description  string
 	Version      string
 	GeneratedAt  string
 	CSS          template.CSS
@@ -24,6 +25,7 @@ type View struct {
 	Players      []*PlayerView
 	Rounds       []*RoundView
 	Warmup       *TimelineView
+	Timeline     []*TimelineSection
 	Summary      *model.Summary
 	TeamStats    []model.TeamStats
 	Warnings     []string
@@ -31,6 +33,62 @@ type View struct {
 	RoundStrip   []RoundStripView
 	DemoDownload *DemoLink
 	IndexHref    string
+	Chrome       *ChromeView
+	Footer       *FooterView
+	Assets       *AssetView
+}
+
+// ChromeView is the shared topbar model for report and index pages.
+type ChromeView struct {
+	BrandHref  string
+	BrandLabel string
+	Nav        []NavLink
+	Meta       []string
+	BackHref   string
+	BackLabel  string
+}
+
+// NavLink is one topbar tab.
+type NavLink struct {
+	Href   string
+	Label  string
+	Count  int
+	Active bool
+}
+
+// FooterView is the shared footer model. Both pages render the same component.
+type FooterView struct {
+	RepoURL       string
+	Version       string
+	GeneratedAt   string
+	ParserVersion string
+}
+
+// AssetView holds inlined brand assets as trusted data URIs.
+type AssetView struct {
+	BrandMark  template.URL
+	Logo       template.URL
+	Favicon    template.URL
+	AppleTouch template.URL
+}
+
+// TimelineSection is one visually distinct block of the continuous timeline.
+type TimelineSection struct {
+	Kind     string
+	Label    string
+	Anchor   string
+	Time     string
+	EndTime  string
+	Duration string
+	Score    string
+	Reason   string
+	Side     string
+	Class    string
+	Number   int
+	HasFlag  bool
+	IsRound  bool
+	Economy  []EconomyView
+	Rows     []EventView
 }
 
 // DemoLink is a direct download link for a source demo.
@@ -242,13 +300,15 @@ type TimelineView struct {
 
 // EventView is a pre-rendered timeline row.
 type EventView struct {
-	Type        string
-	Time        string
-	Icon        string
-	Parts       []EventPart
-	Badges      []string
-	DataPlayers string
-	Class       string
+	Type         string
+	Time         string
+	AbsoluteTime string
+	RoundTime    string
+	Icon         string
+	Parts        []EventPart
+	Badges       []string
+	DataPlayers  string
+	Class        string
 }
 
 // EventPart is a text fragment, optionally a player link.
@@ -285,15 +345,53 @@ func newView(doc *report.Document, opts Options) *View {
 	v.Rounds = buildRounds(m)
 	v.RoundStrip = buildRoundStrip(m)
 	v.Cheaters = buildCheaters(v.Players)
-	markFlaggedRounds(v, m)
 	if m.Warmup != nil && len(m.Warmup.Events) > 0 {
 		v.Warmup = &TimelineView{
 			Duration: clock(m.Warmup.Duration),
 			Events:   buildEvents(m.Warmup.Events, m),
 		}
 	}
+	v.Timeline = buildTimeline(m)
+	markFlaggedRounds(v, m)
 	v.Warnings = m.Warnings
+	v.Description = fmt.Sprintf("CS2 match report for %s - %s - by cs2-demo-analyzer from kandru.net", v.Title, m.Mode)
+	v.Chrome = &ChromeView{
+		BrandHref:  chromeHref(opts.IndexHref),
+		BrandLabel: brandLabel(opts.IndexHref),
+		Nav: []NavLink{
+			{Href: "#overview", Label: "Overview", Active: true},
+			{Href: "#scoreboard", Label: "Scoreboard"},
+			{Href: "#cheaters", Label: "Watch list", Count: len(v.Cheaters)},
+			{Href: "#rounds", Label: "Timeline"},
+			{Href: "#players", Label: "Players"},
+		},
+		Meta: compact(m.Map, m.Mode),
+	}
+	if opts.IndexHref != "" {
+		v.Chrome.BackHref = opts.IndexHref
+		v.Chrome.BackLabel = "All reports"
+	}
+	v.Footer = &FooterView{
+		RepoURL:       RepoURL,
+		Version:       v.Version,
+		GeneratedAt:   v.GeneratedAt,
+		ParserVersion: m.ParserVersion,
+	}
 	return v
+}
+
+func chromeHref(indexHref string) string {
+	if indexHref != "" {
+		return indexHref
+	}
+	return "#overview"
+}
+
+func brandLabel(indexHref string) string {
+	if indexHref != "" {
+		return "Back to report index"
+	}
+	return "CS2 Demo Analyzer home"
 }
 
 func buildTeams(m *model.Match, stats []model.TeamStats) []*TeamView {
@@ -761,6 +859,306 @@ func buildRoundStrip(m *model.Match) []RoundStripView {
 	return out
 }
 
+type timelineEntry struct {
+	view   EventView
+	offset float64
+	seq    int
+}
+
+func buildTimeline(m *model.Match) []*TimelineSection {
+	global := globalEventsWithFallback(m)
+	globalEntries := make([]timelineEntry, 0, len(global))
+	for _, e := range global {
+		globalEntries = append(globalEntries, timelineEntry{
+			view:   buildEvent(e, m, 0),
+			offset: e.Offset,
+			seq:    e.Seq,
+		})
+	}
+	usedGlobal := make([]bool, len(globalEntries))
+
+	var sections []*TimelineSection
+	firstStart := -1.0
+	for _, r := range m.Rounds {
+		firstStart = r.StartOffset
+		break
+	}
+	warmupStart, warmupEnd := 0.0, 0.0
+	hasWarmup := m.Warmup != nil && len(m.Warmup.Events) > 0
+	if hasWarmup {
+		warmupStart = m.Warmup.StartOffset
+		warmupEnd = m.Warmup.EndOffset
+		if warmupEnd <= warmupStart {
+			warmupEnd = firstStart
+		}
+	}
+
+	preLimit := firstStart
+	if hasWarmup {
+		preLimit = warmupStart
+	}
+	var pre []timelineEntry
+	if preLimit >= 0 {
+		for i, entry := range globalEntries {
+			if entry.offset < preLimit {
+				pre = append(pre, entry)
+				usedGlobal[i] = true
+			}
+		}
+	}
+	if len(pre) > 0 {
+		sortTimelineEntries(pre)
+		sections = append(sections, &TimelineSection{
+			Kind:  "pre",
+			Label: "Before the first round",
+			Time:  pre[0].view.Time,
+			Rows:  timelineViews(pre),
+			Class: "alt-a",
+		})
+	}
+
+	if hasWarmup {
+		rows := make([]timelineEntry, 0, len(m.Warmup.Events))
+		for _, e := range m.Warmup.Events {
+			rows = append(rows, timelineEntry{view: buildEvent(e, m, 0), offset: e.Offset, seq: e.Seq})
+		}
+		for i, entry := range globalEntries {
+			if usedGlobal[i] {
+				continue
+			}
+			if entry.offset >= warmupStart && entry.offset <= warmupEnd {
+				rows = append(rows, entry)
+				usedGlobal[i] = true
+			}
+		}
+		sortTimelineEntries(rows)
+		end := clock(warmupEnd)
+		if warmupEnd <= 0 {
+			end = clock(m.Warmup.Duration)
+		}
+		sections = append(sections, &TimelineSection{
+			Kind:     "warmup",
+			Label:    "Warmup",
+			Anchor:   "warmup",
+			Time:     clock(warmupStart),
+			EndTime:  end,
+			Duration: clock(m.Warmup.Duration),
+			Rows:     timelineViews(rows),
+			Class:    "alt-b",
+		})
+	}
+
+	for i, r := range m.Rounds {
+		var rows []timelineEntry
+		hasRoundEnd := false
+		for _, e := range r.Events {
+			if e.Type == "round_start" {
+				continue
+			}
+			if e.Type == "round_end" {
+				hasRoundEnd = true
+			}
+			rows = append(rows, timelineEntry{
+				view:   buildEvent(e, m, r.StartOffset),
+				offset: r.StartOffset + e.Offset,
+				seq:    e.Seq,
+			})
+		}
+		for j, entry := range globalEntries {
+			if usedGlobal[j] {
+				continue
+			}
+			if entry.offset >= r.StartOffset && entry.offset <= r.EndOffset {
+				rows = append(rows, entry)
+				usedGlobal[j] = true
+			}
+		}
+		if !hasRoundEnd {
+			endEvent := &model.Event{
+				Type:   "round_end",
+				Offset: r.EndOffset - r.StartOffset,
+				Text:   r.Reason,
+				Score:  r.EndScore,
+			}
+			if endEvent.Text == "" {
+				endEvent.Text = "Round ended"
+			}
+			rows = append(rows, timelineEntry{
+				view:   buildEvent(endEvent, m, r.StartOffset),
+				offset: r.EndOffset,
+			})
+		}
+		sortTimelineEntries(rows)
+		label := fmt.Sprintf("Round %d", r.Number)
+		if r.Pregame {
+			label = "Pregame"
+		} else if r.Overtime {
+			label += " (OT)"
+		}
+		sections = append(sections, &TimelineSection{
+			Kind:     "round",
+			Label:    label,
+			Anchor:   fmt.Sprintf("round-%d", r.StartTick),
+			Time:     clock(r.StartOffset),
+			EndTime:  clock(r.EndOffset),
+			Duration: clock(r.Duration),
+			Score:    fmt.Sprintf("%d : %d", r.EndScore[0], r.EndScore[1]),
+			Reason:   r.Reason,
+			Side:     string(r.Winner),
+			Class:    roundClass(r),
+			Number:   r.Number,
+			IsRound:  true,
+			Economy:  buildEconomy(r, m),
+			Rows:     timelineViews(rows),
+		})
+
+		// Lifecycle events between this round and the next one. They belong to
+		// the gap, not to the round that just ended.
+		var gap []timelineEntry
+		for j, entry := range globalEntries {
+			if usedGlobal[j] || entry.offset <= r.EndOffset {
+				continue
+			}
+			if i+1 < len(m.Rounds) && entry.offset >= m.Rounds[i+1].StartOffset {
+				continue
+			}
+			gap = append(gap, entry)
+			usedGlobal[j] = true
+		}
+		if len(gap) > 0 {
+			sortTimelineEntries(gap)
+			label := fmt.Sprintf("Between round %d and %d", r.Number, r.Number+1)
+			if i+1 >= len(m.Rounds) {
+				label = fmt.Sprintf("After round %d", r.Number)
+			}
+			sections = append(sections, &TimelineSection{
+				Kind:  "gap",
+				Label: label,
+				Time:  gap[0].view.Time,
+				Rows:  timelineViews(gap),
+				Class: "gap",
+			})
+		}
+	}
+
+	var rest []timelineEntry
+	for i, entry := range globalEntries {
+		if !usedGlobal[i] {
+			rest = append(rest, entry)
+		}
+	}
+	if len(rest) > 0 {
+		sortTimelineEntries(rest)
+		sections = append(sections, &TimelineSection{
+			Kind:  "post",
+			Label: "After the last round",
+			Time:  rest[0].view.Time,
+			Rows:  timelineViews(rest),
+			Class: "gap",
+		})
+	}
+	return sections
+}
+
+func sortTimelineEntries(entries []timelineEntry) {
+	sort.SliceStable(entries, func(i, j int) bool {
+		if entries[i].offset != entries[j].offset {
+			return entries[i].offset < entries[j].offset
+		}
+		return entries[i].seq < entries[j].seq
+	})
+}
+
+func timelineViews(entries []timelineEntry) []EventView {
+	out := make([]EventView, 0, len(entries))
+	for _, entry := range entries {
+		out = append(out, entry.view)
+	}
+	return out
+}
+
+func roundClass(r *model.Round) string {
+	classes := []string{teamSideClass(r.Winner), "neutral"}
+	if r.Number%2 == 0 {
+		classes[1] = "alt-b"
+	} else {
+		classes[1] = "alt-a"
+	}
+	return strings.Join(classes, " ")
+}
+
+func buildEconomy(r *model.Round, m *model.Match) []EconomyView {
+	out := make([]EconomyView, 0, len(r.Economy))
+	for _, e := range r.Economy {
+		ev := EconomyView{Equip: e.EquipmentValue, BuyType: e.BuyType, Class: buyClass(e.BuyType)}
+		if t := m.TeamByID(e.TeamID); t != nil {
+			ev.TeamName = t.Name
+		}
+		ev.Side = string(e.Side)
+		out = append(out, ev)
+	}
+	return out
+}
+
+// globalEventsWithFallback keeps older cached reports useful: when the parser
+// did not record a team_swap event, detect the side flip from round economy.
+func globalEventsWithFallback(m *model.Match) []*model.Event {
+	events := append([]*model.Event(nil), m.Events...)
+	for _, e := range events {
+		if e.Type == "team_swap" {
+			return events
+		}
+	}
+	var prev map[int]model.Side
+	for _, r := range m.Rounds {
+		if r.Pregame || len(r.Economy) < 2 {
+			continue
+		}
+		cur := map[int]model.Side{}
+		for _, e := range r.Economy {
+			cur[e.TeamID] = e.Side
+		}
+		if len(prev) >= 2 && sidesSwapped(prev, cur) {
+			text := "Teams switched sides"
+			var ctName, tName string
+			for id, side := range cur {
+				if team := m.TeamByID(id); team != nil && team.Name != "" {
+					if side == model.SideCT {
+						ctName = team.Name
+					} else if side == model.SideT {
+						tName = team.Name
+					}
+				}
+			}
+			if ctName != "" && tName != "" {
+				text = fmt.Sprintf("%s now CT - %s now T", ctName, tName)
+			}
+			offset := r.StartOffset - 0.01
+			if offset < 0 {
+				offset = 0
+			}
+			events = append(events, &model.Event{Type: "team_swap", Offset: offset, Text: text})
+		}
+		prev = cur
+	}
+	return events
+}
+
+func sidesSwapped(a, b map[int]model.Side) bool {
+	common := 0
+	for id, side := range a {
+		other, ok := b[id]
+		if !ok {
+			continue
+		}
+		common++
+		if other == side {
+			return false
+		}
+	}
+	return common >= 2
+}
+
 func markFlaggedRounds(v *View, m *model.Match) {
 	flagged := map[int]bool{}
 	for _, pv := range v.Players {
@@ -786,6 +1184,11 @@ func markFlaggedRounds(v *View, m *model.Match) {
 	}
 	for i := range v.RoundStrip {
 		v.RoundStrip[i].HasFlag = flagged[v.RoundStrip[i].Number]
+	}
+	for _, section := range v.Timeline {
+		if section.IsRound {
+			section.HasFlag = flagged[section.Number]
+		}
 	}
 }
 
@@ -822,17 +1225,21 @@ func rawMetric(ch model.CheatChannel) string {
 }
 
 var iconByType = map[string]string{
-	"round_start":  "flag",
-	"freeze_end":   "buy",
-	"kill":         "kill",
-	"teamkill":     "warning",
-	"suicide":      "warning",
-	"bomb_plant":   "bomb",
-	"bomb_defuse":  "defuse",
-	"bomb_explode": "explosion",
-	"grenade":      "grenade",
-	"mvp":          "star",
-	"round_end":    "trophy",
+	"round_start":       "flag",
+	"freeze_end":        "buy",
+	"kill":              "kill",
+	"teamkill":          "warning",
+	"suicide":           "warning",
+	"bomb_plant":        "bomb",
+	"bomb_defuse":       "defuse",
+	"bomb_explode":      "explosion",
+	"grenade":           "grenade",
+	"mvp":               "star",
+	"round_end":         "trophy",
+	"player_connect":    "connect",
+	"player_disconnect": "disconnect",
+	"team_change":       "swap",
+	"team_swap":         "swap",
 }
 
 func buildRounds(m *model.Match) []*RoundView {
@@ -879,94 +1286,157 @@ func buildRounds(m *model.Match) []*RoundView {
 }
 
 func buildEvents(events []*model.Event, m *model.Match) []EventView {
+	return buildEventsAt(events, m, 0)
+}
+
+func buildEventsAt(events []*model.Event, m *model.Match, base float64) []EventView {
+	out := make([]EventView, 0, len(events))
+	for _, e := range events {
+		out = append(out, buildEvent(e, m, base))
+	}
+	return out
+}
+
+func buildEvent(e *model.Event, m *model.Match, base float64) EventView {
 	slugs := map[string]string{}
 	for _, p := range m.Players {
 		slugs[p.ID] = p.Slug
 	}
-	out := make([]EventView, 0, len(events))
-	for _, e := range events {
-		ev := EventView{
-			Type:        e.Type,
-			Time:        clock(e.Offset),
-			Icon:        iconByType[e.Type],
-			DataPlayers: strings.Join(compact(e.ActorID, e.VictimID, e.AssisterID), " "),
-			Class:       eventClass(e),
-		}
-		if ev.Icon == "" {
-			ev.Icon = "dot"
-		}
-		link := func(id, name string) EventPart {
-			if id == "" {
-				return EventPart{Text: name}
-			}
-			if slug := slugs[id]; slug != "" {
-				return EventPart{Text: name, Href: "#player-" + slug}
-			}
+	absolute := base + e.Offset
+	ev := EventView{
+		Type:         e.Type,
+		Time:         clock(absolute),
+		AbsoluteTime: clock(absolute),
+		RoundTime:    clock(e.Offset),
+		Icon:         iconByType[e.Type],
+		DataPlayers:  strings.Join(compact(e.ActorID, e.VictimID, e.AssisterID), " "),
+		Class:        eventClass(e),
+	}
+	if ev.Icon == "" {
+		ev.Icon = "dot"
+	}
+	link := func(id, name string) EventPart {
+		if id == "" {
 			return EventPart{Text: name}
 		}
-		switch e.Type {
-		case "round_start":
-			ev.Parts = []EventPart{{Text: "Round started"}}
-		case "freeze_end":
-			ev.Parts = []EventPart{{Text: "Freeze time ended — weapons are live"}}
-		case "kill":
-			ev.Parts = append(ev.Parts, link(e.ActorID, e.ActorName))
-			ev.Parts = append(ev.Parts, EventPart{Text: " eliminated "})
-			ev.Parts = append(ev.Parts, link(e.VictimID, e.VictimName))
-			if e.Weapon != "" {
-				ev.Parts = append(ev.Parts, EventPart{Text: " with " + e.Weapon})
-			}
-			if e.AssisterID != "" {
-				ev.Parts = append(ev.Parts, EventPart{Text: " (assist: "})
-				ev.Parts = append(ev.Parts, link(e.AssisterID, e.AssisterName))
-				ev.Parts = append(ev.Parts, EventPart{Text: ")"})
-			}
-			addKillBadges(&ev, e)
-		case "teamkill":
-			ev.Parts = append(ev.Parts, link(e.ActorID, e.ActorName))
-			ev.Parts = append(ev.Parts, EventPart{Text: " team-killed "})
-			ev.Parts = append(ev.Parts, link(e.VictimID, e.VictimName))
-			if e.Weapon != "" {
-				ev.Parts = append(ev.Parts, EventPart{Text: " with " + e.Weapon})
-			}
-			addKillBadges(&ev, e)
-		case "suicide":
-			ev.Parts = append(ev.Parts, link(e.VictimID, e.VictimName))
-			ev.Parts = append(ev.Parts, EventPart{Text: " died"})
-			if e.Weapon != "" && e.Weapon != "World" {
-				ev.Parts = append(ev.Parts, EventPart{Text: " (" + e.Weapon + ")"})
-			}
-		case "bomb_plant":
-			ev.Parts = append(ev.Parts, link(e.ActorID, e.ActorName))
-			ev.Parts = append(ev.Parts, EventPart{Text: " planted the bomb"})
-			if e.Site != "" {
-				ev.Parts = append(ev.Parts, EventPart{Text: " at site " + e.Site})
-			}
-		case "bomb_defuse":
-			ev.Parts = append(ev.Parts, link(e.ActorID, e.ActorName))
-			ev.Parts = append(ev.Parts, EventPart{Text: " defused the bomb"})
-			if e.Site != "" {
-				ev.Parts = append(ev.Parts, EventPart{Text: " at site " + e.Site})
-			}
-		case "bomb_explode":
-			ev.Parts = []EventPart{{Text: "The bomb exploded"}}
-		case "grenade":
-			ev.Parts = append(ev.Parts, link(e.ActorID, e.ActorName))
-			ev.Parts = append(ev.Parts, EventPart{Text: " threw " + article(e.Grenade) + e.Grenade})
-		case "mvp":
-			ev.Parts = append(ev.Parts, link(e.ActorID, e.ActorName))
-			ev.Parts = append(ev.Parts, EventPart{Text: " was awarded the round MVP"})
-		case "round_end":
-			ev.Parts = []EventPart{{Text: e.Text}}
-			if e.Score != [2]int{} {
-				ev.Parts = append(ev.Parts, EventPart{Text: fmt.Sprintf(" — %d : %d", e.Score[0], e.Score[1])})
-			}
-		default:
-			ev.Parts = []EventPart{{Text: e.Type}}
+		if slug := slugs[id]; slug != "" {
+			return EventPart{Text: name, Href: "#player-" + slug}
 		}
-		out = append(out, ev)
+		return EventPart{Text: name}
 	}
-	return out
+	switch e.Type {
+	case "round_start":
+		ev.Parts = []EventPart{{Text: "Round started"}}
+	case "freeze_end":
+		ev.Parts = []EventPart{{Text: "Freeze time ended - weapons are live"}}
+	case "kill":
+		ev.Parts = append(ev.Parts, link(e.ActorID, e.ActorName))
+		ev.Parts = append(ev.Parts, EventPart{Text: " eliminated "})
+		ev.Parts = append(ev.Parts, link(e.VictimID, e.VictimName))
+		if e.Weapon != "" {
+			ev.Parts = append(ev.Parts, EventPart{Text: " with " + e.Weapon})
+		}
+		if e.AssisterID != "" {
+			ev.Parts = append(ev.Parts, EventPart{Text: " (assist: "})
+			ev.Parts = append(ev.Parts, link(e.AssisterID, e.AssisterName))
+			ev.Parts = append(ev.Parts, EventPart{Text: ")"})
+		}
+		addKillBadges(&ev, e)
+	case "teamkill":
+		ev.Parts = append(ev.Parts, link(e.ActorID, e.ActorName))
+		ev.Parts = append(ev.Parts, EventPart{Text: " team-killed "})
+		ev.Parts = append(ev.Parts, link(e.VictimID, e.VictimName))
+		if e.Weapon != "" {
+			ev.Parts = append(ev.Parts, EventPart{Text: " with " + e.Weapon})
+		}
+		addKillBadges(&ev, e)
+	case "suicide":
+		ev.Parts = append(ev.Parts, link(e.VictimID, e.VictimName))
+		ev.Parts = append(ev.Parts, EventPart{Text: " died"})
+		if e.Weapon != "" && e.Weapon != "World" {
+			ev.Parts = append(ev.Parts, EventPart{Text: " (" + e.Weapon + ")"})
+		}
+	case "bomb_plant":
+		ev.Parts = append(ev.Parts, link(e.ActorID, e.ActorName))
+		ev.Parts = append(ev.Parts, EventPart{Text: " planted the bomb"})
+		if e.Site != "" {
+			ev.Parts = append(ev.Parts, EventPart{Text: " at site " + e.Site})
+		}
+	case "bomb_defuse":
+		ev.Parts = append(ev.Parts, link(e.ActorID, e.ActorName))
+		ev.Parts = append(ev.Parts, EventPart{Text: " defused the bomb"})
+		if e.Site != "" {
+			ev.Parts = append(ev.Parts, EventPart{Text: " at site " + e.Site})
+		}
+	case "bomb_explode":
+		ev.Parts = []EventPart{{Text: "The bomb exploded"}}
+	case "grenade":
+		ev.Parts = append(ev.Parts, link(e.ActorID, e.ActorName))
+		ev.Parts = append(ev.Parts, EventPart{Text: " threw " + article(e.Grenade) + e.Grenade})
+	case "mvp":
+		ev.Parts = append(ev.Parts, link(e.ActorID, e.ActorName))
+		ev.Parts = append(ev.Parts, EventPart{Text: " was awarded the round MVP"})
+	case "round_end":
+		ev.Parts = []EventPart{{Text: e.Text}}
+		if e.Score != [2]int{} {
+			ev.Parts = append(ev.Parts, EventPart{Text: fmt.Sprintf(" - %d : %d", e.Score[0], e.Score[1])})
+		}
+	case "player_connect":
+		ev.Parts = append(ev.Parts, link(e.ActorID, actorName(e)))
+		ev.Parts = append(ev.Parts, EventPart{Text: " connected"})
+	case "player_disconnect":
+		ev.Parts = append(ev.Parts, link(e.ActorID, actorName(e)))
+		ev.Parts = append(ev.Parts, EventPart{Text: " disconnected"})
+	case "team_change":
+		ev.Parts = append(ev.Parts, link(e.ActorID, actorName(e)))
+		ev.Parts = append(ev.Parts, EventPart{Text: teamChangeText(e)})
+		if e.NewSide != model.SideUnknown {
+			ev.Badges = append(ev.Badges, string(e.NewSide))
+		}
+	case "team_swap":
+		text := e.Text
+		if text == "" {
+			text = "Teams switched sides"
+		}
+		ev.Parts = []EventPart{{Text: text}}
+	default:
+		ev.Parts = []EventPart{{Text: e.Type}}
+	}
+	return ev
+}
+
+func actorName(e *model.Event) string {
+	if e.ActorName != "" {
+		return e.ActorName
+	}
+	return "Unknown player"
+}
+
+func teamChangeText(e *model.Event) string {
+	oldSide, newSide := e.OldSide, e.NewSide
+	switch {
+	case newSide == model.SideSpectator || newSide == model.SideUnassigned:
+		return " moved to " + sideLabel(newSide)
+	case oldSide == model.SideSpectator || oldSide == model.SideUnassigned || oldSide == model.SideUnknown:
+		return " joined " + sideLabel(newSide)
+	default:
+		return " switched from " + sideLabel(oldSide) + " to " + sideLabel(newSide)
+	}
+}
+
+func sideLabel(s model.Side) string {
+	switch s {
+	case model.SideCT:
+		return "Counter-Terrorists"
+	case model.SideT:
+		return "Terrorists"
+	case model.SideSpectator:
+		return "Spectators"
+	case model.SideUnassigned:
+		return "Unassigned"
+	default:
+		return "Unknown"
+	}
 }
 
 func addKillBadges(ev *EventView, e *model.Event) {
@@ -999,6 +1469,10 @@ func eventClass(e *model.Event) string {
 		return "evt-mvp"
 	case "round_end":
 		return "evt-end"
+	case "player_connect", "player_disconnect", "team_change":
+		return "evt-life"
+	case "team_swap":
+		return "evt-swap"
 	default:
 		return "evt-" + e.Type
 	}

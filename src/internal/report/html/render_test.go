@@ -200,3 +200,63 @@ func TestRenderContainsCoreSectionsAndEscapesNames(t *testing.T) {
 		t.Fatal("unrendered template action")
 	}
 }
+
+func TestTimelineOrdersAbsoluteTimesAndLifecycleSections(t *testing.T) {
+	m := testMatch()
+	m.Warmup = &model.Warmup{StartOffset: 0, EndOffset: 10, Duration: 10, Events: []*model.Event{{Type: "kill", Offset: 5, ActorName: "kalle", VictimName: "victim", Weapon: "USP-S"}}}
+	m.Rounds[0].StartOffset = 10
+	m.Rounds[0].EndOffset = 100
+	m.Rounds[0].Duration = 90
+	m.Rounds[0].Events = []*model.Event{
+		{Type: "kill", Offset: 20, ActorName: "kalle", VictimName: "victim", Weapon: "AK-47"},
+		{Type: "round_end", Offset: 90, Text: "Bomb exploded", Score: [2]int{1, 0}},
+	}
+	m.Events = []*model.Event{
+		{Type: "player_connect", Offset: 0, ActorName: "kalle"},
+		{Type: "team_change", Offset: 5.5, ActorName: "kalle", OldSide: model.SideSpectator, NewSide: model.SideT},
+		{Type: "team_swap", Offset: 105, Text: "Alpha now CT - Bravo now T"},
+		{Type: "player_disconnect", Offset: 120, ActorName: "kalle"},
+	}
+	v := newView(testDocument(m, "test"), Options{})
+	if len(v.Timeline) < 3 {
+		t.Fatalf("timeline sections: got %d, want at least 3", len(v.Timeline))
+	}
+	if v.Timeline[0].Kind != "warmup" || v.Timeline[1].Kind != "round" || v.Timeline[2].Kind != "gap" {
+		t.Fatalf("section order: %q %q %q", v.Timeline[0].Kind, v.Timeline[1].Kind, v.Timeline[2].Kind)
+	}
+	round := v.Timeline[1]
+	if len(round.Rows) != 2 {
+		t.Fatalf("round rows: got %d, want 2", len(round.Rows))
+	}
+	if round.Rows[0].AbsoluteTime != "0:30" || round.Rows[1].AbsoluteTime != "1:40" {
+		t.Fatalf("absolute times: %q %q", round.Rows[0].AbsoluteTime, round.Rows[1].AbsoluteTime)
+	}
+	gap := v.Timeline[2]
+	if len(gap.Rows) != 2 {
+		t.Fatalf("gap rows: got %d, want 2", len(gap.Rows))
+	}
+	if !strings.Contains(gap.Rows[0].Parts[0].Text, "now CT") {
+		t.Fatalf("team swap text missing: %+v", gap.Rows[0].Parts)
+	}
+}
+
+func TestTimelineFallsBackToEconomyForTeamSwap(t *testing.T) {
+	m := testMatch()
+	m.Events = nil
+	m.Rounds = []*model.Round{
+		{Number: 1, StartTick: 100, EndTick: 500, StartOffset: 10, EndOffset: 100, Duration: 90, Winner: model.SideT, EndScore: [2]int{1, 0}, Economy: []*model.TeamEconomy{{TeamID: 2, Side: model.SideT}, {TeamID: 3, Side: model.SideCT}}},
+		{Number: 2, StartTick: 600, EndTick: 900, StartOffset: 110, EndOffset: 180, Duration: 70, Winner: model.SideT, EndScore: [2]int{2, 0}, Economy: []*model.TeamEconomy{{TeamID: 2, Side: model.SideCT}, {TeamID: 3, Side: model.SideT}}},
+	}
+	v := newView(testDocument(m, "test"), Options{})
+	found := false
+	for _, section := range v.Timeline {
+		for _, row := range section.Rows {
+			if row.Type == "team_swap" {
+				found = true
+			}
+		}
+	}
+	if !found {
+		t.Fatal("fallback team swap event missing")
+	}
+}
