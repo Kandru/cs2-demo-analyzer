@@ -1508,7 +1508,7 @@ select {
   position: absolute;
   top: 0.4rem;
   bottom: 0.4rem;
-  left: 4.55rem;
+  left: 5.2rem;
   width: 2px;
   background: var(--line);
 }
@@ -1544,6 +1544,7 @@ select {
 
 .tl-node {
   position: relative;
+  justify-self: center;
   z-index: 1;
   display: flex;
   width: 1.5rem;
@@ -2539,7 +2540,7 @@ select {
   }
 
   .tl-rows::before {
-    left: 4.1rem;
+    left: 4.6rem;
   }
 
   .tl-row {
@@ -2640,7 +2641,7 @@ select {
   }
 
   .tl-rows::before {
-    left: 3.6rem;
+    left: 4.05rem;
   }
 
   .tl-round-badge {
@@ -2659,8 +2660,22 @@ select {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .player-body {
+    grid-template-columns: 1fr;
+  }
+
+  .player-rounds {
+    grid-column: auto;
+  }
+
   .index-grid {
     grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  }
+}
+
+@media (min-width: 2600px) {
+  .player-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -2821,4 +2836,31 @@ select {
 .tl-section.tl-pre .tl-head,
 .tl-section.tl-post .tl-head {
   background: var(--bg-2);
+}
+
+.score-table tbody th {
+  background: transparent;
+  color: var(--text);
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.score-table tfoot th {
+  background: var(--bg-1);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.mini-table tbody th {
+  background: transparent;
+  color: var(--text);
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-align: left;
+  text-transform: none;
 }

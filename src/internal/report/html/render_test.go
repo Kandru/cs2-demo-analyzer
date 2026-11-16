@@ -108,6 +108,9 @@ func TestRenderWritesSelfDescribingHeader(t *testing.T) {
 	if !strings.HasPrefix(page, "<!doctype html>\n"+report.HeaderPrefix) {
 		t.Fatalf("report does not start with the metadata comment: %q", page[:120])
 	}
+	if strings.Count(page, "<!doctype html>") != 1 {
+		t.Fatal("report must contain exactly one doctype")
+	}
 	h, err := report.ReadHeaderFrom(strings.NewReader(page))
 	if err != nil {
 		t.Fatal(err)
