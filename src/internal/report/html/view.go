@@ -1521,8 +1521,10 @@ func article(g string) string {
 
 // plainDashes keeps generated UI text to the project's plain "-" style. It is
 // only applied to analyser/parser text, never to untrusted player names.
+var dashReplacer = strings.NewReplacer("\u2014", "-", "\u2013", "-", "\u00b7", "-")
+
 func plainDashes(s string) string {
-	return strings.NewReplacer("\u2014", "-", "\u2013", "-", "\u00b7", "-").Replace(s)
+	return dashReplacer.Replace(s)
 }
 
 func clock(seconds float64) string {
