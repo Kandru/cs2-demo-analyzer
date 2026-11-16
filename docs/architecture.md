@@ -35,8 +35,9 @@ demo takes roughly 9–11 s on a modern CPU (both passes included).
 | `internal/model` | Pure domain structs, JSON tags, no behavior | parser, report, demoinfocs |
 | `internal/config` | Validated runtime flags | parser, report |
 | `internal/parser` | demoinfocs → `model.Match`; rounds, events, economy, player stats | report |
-| `internal/aim` | Leetify-style aim tracker (one pass, fed by parser) | parser (receives events/state) |
+| `internal/aim` | Leetify-style aim tracker (one pass, fed by parser); one `metric_<id>.go` spec per tile | parser (receives events/state) |
 | `internal/anticheat` | Adapter around vendored detector | parser, report |
+| `internal/anticheat/stats` | Collectors + first-party detection registry (`detect_*`, `mod_*`) | app/report |
 | `internal/anticheat/stats`, `.../analyzer` | Vendored upstream code; only integration patches allowed | app/report |
 | `internal/analysis` | Cheat merge, summary/team totals, validation | parser internals |
 | `internal/report/html` | View model + template + assets | store |
@@ -79,17 +80,39 @@ demo takes roughly 9–11 s on a modern CPU (both passes included).
    in `parser` handlers, render it in `report/html/view.go` + template.
 2. **New match stat**: aggregate in `parser.applyRoundToPlayers` or
    `finalizePlayerStats`; expose in `model.PlayerStats`; show in player cards.
-3. **New aim metric**: add a component in `aim.buildAimStats` with weight and
-   anchors; update `docs/aim-metrics.md`; add a unit test.
-4. **New cheat channel**: this is upstream logic. Prefer extending the vendored
-   detector only via documented patches; then map it in
-   `anticheat/stats/battlelog.go`. If reviewers should jump to the signal,
-   append an `EvidenceMoment` at the collector and document the threshold in
-   `docs/anticheat.md`.
-5. **New output format**: implement a renderer in `internal/report/<format>` and
+3. **New aim metric**: add `src/internal/aim/metric_<id>.go` with a
+   `MetricSpec` (anchors, weight, sample gate, formatter), register it in
+   `metric_specs.go`, add `docs/aim/<id>.md` from the template, and extend
+   `metrics_test.go`. The docs-sync test enforces the page.
+4. **New cheat channel**: add `src/internal/anticheat/stats/detect_<id>.go`
+   with a `Detection` spec (measurement, ramp, weight, mode, narrative,
+   optional evidence cue), register it in `registry.go`, add
+   `docs/detections/<id>.md`, and add `detect_<id>_test.go`. Keep scoring
+   behavior changes separate from structural changes. See
+   `docs/detections/README.md`.
+5. **New cheat modifier**: add `mod_<id>.go` with `Apply`, `Publish` and
+   `Adjustments`, then register it at the correct stage (boosts → discount →
+   stacking/co-occurrence → floor → overrides).
+6. **New output format**: implement a renderer in `internal/report/<format>` and
    call it from `app.Processor`; keep the `model` contract unchanged.
-6. **New watcher source** (S3/SFTP): implement the `watch.Processor` boundary
+7. **New watcher source** (S3/SFTP): implement the `watch.Processor` boundary
    and feed it paths; do not put I/O into the parser.
+
+## Detection architecture
+
+The vendored detector supplies raw measurements; the first-party registry in
+`internal/anticheat/stats` turns them into scored channels. One file per
+detection/modifier and one matching page keeps a feature editable in isolation:
+
+```
+collect_*.go ──► detect_<id>.go ──► combine ──► mod_<id>.go ──► publish
+                     │
+                     └── docs/detections/<id>.md
+```
+
+The registry order is a contract; formulas and thresholds live in the feature
+file, never in the pipeline. `internal/aim` follows the same pattern with
+`MetricSpec` and `docs/aim/`.
 
 ## Failure model
 

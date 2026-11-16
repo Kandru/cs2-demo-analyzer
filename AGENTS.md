@@ -5,10 +5,11 @@ aim stats and a vendored anti-cheat analysis.
 
 ## Read first
 
-1. `docs/architecture.md` — pipeline and package boundaries.
-2. `docs/conventions.md` — global rules (errors, escaping, tests, commits).
-3. The `AGENTS.md` in the folder you are editing.
-4. `docs/THIRD_PARTY.md` before touching `src/internal/anticheat`.
+1. `docs/README.md` — documentation index and reading order.
+2. `docs/architecture.md` — pipeline and package boundaries.
+3. `docs/conventions.md` — global rules (errors, escaping, tests, commits).
+4. The `AGENTS.md` in the folder you are editing.
+5. `docs/THIRD_PARTY.md` before touching `src/internal/anticheat`.
 
 ## Ground rules
 
@@ -59,7 +60,9 @@ src/internal/version/     ldflags version
 
 - `go test ./...` passes.
 - `go vet ./...` passes.
-- New/changed behavior documented.
+- New/changed behavior documented, including the matching
+  `docs/detections/<id>.md` or `docs/aim/<id>.md` page.
+- Docs-sync tests pass for every registered detection/modifier/metric.
 - No unescaped user content reaches HTML.
 - Clean demo does not gain a new false-positive flag; calibration tests pass.
 - Partial/corrupt demo still produces a report or a cached, actionable error.

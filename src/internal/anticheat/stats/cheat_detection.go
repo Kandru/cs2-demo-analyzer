@@ -5,8 +5,8 @@ import (
 )
 
 // CheatDetector is the Collector facade for the cheat-detection scoring
-// pipeline. All scoring logic lives in cheatscore_*.go files within this
-// package so it can be unit-tested without spinning up a parser.
+// pipeline. Scoring lives in run.go plus the registry-driven detect_*.go and
+// mod_*.go files so it can be unit-tested without spinning up a parser.
 type CheatDetector struct {
 	*BaseCollector
 }

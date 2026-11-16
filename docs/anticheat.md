@@ -68,7 +68,7 @@ crosses its ramp start. They are reviewer navigation aids, never a verdict.
 These changes are intentional and covered by tests/docs. Scoring logic is
 otherwise unchanged.
 
-1. **Snap velocity unit bug fixed** (`snap_collectors.go`). Upstream
+1. **Snap velocity unit bug fixed** (`collect_snap.go`). Upstream
    `angleDiff` returns degrees but multiplied by `180/π` again, inflating snap
    velocity ~57×. Removing the double conversion eliminates a major
    false-positive source.
@@ -77,9 +77,9 @@ otherwise unchanged.
    ≥5 sub-100 ms events, a ≤9° pre-FOV median on ≥8 samples, and lobby
    asymmetry. Details in
    [`ttd_sub100_high_floor.md`](detections/ttd_sub100_high_floor.md).
-3. **Same-tick TTD discarded** (`reaction_collectors.go`). A sighting and
+3. **Same-tick TTD discarded** (`collect_reaction.go`). A sighting and
    damage in the same tick is a radar-spot artifact, not a reaction.
-4. **Debug stdout removed** (`recoil_collectors.go`).
+4. **Debug stdout removed** (`collect_recoil.go`).
 5. **Unused weapon-usage collector removed** and unused reporter code dropped
    during vendoring.
 6. **Timestamped evidence cues** added per detection; see

@@ -43,7 +43,7 @@ pinned rather than additive.
 ## Files
 
 - Implementation: `src/internal/anticheat/stats/mod_sniper_overrides.go`
-- Collector: `src/internal/anticheat/stats/sniper_collector.go`
+- Collector: `src/internal/anticheat/stats/collect_sniper.go`
 - Registry position: last modifier.
 
 ## Tuning checklist

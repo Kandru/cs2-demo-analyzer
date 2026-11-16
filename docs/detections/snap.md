@@ -12,7 +12,7 @@ the top of that distribution without depending on a single lucky flick.
 
 ## Collection
 
-- Collector: `SnapAngleCollector` (`snap_collectors.go`).
+- Collector: `SnapAngleCollector` (`collect_snap.go`).
 - Keeps a 40-tick ring buffer of yaw/pitch per player.
 - On a kill, walks backward to the last tick where the aim was stable
   (`< 0.2°` change), then measures angle delta over the elapsed ticks.
@@ -55,7 +55,7 @@ aid, never a verdict.
 ## Files
 
 - Implementation: `src/internal/anticheat/stats/detect_snap.go`
-- Collector: `src/internal/anticheat/stats/snap_collectors.go`
+- Collector: `src/internal/anticheat/stats/collect_snap.go`
 - Tests: `src/internal/anticheat/stats/detect_snap_test.go`,
   `calibration_test.go`
 - Report row: registry metadata in `battlelog.go`

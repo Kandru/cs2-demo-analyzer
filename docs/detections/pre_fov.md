@@ -13,7 +13,7 @@ information, not aim.
 
 ## Collection
 
-- Collector: `BehavioralCollector` (`behavioral_collectors.go`).
+- Collector: `BehavioralCollector` (`collect_behavioral.go` + `collect_behavioral_prefov.go`).
 - Keeps a 320-tick (5 s at 64 tick) history of view direction and position per
   player.
 - On a kill, walks backward to the first tick where the victim left the
@@ -56,15 +56,15 @@ screen visibility. Treat tight angles as a review cue, not proof.
 
 - [`pre_fov_presence`](pre_fov_presence.md) consumes the sample count and
   lobby asymmetry.
-- [`wallhack_cooccurrence`](wallhack_cooccurrence.md) requires the
+- [`wallhack_cooccurrence`](wallhack_co_occurrence_boost.md) requires the
   post-normalisation score × confidence.
-- [`ttd_sub100_floor`](ttd_sub100_floor.md) requires a tight pre-FOV median.
+- [`ttd_sub100_floor`](ttd_sub100_high_floor.md) requires a tight pre-FOV median.
 - [`decoupling`](decoupling.md) subtracts this median from attention.
 
 ## Files
 
 - Implementation: `src/internal/anticheat/stats/detect_pre_fov.go`
-- Collector: `src/internal/anticheat/stats/behavioral_collectors.go`
+- Collector: `src/internal/anticheat/stats/collect_behavioral_prefov.go`
 - Tests: `src/internal/anticheat/stats/detect_pre_fov_test.go`
 - Report row: registry metadata in `battlelog.go`
 

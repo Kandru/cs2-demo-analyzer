@@ -20,6 +20,9 @@ path and the one used by the Makefile.
 | Aim formulas | `internal/aim/metrics_test.go` | anchors, medians, no-damage degradation, display strings |
 | Parser helpers | `internal/parser/helpers_test.go` | slugs, buy types, ADR/HS/accuracy finalization, stable IDs |
 | Anti-cheat calibration | `internal/anticheat/stats/calibration_test.go` | sub-100 floor gates, snap-unit regression |
+| Cheat detections | `internal/anticheat/stats/detect_*_test.go`, `registry_test.go` | one test per signal, registry contract |
+| Detection docs | `internal/anticheat/stats/docs_sync_test.go` | every registered feature has a page |
+| Aim metrics | `internal/aim/metrics_test.go`, `docs_sync_test.go` | anchors, medians, no-damage degradation, doc sync |
 | HTML report | `internal/report/html/render_test.go`, `index_test.go` | template compiles, core sections render, names are escaped, index links |
 | Index/demo links | `internal/app/index_test.go` | same-directory and opt-in links, index entries |
 | Demo filenames | `internal/demofile/demofile_test.go` | supported extensions, base names, sibling lookup |
@@ -29,6 +32,25 @@ path and the one used by the Makefile.
 | Watcher | `internal/watch/watch_test.go` | settle-before-queue |
 
 No test requires network access or a demo file.
+
+## Behavior-preserving refactors
+
+Two opt-in harnesses make structural refactors auditable:
+
+```sh
+# Full report + JSON baseline
+./dist/cs2-battlelog analyze --json --output /tmp/before stuff/
+
+# Internal detector metrics baseline
+CS2BATTLELOG_GOLDEN_DEMO=stuff/match.dem \
+CS2BATTLELOG_GOLDEN_OUT=/tmp/before.metrics \
+go test ./internal/anticheat/stats -run TestGoldenDemoMetrics
+```
+
+Diff the JSON sidecars (ignore `analyzedAt`/`fileTime`) and the metric dumps
+after the refactor. Additive JSON fields are allowed; scores, channels, flags,
+weights and HTML should be unchanged unless the change is explicitly a
+calibration or schema change.
 
 ## Demo-backed checks (manual/opt-in)
 

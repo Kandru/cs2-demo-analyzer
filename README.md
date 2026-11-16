@@ -75,17 +75,20 @@ See [docs/releasing.md](docs/releasing.md).
 
 | Doc | Contents |
 |---|---|
+| [docs/README.md](docs/README.md) | Documentation index and “start here” map |
 | [docs/architecture.md](docs/architecture.md) | Pipeline, packages, data flow, extension points |
 | [docs/conventions.md](docs/conventions.md) | Global coding, error, logging, testing rules |
 | [docs/cli.md](docs/cli.md) | Flags, env vars, watch/cache behavior |
 | [docs/parser.md](docs/parser.md) | demoinfocs mapping, round model, edge cases |
 | [docs/battlelog-ui.md](docs/battlelog-ui.md) | Sections, design tokens, components, accessibility |
-| [docs/aim-metrics.md](docs/aim-metrics.md) | Exact aim formulas, anchors, sample gates |
+| [docs/aim-metrics.md](docs/aim-metrics.md) | Aim rating and shared rules |
+| [docs/aim/](docs/aim/README.md) | One page per aim metric |
 | [docs/anticheat.md](docs/anticheat.md) | Vendored detector, calibrations, limitations |
+| [docs/detections/](docs/detections/README.md) | One page per cheat detection and modifier |
 | [docs/watching.md](docs/watching.md) | Watch lifecycle, manifest, Docker mounts |
 | [docs/report-schema.md](docs/report-schema.md) | JSON/HTML data contract |
 | [docs/releasing.md](docs/releasing.md) | Version scheme and release workflow |
-| [docs/testing.md](docs/testing.md) | Running tests, demo fixtures |
+| [docs/testing.md](docs/testing.md) | Running tests, docs-sync checks, demo fixtures |
 | [docs/THIRD_PARTY.md](docs/THIRD_PARTY.md) | Vendored code and licenses |
 
 Every feature package also has an `AGENTS.md` with local invariants and extension instructions.

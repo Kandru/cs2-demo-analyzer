@@ -13,7 +13,7 @@ with fast professionals at 400–500 ms and sub-250 ms medians suspicious.
 
 ## Collection
 
-- Collector: `ReactionTimeCollector` (`reaction_collectors.go`).
+- Collector: `ReactionTimeCollector` (`collect_reaction.go`).
 - Visibility uses `opponent.IsSpottedBy(attacker)` (`m_bSpottedByMask`), not a
   geometric cone, so walls and smoke are respected.
 - An engagement starts on first visibility, survives brief LoS flickers up to
@@ -50,13 +50,13 @@ artifacts from becoming reaction samples.
 ## Interactions
 
 The companion [`ttd_sub100`](ttd_sub100.md) channel and the
-[`ttd_sub100_floor`](ttd_sub100_floor.md) modifier read the same sample set.
+[`ttd_sub100_floor`](ttd_sub100_high_floor.md) modifier read the same sample set.
 The floor requires the median/pre-FOV context documented there.
 
 ## Files
 
 - Implementation: `src/internal/anticheat/stats/detect_reaction.go`
-- Collector: `src/internal/anticheat/stats/reaction_collectors.go`
+- Collector: `src/internal/anticheat/stats/collect_reaction.go`
 - Tests: `src/internal/anticheat/stats/detect_reaction_test.go`
 - Report row: registry metadata in `battlelog.go`
 

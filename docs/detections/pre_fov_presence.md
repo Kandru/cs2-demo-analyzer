@@ -49,7 +49,7 @@ published score directly: strong at 0.50, blatant at 0.80, no mild tier.
 
 ## Interactions
 
-The same lobby tally feeds [`ttd_sub100_floor`](ttd_sub100_floor.md). Do not
+The same lobby tally feeds [`ttd_sub100_floor`](ttd_sub100_high_floor.md). Do not
 compute asymmetry twice or with different thresholds.
 
 ## Files

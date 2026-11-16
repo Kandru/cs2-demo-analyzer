@@ -42,13 +42,13 @@ is the strongest reading. Very low-death matches must not score.
 
 ## Interactions
 
-[`wallhack_cooccurrence`](wallhack_cooccurrence.md) reads
+[`wallhack_cooccurrence`](wallhack_co_occurrence_boost.md) reads
 `back_kill_given_pct` and `back_kill_given_total_kills` on the killer side.
 
 ## Files
 
 - Implementation: `src/internal/anticheat/stats/detect_back_killed.go`
-- Collector: `src/internal/anticheat/stats/behavioral_collectors.go`
+- Collector: `src/internal/anticheat/stats/collect_behavioral_backkill.go`
 - Tests: `src/internal/anticheat/stats/detect_back_killed_test.go`
 - Report row: registry metadata in `battlelog.go`
 

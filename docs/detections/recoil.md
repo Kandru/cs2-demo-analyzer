@@ -12,7 +12,7 @@ programmatic compensation.
 
 ## Collection
 
-- Collector: `RecoilControlCollector` (`recoil_collectors.go`).
+- Collector: `RecoilControlCollector` (`collect_recoil.go`).
 - Tracks automatic weapons with a defined pattern (`AK-47`, `M4A4`, `M4A1-S`,
   `MP9`, `P90`) in bursts of at least three bullets.
 - Raw keys: `recoil/mean_angular_error`, `recoil/recoil_score`,
@@ -52,7 +52,8 @@ Feeds the Bayesian combiner and evidence stacking. Gains no direct modifier.
 ## Files
 
 - Implementation: `src/internal/anticheat/stats/detect_recoil.go`
-- Collector/patterns: `src/internal/anticheat/stats/recoil_collectors.go`
+- Collector: `src/internal/anticheat/stats/collect_recoil.go`
+- Patterns: `src/internal/anticheat/stats/spray_patterns.go`
 - Tests: `src/internal/anticheat/stats/detect_recoil_test.go`
 - Report row: registry metadata in `battlelog.go`
 

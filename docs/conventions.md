@@ -37,6 +37,19 @@ These rules apply to the whole repository.
 - Never emit a report with zero players; return `ErrNoPlayers` instead.
 - Cheat-detection failure is non-fatal; record it on each `CheatReport`.
 
+## Feature units
+
+- One cheat detection per `detect_<id>.go`, one modifier per `mod_<id>.go`,
+  and one aim metric per `metric_<id>.go`. Each needs a matching page:
+  `docs/detections/<id>.md` or `docs/aim/<id>.md`.
+- Metadata belongs in the feature spec, not in the pipeline. Do not add
+  per-feature switches to `run.go`, `publish.go`, the report builder or the
+  template.
+- The registry order is part of the behavior contract; changing it requires a
+  test update and a docs note.
+- The docs-sync tests fail when a registered feature has no page or an orphan
+  page exists. Run them before committing.
+
 ## Tests
 
 - Every feature folder needs tests for pure logic and at least one integration

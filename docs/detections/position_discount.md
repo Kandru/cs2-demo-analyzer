@@ -38,7 +38,7 @@ depending on the final scoreboard only.
 ## Files
 
 - Implementation: `src/internal/anticheat/stats/mod_position_discount.go`
-- Factor source: `src/internal/anticheat/stats/scoreboard_collector.go`
+- Factor source: `src/internal/anticheat/stats/collect_scoreboard.go`
 - Registry position: third modifier.
 
 ## Tuning checklist

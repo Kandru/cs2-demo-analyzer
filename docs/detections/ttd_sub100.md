@@ -37,7 +37,7 @@ is meaningful only with enough samples.
 ## Calibration
 
 This channel is deliberately paired with a hard sample gate in the
-[`ttd_sub100_floor`](ttd_sub100_floor.md) modifier: at least 20 TTD samples,
+[`ttd_sub100_floor`](ttd_sub100_high_floor.md) modifier: at least 20 TTD samples,
 at least 5 sub-100 ms events, and a tight pre-FOV median on at least 8
 samples in an asymmetric lobby. The earlier upstream floor fired at three
 samples and produced false positives on short/custom lobbies.
@@ -50,7 +50,7 @@ normalisation cannot weaken the gate.
 ## Files
 
 - Implementation: `src/internal/anticheat/stats/detect_ttd_sub100.go`
-- Collector: `src/internal/anticheat/stats/reaction_collectors.go`
+- Collector: `src/internal/anticheat/stats/collect_reaction.go`
 - Tests: `src/internal/anticheat/stats/detect_ttd_sub100_test.go`,
   `calibration_test.go`
 - Report row: registry metadata in `battlelog.go`

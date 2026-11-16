@@ -12,7 +12,7 @@ players and wallhack-only cheaters can all have ordinary headshot rates.
 
 ## Collection
 
-- Collector: `HeadshotCollector` (`kill_collectors.go`), `events.Kill`.
+- Collector: `HeadshotCollector` (`collect_headshot.go`), `events.Kill`.
 - Raw keys: `kills/headshot_kills`, `kills/total_kills`,
   `kills/headshot_percentage`.
 - Team kills and suicides are ignored.
