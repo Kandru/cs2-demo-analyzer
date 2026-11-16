@@ -29,8 +29,6 @@ type playerSnap struct {
 	side  common.Team
 }
 
-const scoreboardCategory = Category("scoreboard")
-
 func NewScoreboardCollector() *ScoreboardCollector {
 	return &ScoreboardCollector{
 		BaseCollector: NewBaseCollector("Scoreboard"),

@@ -150,10 +150,10 @@ func (rtc *ReactionTimeCollector) processDamage(e events.PlayerHurt, demoStats *
 
 	// Battlelog integration: record the sighting as a timestamped review cue
 	// when the time-to-damage is suspicious. Only metadata; scoring unchanged.
-	if deltaT <= evidenceReactionMs {
+	if deltaT <= detReaction.Evidence.Threshold {
 		if ps := demoStats.GetOrCreatePlayerStats(e.Attacker); ps != nil {
 			kind := "ttd"
-			if deltaT <= evidenceSub100Ms {
+			if deltaT <= detTTDSub100.Evidence.Threshold {
 				kind = "ttd_sub100"
 			}
 			weapon := e.WeaponString

@@ -425,7 +425,7 @@ func (rc *RecoilControlCollector) finalizeBurst(state *sprayState, steamID uint6
 
 	// Battlelog integration: a near-perfect spray is a timestamped review cue.
 	// Only metadata; the recoil score is still computed below from the totals.
-	if meanError <= evidenceRecoilError && state.countedBullets >= rc.minBurstSize {
+	if meanError <= detRecoil.Evidence.Threshold && state.countedBullets >= rc.minBurstSize {
 		playerStats.AddMoment(EvidenceMoment{
 			Kind:   "recoil",
 			Tick:   state.firstTick,

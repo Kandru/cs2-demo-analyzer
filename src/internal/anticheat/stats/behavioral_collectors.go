@@ -282,7 +282,7 @@ func (bc *BehavioralCollector) handleKill(e events.Kill, demoStats *DemoStats) {
 	// Battlelog integration: record the pre-aim sample as a timestamped cue.
 	// The tick is when the victim entered the killer's FOV, so the reviewer can
 	// watch the approach rather than only the shot. Scoring is unchanged.
-	if preFOVAngle <= evidencePreFOVAngle {
+	if preFOVAngle <= detPreFOV.Evidence.Threshold {
 		if ps := demoStats.GetOrCreatePlayerStats(e.Killer); ps != nil {
 			ps.AddMoment(EvidenceMoment{
 				Kind:     "preaim",

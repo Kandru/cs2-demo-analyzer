@@ -220,7 +220,7 @@ func (sac *SnapAngleCollector) processKill(e events.Kill, demoStats *DemoStats) 
 
 		// Battlelog integration: record a timestamped review cue when the snap
 		// is at or beyond the channel's ramp start. Scoring is unchanged.
-		if velocity >= evidenceSnapVelocity {
+		if velocity >= detSnap.Evidence.Threshold {
 			tick := endSnapshot.Tick
 			if tick <= 0 {
 				tick = sac.currentTick

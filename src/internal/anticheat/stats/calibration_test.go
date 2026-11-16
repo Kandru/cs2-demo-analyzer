@@ -21,8 +21,9 @@ func TestTTDSub100FloorRequiresStrongSample(t *testing.T) {
 	metricFloat(t, ps, Category("behavioral"), Key("pre_fov_aim_median_deg"), 9.2)
 
 	// The kalle-style 4/17 sample with a 9.2° pre-aim must not pin the verdict.
-	if score, fired := applyTTDSub100Floor(12, ps, true); fired || score != 12 {
-		t.Fatalf("thin sample should not trigger floor: score=%v fired=%v", score, fired)
+	st := &scoreState{score: 12, ps: ps, lobbyAsymmetric: true}
+	if a := applyTTDSub100Floor(st); a.Fired || st.score != 12 {
+		t.Fatalf("thin sample should not trigger floor: score=%v fired=%v", st.score, a.Fired)
 	}
 
 	// A larger, unambiguous triggerbot profile still floors.
@@ -32,8 +33,9 @@ func TestTTDSub100FloorRequiresStrongSample(t *testing.T) {
 	metricInt(t, ps2, Category("reaction"), Key("sub_100ms_count"), 12)
 	metricInt(t, ps2, Category("behavioral"), Key("pre_fov_aim_samples"), 10)
 	metricFloat(t, ps2, Category("behavioral"), Key("pre_fov_aim_median_deg"), 5)
-	if score, fired := applyTTDSub100Floor(12, ps2, true); !fired || score < 55 {
-		t.Fatalf("strong profile should floor: score=%v fired=%v", score, fired)
+	st2 := &scoreState{score: 12, ps: ps2, lobbyAsymmetric: true}
+	if a := applyTTDSub100Floor(st2); !a.Fired || st2.score < 55 {
+		t.Fatalf("strong profile should floor: score=%v fired=%v", st2.score, a.Fired)
 	}
 }
 

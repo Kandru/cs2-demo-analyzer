@@ -6,8 +6,6 @@ import (
 	"github.com/markus-wa/demoinfocs-golang/v5/pkg/demoinfocs/events"
 )
 
-const sniperCategory = Category("sniper")
-
 // SniperCollector tracks sniper-specific kill signals that act as
 // high-confidence cheat overrides in the detector:
 //

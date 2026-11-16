@@ -7,8 +7,6 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
-const grenadeCategory = Category("utility")
-
 // GrenadeCollector tracks per-player HE grenade usage and damage. We restrict
 // to HE because that's the unit authoritative demo tools report on and the
 // metric that carries cheat signal — a player landing every HE on enemies

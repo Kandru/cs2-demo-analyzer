@@ -119,29 +119,6 @@ func (ps *PlayerStats) AddMoment(m EvidenceMoment) {
 	ps.Moments = append(ps.Moments, m)
 }
 
-// momentSeverity orders cues within a kind so the cap keeps the strongest
-// samples. The scales are deliberately simple; the report ranks by kind too.
-func momentSeverity(m EvidenceMoment) float64 {
-	switch m.Kind {
-	case "snap":
-		return m.Value // higher is worse
-	case "ttd", "ttd_sub100":
-		return 1000 - m.Value // lower is worse
-	case "preaim":
-		return 90 - m.Value
-	case "recoil":
-		return 10 - m.Value
-	case "wallbang":
-		return 20 + m.Value
-	case "smoke":
-		return 15
-	case "noscope":
-		return 14
-	default:
-		return 1
-	}
-}
-
 // NewPlayerStats creates a new PlayerStats instance
 func NewPlayerStats(player *common.Player) *PlayerStats {
 	return &PlayerStats{

@@ -1,7 +1,6 @@
 package stats
 
 import (
-	"fmt"
 	"sort"
 )
 
@@ -144,53 +143,25 @@ func battlelogGrades(ps *PlayerStats) []BattlelogGrade {
 }
 
 func battlelogChannels(ps *PlayerStats) []BattlelogChannel {
-	n := func(cat Category, key Key) int {
-		v, _ := psGetInt(ps, cat, key)
-		return int(v)
-	}
-	f := func(cat Category, key Key) float64 {
-		v, _ := psGetFloat(ps, cat, key)
-		return v
-	}
-
-	type spec struct {
-		id, label, unit, desc string
-		raw                   float64
-		samples               int
-	}
-	// Raw values are read from the same keys the channel evaluators use, so
-	// the UI can show the human-readable metric behind every score.
-	specs := []spec{
-		{"hs", "Headshot rate", "%", "Share of kills that were headshots.", f(Category("kills"), Key("headshot_percentage")), n(Category("kills"), Key("total_kills"))},
-		{"snap", "Snap velocity P95", "°/ms", "95th percentile view-angle snap speed.", f(Category("aiming"), Key("p95_snap_velocity")), n(Category("aiming"), Key("snap_count"))},
-		{"reaction", "Damage speed (TTD)", "ms", "Median time from visibility to first damage.", f(Category("reaction"), Key("median_ttd")), n(Category("reaction"), Key("ttd_samples"))},
-		{"ttd_sub100", "Sub-100ms damage", "%", "Share of engagements completed in under 100 ms.", f(Category("reaction"), Key("sub_100ms_ttd")), n(Category("reaction"), Key("ttd_samples"))},
-		{"recoil", "Recoil deviation", "°", "Mean angular error against known spray patterns.", f(Category("recoil"), Key("mean_angular_error")), n(Category("recoil"), Key("total_counted_bullets"))},
-		{"pre_fov", "Pre-FOV pre-aim", "°", "Median crosshair-to-enemy angle 200 ms before visibility.", f(Category("behavioral"), Key("pre_fov_aim_median_deg")), n(Category("behavioral"), Key("pre_fov_aim_samples"))},
-		{"pre_fov_presence", "Pre-aim sample asymmetry", "samples", "Pre-aim samples relative to the rest of the lobby.", float64(n(Category("behavioral"), Key("pre_fov_aim_samples"))), n(Category("behavioral"), Key("pre_fov_aim_samples"))},
-		{"attention", "Off-engagement attention", "°", "Median crosshair-to-nearest-enemy angle outside fights.", f(Category("behavioral"), Key("nearest_enemy_angle_median_deg")), n(Category("behavioral"), Key("nearest_enemy_angle_samples"))},
-		{"back_killed", "Back-killed rate", "%", "Share of deaths where the player was looking away from the killer.", f(Category("behavioral"), Key("back_killed_pct")), n(Category("behavioral"), Key("back_killed_total_deaths"))},
-		{"decoupling", "Fight/idle decoupling", "°", "Attention angle minus pre-FOV angle.", f(Category("behavioral"), Key("nearest_enemy_angle_median_deg")) - f(Category("behavioral"), Key("pre_fov_aim_median_deg")), n(Category("behavioral"), Key("pre_fov_aim_samples"))},
-	}
-
-	out := make([]BattlelogChannel, 0, len(specs))
-	for _, s := range specs {
+	out := make([]BattlelogChannel, 0, len(detections))
+	for _, det := range detections {
 		ch := BattlelogChannel{
-			ID:          s.id,
-			Label:       s.label,
-			Unit:        s.unit,
-			Description: s.desc,
-			Raw:         s.raw,
-			Samples:     s.samples,
+			ID:          det.ID,
+			Label:       det.Label,
+			Unit:        det.Unit,
+			Description: det.Description,
 		}
-		if m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key(s.id+"_score")); ok {
+		if det.Raw != nil {
+			ch.Raw, ch.Samples, _ = det.Raw(ps)
+		}
+		if m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key(det.ID+"_score")); ok {
 			ch.Score = m.FloatValue
 			ch.HasData = true
 		}
-		if m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key(s.id+"_confidence")); ok {
+		if m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key(det.ID+"_confidence")); ok {
 			ch.Confidence = m.FloatValue
 		}
-		if m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key(s.id+"_zone")); ok {
+		if m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key(det.ID+"_zone")); ok {
 			ch.Zone = m.StringValue
 		}
 		if !ch.HasData {
@@ -205,31 +176,9 @@ func battlelogChannels(ps *PlayerStats) []BattlelogChannel {
 
 func battlelogAdjustments(ps *PlayerStats) []BattlelogAdjustment {
 	out := make([]BattlelogAdjustment, 0, 6)
-	if m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key("wingman_boost")); ok && m.StringValue == "Yes" {
-		detail := ""
-		if r, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key("wingman_kpr_boost_reason")); ok {
-			detail = r.StringValue
-		}
-		out = append(out, BattlelogAdjustment{Label: "Wingman score boost", Detail: detail})
-	}
-	if m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key("competitive_boost")); ok && m.StringValue == "Yes" {
-		out = append(out, BattlelogAdjustment{Label: "Competitive score boost", Detail: ">39 kills in regulation time"})
-	}
-	if m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key("position_discount")); ok && m.FloatValue > 0 {
-		out = append(out, BattlelogAdjustment{Label: "Scoreboard-position discount", Detail: fmt.Sprintf("%.0f%% reduction", m.FloatValue)})
-	}
-	if m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key("evidence_stacking_boost")); ok && m.StringValue != "" {
-		out = append(out, BattlelogAdjustment{Label: "Evidence stacking boost", Detail: m.StringValue})
-	}
-	if m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key("wallhack_co_occurrence_boost")); ok && m.StringValue == "Yes" {
-		out = append(out, BattlelogAdjustment{Label: "Wallhack co-occurrence boost", Detail: "pre-FOV pre-aim and back-kill signal both elevated"})
-	}
-	if m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key("ttd_sub100_high_floor")); ok && m.StringValue == "Yes" {
-		out = append(out, BattlelogAdjustment{Label: "Sub-100ms floor", Detail: "verdict floored at 55%"})
-	}
-	for _, key := range []Key{"sniper_wallbang_override", "scout_precision_override"} {
-		if m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, key); ok && m.StringValue == "Yes" {
-			out = append(out, BattlelogAdjustment{Label: "Sniper anomaly override", Detail: string(key)})
+	for _, m := range modifiers {
+		if m.Adjustments != nil {
+			out = append(out, m.Adjustments(ps)...)
 		}
 	}
 	return out
