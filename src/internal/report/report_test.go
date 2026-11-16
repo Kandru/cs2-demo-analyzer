@@ -19,7 +19,6 @@ func testHeader() Header {
 		SchemaVersion:   model.SchemaVersion,
 		Options:         Options{Cheat: true, Aim: true, DemoDownload: true}.String(),
 		DemoKey:         DemoKey("/demos/match.dem"),
-		DemoName:        "match.dem",
 		DemoSize:        1234,
 		DemoModUnixNano: 987654321,
 		GeneratedAt:     time.Date(2026, 11, 16, 12, 0, 0, 0, time.UTC),
@@ -113,9 +112,9 @@ func TestReadHTMLHeader(t *testing.T) {
 	}
 }
 
-func TestHeaderCommentEscapesUntrustedDemoName(t *testing.T) {
+func TestHeaderCommentEscapesUntrustedMetadata(t *testing.T) {
 	h := testHeader()
-	h.DemoName = `--><script>alert(1)</script>`
+	h.ServerName = `--><script>alert(1)</script>`
 	comment, err := HeaderComment(h)
 	if err != nil {
 		t.Fatal(err)

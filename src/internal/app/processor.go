@@ -136,7 +136,6 @@ func (p *Processor) Process(ctx context.Context, path string) error {
 	analysis.Validate(m)
 
 	header := p.headerFor(path, info.Size(), info.ModTime(), plan)
-	header.Partial = m.Partial
 	fillMatchMeta(&header, m, info.ModTime())
 	doc := report.New(m, header)
 
@@ -210,7 +209,6 @@ func (p *Processor) headerFor(demoPath string, size int64, mod time.Time, plan o
 		SchemaVersion:   model.SchemaVersion,
 		Options:         p.reportOptions(plan.HTMLPath, demoPath).String(),
 		DemoKey:         report.DemoKey(demoPath),
-		DemoName:        filepath.Base(demoPath),
 		DemoSize:        size,
 		DemoModUnixNano: mod.UnixNano(),
 		GeneratedAt:     time.Now().UTC(),

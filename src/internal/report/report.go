@@ -45,11 +45,9 @@ type Header struct {
 	SchemaVersion   int       `json:"schemaVersion"`
 	Options         string    `json:"options,omitempty"`
 	DemoKey         string    `json:"demoKey"`
-	DemoName        string    `json:"demoName,omitempty"`
 	DemoSize        int64     `json:"demoSize"`
 	DemoModUnixNano int64     `json:"demoModUnixNano"`
 	GeneratedAt     time.Time `json:"generatedAt"`
-	Partial         bool      `json:"partial,omitempty"`
 
 	// Match summary used by report index pages. These do not affect freshness.
 	Map        string    `json:"map,omitempty"`

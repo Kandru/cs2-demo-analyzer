@@ -20,7 +20,6 @@ func testDocument(m *model.Match, version string) *report.Document {
 		SchemaVersion:   model.SchemaVersion,
 		Options:         report.Options{Cheat: true, Aim: true}.String(),
 		DemoKey:         report.DemoKey("/demos/match.dem"),
-		DemoName:        "match.dem",
 		DemoSize:        1024,
 		DemoModUnixNano: time.Date(2026, 11, 13, 20, 0, 0, 0, time.UTC).UnixNano(),
 		GeneratedAt:     time.Date(2026, 11, 16, 12, 0, 0, 0, time.UTC),

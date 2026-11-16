@@ -15,11 +15,11 @@ Canonical report document shared by the HTML page and the JSON sidecar.
 - HTML artifacts start with `<!doctype html>` followed by exactly one
   `<!--cs2-demo-analyzer:{...}-->` line. The comment is produced by
   `HeaderComment`, never by a template.
-- Only controlled or JSON-escaped values may enter the header. Demo names are
-  untrusted; never add player names, paths, or free-form match text.
+- Only controlled or JSON-escaped values may enter the header. Map/server names
+  are untrusted; never add player names, paths, or free-form match text.
 - `Header.Matches` compares only cache-affecting fields. Presentation/index
-  metadata (`Map`, `ServerName`, `Score`, `PlayedAt`, `GeneratedAt`, `Partial`)
-  must not invalidate a report.
+  metadata (`Map`, `ServerName`, `Score`, `PlayedAt`, `GeneratedAt`) must not
+  invalidate a report.
 - Bump `HeaderFormat` when the header encoding changes in a way that would let
   an old artifact pass the freshness check. Bump `model.SchemaVersion` for
   incompatible match data changes.
