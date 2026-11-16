@@ -19,8 +19,8 @@ out/
 .vscode/
 *.swp
 
-# Go
-src/.cache/
+# Go build/test caches used by make's Docker targets
+.cache/
 
 # Local test demos and scratch space
 stuff/

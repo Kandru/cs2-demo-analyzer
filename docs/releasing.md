@@ -82,9 +82,14 @@ secrets are required.
 
 ```sh
 make docker-build
-docker run --rm -v "$PWD/demos":/demos:ro -v "$PWD/reports":/out \
+make analyze       # uses the current UID/GID for reports
+docker run --rm --user "$(id -u):$(id -g)" \
+  -v "$PWD/demos":/demos:ro -v "$PWD/reports":/out \
   cs2-demo-analyzer:latest watch --input /demos --output /out
 ```
 
 The runtime image is Alpine with CA certificates and tzdata. The binary is
-static (`CGO_ENABLED=0`).
+static (`CGO_ENABLED=0`). `make build`, `make test`, `make release`, and
+`make analyze` run the container with the invoking user's UID/GID and keep Go
+caches in `.cache/`, so files created in the repository or `dist/` do not need
+root to remove.

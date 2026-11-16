@@ -60,7 +60,9 @@ services:
 ```
 
 - The container runs as root by default so bind-mounted output directories work
-  without UID mapping. Add `user: "1000:1000"` if you prefer.
+  without UID mapping. Add `user: "1000:1000"` if you prefer. The `make run`,
+  `make analyze`, and `make watch` targets pass the caller's UID/GID
+  automatically.
 - Mount demos read-only.
 - Keep `--workers` low: each worker holds two parser states (statistics + cheat).
 - Memory guidance: assume 0.5–1 GB peak per concurrent worker for large GOTV

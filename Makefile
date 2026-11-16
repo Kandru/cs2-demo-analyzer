@@ -10,8 +10,10 @@ BUILD_DATE      := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 GO_VERSION      := 1.27.4
 # Pinned by digest so CI and release builds use the exact audited toolchain.
 DOCKER_GO_IMAGE ?= golang:$(GO_VERSION)@sha256:70bd7ddea8b6cbe5d6943cde279d6b67feb10cc924fb9100d1d8757c1575b280
-GO_MOD_CACHE    ?= cs2-demo-analyzer-go-mod
-GO_BUILD_CACHE  ?= cs2-demo-analyzer-go-build
+HOST_UID        := $(shell id -u 2>/dev/null)
+HOST_GID        := $(shell id -g 2>/dev/null)
+DOCKER_USER_ARG := $(if $(HOST_UID),--user "$(HOST_UID):$(HOST_GID)")
+CACHE_DIR       ?= $(CURDIR)/.cache
 DIST            := dist
 GOFLAGS         := -trimpath -buildvcs=false
 LDFLAGS         := -s -w \
@@ -20,14 +22,20 @@ LDFLAGS         := -s -w \
 	-X $(MODULE)/internal/version.Date=$(BUILD_DATE)
 
 # Run a command inside the Go container with the repository mounted.
-# The two named volumes make repeated builds fast without polluting the repo.
+# The container runs as the invoking user so files written to dist/ and the
+# repository stay owned by that user. Go caches live in .cache/ on the host.
 DOCKER_RUN = docker run --rm \
+	$(DOCKER_USER_ARG) \
 	-v "$(CURDIR)":/workspace \
-	-v $(GO_MOD_CACHE):/go/pkg/mod \
-	-v $(GO_BUILD_CACHE):/root/.cache/go-build \
+	-v "$(CACHE_DIR)":/cache \
 	-w /workspace/src \
 	-e CGO_ENABLED=0 \
+	-e GOTOOLCHAIN=local \
 	-e GOOS -e GOARCH \
+	-e HOME=/tmp \
+	-e GOPATH=/cache/go \
+	-e GOMODCACHE=/cache/go-mod \
+	-e GOCACHE=/cache/go-build \
 	$(DOCKER_GO_IMAGE)
 
 .PHONY: help build build-local test test-cover fmt vet tidy tidy-check audit release release-local docker-build run analyze watch version version-bump clean check-docker check-install
@@ -47,6 +55,7 @@ help: ## Show this help (default)
 
 check-docker:
 	@command -v docker >/dev/null 2>&1 || { echo "docker is required but not installed"; exit 1; }
+	@mkdir -p "$(CACHE_DIR)/go" "$(CACHE_DIR)/go-mod" "$(CACHE_DIR)/go-build"
 
 check-install: ## Validate install.sh syntax
 	@sh -n install.sh
@@ -101,21 +110,21 @@ docker-build: check-docker ## Build the runtime Docker image
 
 run: check-docker ## Run the container with ./demos and ./reports mounted
 	@mkdir -p demos reports
-	docker run --rm -it \
+	docker run --rm -it $(DOCKER_USER_ARG) \
 		-v "$(CURDIR)/demos":/demos:ro \
 		-v "$(CURDIR)/reports":/out \
 		$(BINARY):latest $(ARGS)
 
 analyze: docker-build ## Analyze every demo in ./stuff into ./reports
 	@mkdir -p reports
-	docker run --rm \
+	docker run --rm $(DOCKER_USER_ARG) \
 		-v "$(CURDIR)/stuff":/demos:ro \
 		-v "$(CURDIR)/reports":/out \
 		$(BINARY):latest analyze --input /demos --output /out
 
 watch: docker-build ## Watch ./stuff and write reports into ./reports
 	@mkdir -p reports
-	docker run --rm -it \
+	docker run --rm -it $(DOCKER_USER_ARG) \
 		-v "$(CURDIR)/stuff":/demos:ro \
 		-v "$(CURDIR)/reports":/out \
 		$(BINARY):latest watch --input /demos --output /out
@@ -127,4 +136,5 @@ version-bump: ## Increment YY.MM.BuildNr (resets on month change)
 	@sh hack/bump-version.sh
 
 clean: ## Remove build output and local caches
+	@chmod -R u+w .cache 2>/dev/null || true
 	rm -rf $(DIST) .cache

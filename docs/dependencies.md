@@ -117,6 +117,9 @@ dead from upstream's perspective, even if this project does not enable it.
   modules, Docker images, and Actions.
 - **CI:** `.github/workflows/ci.yaml` runs tests, vet, module tidiness, module
   verification, and `govulncheck`.
+- **Host-owned outputs:** Docker targets run with the caller's UID/GID. Go
+  module/build caches live in `.cache/` (git-ignored), and files written to the
+  repository or `dist/` remain owned by the invoking user.
 - **Update channel:** `install.sh` and the self-updater verify `SHA256SUMS` from
   the same GitHub release. This detects corruption, not a compromised release
   account. See [install.md](install.md) for the trust model.

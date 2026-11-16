@@ -127,7 +127,7 @@ cs2-demo-analyzer analyze stuff/match.dem
 cs2-demo-analyzer analyze --output reports --json demos/
 
 # headless container watch
-docker run --rm \
+docker run --rm --user "$(id -u):$(id -g)" \
   -v "$PWD/demos":/demos:ro -v "$PWD/reports":/out \
   cs2-demo-analyzer:latest watch --input /demos --output /out
 

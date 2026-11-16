@@ -113,7 +113,7 @@ Run a one-shot analysis:
 
 ```sh
 mkdir -p demos reports
-docker run --rm \
+docker run --rm --user "$(id -u):$(id -g)" \
   -v "$PWD/demos":/demos:ro \
   -v "$PWD/reports":/out \
   cs2-demo-analyzer:latest analyze --input /demos --output /out
@@ -122,15 +122,16 @@ docker run --rm \
 Run the default long-running watcher:
 
 ```sh
-docker run --rm \
+docker run --rm --user "$(id -u):$(id -g)" \
   -v "$PWD/demos":/demos:ro \
   -v "$PWD/reports":/out \
   cs2-demo-analyzer:latest
 ```
 
-The container runs as root by default so bind-mounted output directories work
-on any host. Add `--user "$(id -u):$(id -g)"` if you prefer to run as your own
-UID.
+The container image itself runs as root by default. The `make` Docker targets
+pass `--user "$(id -u):$(id -g)"`, so `dist/`, reports, and edited Go files
+stay owned by you; Go caches live in `.cache/` on the host. For a raw
+`docker run`, add `--user "$(id -u):$(id -g)"` to get the same ownership.
 
 ### Option 4: Docker Compose
 
@@ -367,12 +368,12 @@ release archive instead.
 
 ```sh
 # one-shot
-docker run --rm \
+docker run --rm --user "$(id -u):$(id -g)" \
   -v "$PWD/demos":/demos:ro -v "$PWD/reports":/out \
   cs2-demo-analyzer:latest analyze --input /demos --output /out
 
 # watcher
-docker run --rm \
+docker run --rm --user "$(id -u):$(id -g)" \
   -v "$PWD/demos":/demos:ro -v "$PWD/reports":/out \
   cs2-demo-analyzer:latest watch --input /demos --output /out --workers 1
 ```

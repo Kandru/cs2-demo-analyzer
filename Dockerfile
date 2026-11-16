@@ -23,8 +23,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -buildvcs=false \
 FROM alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
 RUN apk add --no-cache ca-certificates tzdata && adduser -D -H -u 1000 app
 COPY --from=build /out/cs2-demo-analyzer /usr/local/bin/cs2-demo-analyzer
-# The image runs as root by default so bind-mounted output directories work on
-# any host. Run with `--user $(id -u):$(id -g)` if you prefer a non-root UID.
+# The image runs as root by default so direct bind mounts work on any host.
+# The make Docker targets pass the caller's UID/GID with --user instead.
 WORKDIR /reports
 ENTRYPOINT ["cs2-demo-analyzer"]
 CMD ["watch", "--input", "/demos", "--output", "/out"]
