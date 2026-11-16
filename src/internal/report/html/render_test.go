@@ -347,3 +347,30 @@ func TestIndexMetadataAndSharedFooter(t *testing.T) {
 		}
 	}
 }
+
+func TestTimelineWarmupOnlyDemo(t *testing.T) {
+	m := &model.Match{
+		SchemaVersion: model.SchemaVersion,
+		Map:           "de_mirage",
+		Mode:          "Competitive",
+		Warmup: &model.Warmup{
+			StartOffset: 0,
+			Duration:    30,
+			Events: []*model.Event{
+				{Type: "kill", Offset: 5, ActorName: "kalle", VictimName: "victim"},
+				{Type: "kill", Offset: 10, ActorName: "kalle", VictimName: "victim"},
+			},
+		},
+		Events: []*model.Event{{Type: "player_connect", Offset: 1, ActorName: "kalle"}},
+	}
+	v := newView(testDocument(m, "test"), Options{})
+	if len(v.Timeline) != 1 || v.Timeline[0].Kind != "warmup" {
+		t.Fatalf("warmup-only timeline: %+v", v.Timeline)
+	}
+	if len(v.Timeline[0].Rows) != 3 {
+		t.Fatalf("warmup rows: got %d, want 3", len(v.Timeline[0].Rows))
+	}
+	if v.Timeline[0].EndTime != "0:30" {
+		t.Fatalf("warmup end time: %q", v.Timeline[0].EndTime)
+	}
+}

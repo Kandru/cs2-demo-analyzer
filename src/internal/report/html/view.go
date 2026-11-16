@@ -909,7 +909,17 @@ func buildTimeline(m *model.Match) []*TimelineSection {
 		warmupStart = m.Warmup.StartOffset
 		warmupEnd = m.Warmup.EndOffset
 		if warmupEnd <= warmupStart {
-			warmupEnd = firstStart
+			if firstStart >= 0 {
+				warmupEnd = firstStart
+			} else if m.Warmup.Duration > 0 {
+				warmupEnd = warmupStart + m.Warmup.Duration
+			} else {
+				for _, e := range m.Warmup.Events {
+					if e.Offset > warmupEnd {
+						warmupEnd = e.Offset
+					}
+				}
+			}
 		}
 	}
 
