@@ -85,7 +85,7 @@ One card per flagged or review-level player.
 - Score adjustments are cards with a readable title and a plain-language
   explanation.
 - All review cues with round links and `demo_gototick <tick>` copy buttons,
-  laid out as cards with a header, badge body and footer.
+  using the same card structure as cheat channels.
 - “Open full analysis” is a `.button` in the card footer, bottom-left.
 - “Watchlist” is the only term used for this feature.
 - The short “Statistic calculation only. No Proof.” subtext stays visible.

@@ -41,17 +41,33 @@
     });
   }
 
-  if ("IntersectionObserver" in window) {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (visible) setActive(visible.target.id);
-      },
-      { rootMargin: "-80px 0px -60% 0px", threshold: [0.05, 0.25, 0.5] }
-    );
-    sections.forEach((s) => observer.observe(s));
+  if (sections.length) {
+    const topbar = document.querySelector(".topbar");
+    let scheduled = false;
+
+    const updateActive = () => {
+      scheduled = false;
+      const offset = (topbar ? topbar.getBoundingClientRect().height : 0) + 12;
+      let current = sections[0];
+      for (const section of sections) {
+        if (section.getBoundingClientRect().top <= offset) current = section;
+      }
+      const atBottom =
+        window.innerHeight + window.scrollY >=
+        document.documentElement.scrollHeight - 4;
+      if (atBottom) current = sections[sections.length - 1];
+      if (current) setActive(current.id);
+    };
+
+    const requestUpdate = () => {
+      if (scheduled) return;
+      scheduled = true;
+      window.requestAnimationFrame(updateActive);
+    };
+
+    window.addEventListener("scroll", requestUpdate, { passive: true });
+    window.addEventListener("resize", requestUpdate);
+    updateActive();
   }
 
   // Header search is a combobox backed by a server-rendered list of anchors.

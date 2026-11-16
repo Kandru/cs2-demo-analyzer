@@ -231,8 +231,8 @@ state adds `is-alert`.
 - Cheat analysis is a bulleted signal list, not prose. Use the short
   “Statistic calculation only. No Proof.” subtext.
 - “When to look” shows every cue in a three-column card grid on wide screens.
-- Each cue card has a left/right header (round and time left, copy-tick right),
-  a badge body and a small weapon/opponent footer.
+- Each cue card reuses the channel-card structure: round/timing left, copy-tick
+  right, badge body and a small weapon/opponent footer.
 - Score adjustments use the same three-column card grid, each with a title and
   a plain-language explanation.
 

@@ -110,16 +110,18 @@
 {{- end}}
 
 {{define "moment" -}}
-<li class="cue {{.Class}}">
-  <header class="cue-head">
-    <span class="cue-round">{{if .RoundAnchor}}<a href="#{{.RoundAnchor}}">{{.RoundLabel}}</a>{{else}}{{.RoundLabel}}{{end}}{{if .RoundTime}} <em>{{.RoundTime}}</em>{{end}}</span>
-    <span class="cue-actions">
-      <span class="cue-time">{{.Time}}</span>
-      <button type="button" class="tick-copy" data-copy="{{.DemoCommand}}" title="Copy {{.DemoCommand}}" aria-label="Copy {{.DemoCommand}}">tick {{.Tick}}</button>
+<li class="channel-item cue {{.Class}}">
+  <span class="channel-main">
+    <span class="channel-line">
+      <b>{{if .RoundAnchor}}<a href="#{{.RoundAnchor}}">{{.RoundLabel}}</a>{{else}}{{.RoundLabel}}{{end}}{{if .RoundTime}} <em>{{.RoundTime}}</em>{{end}}</b>
+      <span class="cue-actions">
+        <span class="cue-time">{{.Time}}</span>
+        <button type="button" class="tick-copy" data-copy="{{.DemoCommand}}" title="Copy {{.DemoCommand}}" aria-label="Copy {{.DemoCommand}}">tick {{.Tick}}</button>
+      </span>
     </span>
-  </header>
-  <div class="cue-body">{{range .Reasons}}<span class="badge badge--neutral cue-tag {{.Kind}}" title="{{.Detail}}"><b>{{.Label}}</b> {{.Value}}</span>{{end}}</div>
-  {{if or .Weapon .Opponent}}<footer class="cue-foot">{{if .Weapon}}<span class="cue-meta" title="Weapon">{{.Weapon}}</span>{{end}}{{if .Opponent}}<span class="cue-meta" title="Opponent">vs {{.Opponent}}</span>{{end}}</footer>{{end}}
+    <span class="channel-vals">{{range .Reasons}}<span class="badge badge--neutral cue-tag {{.Kind}}" title="{{.Detail}}"><b>{{.Label}}</b> {{.Value}}</span>{{end}}</span>
+    {{if or .Weapon .Opponent}}<span class="cue-foot">{{if .Weapon}}<span class="cue-meta" title="Weapon">{{.Weapon}}</span>{{end}}{{if .Opponent}}<span class="cue-meta" title="Opponent">vs {{.Opponent}}</span>{{end}}</span>{{end}}
+  </span>
 </li>
 {{- end}}
 

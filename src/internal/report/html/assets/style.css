@@ -15,6 +15,19 @@
   padding: 0;
 }
 
+/* The vendored reset sets element-level margins (for example on nav, ul and
+ * section). Reset them here with equal specificity so component rules below
+ * can opt back in to spacing. */
+nav,
+ul,
+ol,
+section,
+article,
+header,
+footer {
+  margin: 0;
+}
+
 html {
   font-size: clamp(1rem, 0.42vw + 0.625rem, 1.5rem);
   scroll-behavior: smooth;
@@ -351,6 +364,7 @@ table {
   display: flex;
   flex: 1 1 auto;
   min-width: 0;
+  height: 100%;
   align-self: stretch;
   align-items: stretch;
   overflow-x: auto;
@@ -364,7 +378,7 @@ table {
 .mainnav a {
   display: flex;
   flex: 0 0 auto;
-  align-self: stretch;
+  height: 100%;
   align-items: center;
   gap: 0.35rem;
   padding: 0 0.7rem;
@@ -1219,8 +1233,8 @@ table {
 .adjustment-panel {
   margin-top: var(--space-2);
   padding: var(--space-2);
-  border: 1px solid var(--warning-border);
-  background: var(--warning-soft);
+  border: 1px solid var(--line-soft);
+  background: transparent;
 }
 
 .adjustment-panel h4 {
@@ -2138,13 +2152,16 @@ select {
 
 .channel-line {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
   gap: 0.4rem;
 }
 
 .channel-line b {
+  min-width: 0;
   font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
 }
 
 .channel-vals {
@@ -2220,24 +2237,9 @@ select {
   list-style: none;
 }
 
-.cue {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-2);
-  border: 1px solid var(--line-soft);
-  background: var(--bg-1);
+.channel-item.cue {
+  grid-template-columns: minmax(0, 1fr);
   font-size: var(--fs-xs);
-}
-
-.cue-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  padding-bottom: var(--space-1);
-  border-bottom: 1px solid var(--line-soft);
 }
 
 .cue-actions {
@@ -2251,31 +2253,11 @@ select {
   font-family: var(--font-mono);
 }
 
-.cue-round {
-  overflow: hidden;
-  color: var(--muted);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.cue-round a {
-  color: var(--text);
-  font-weight: 700;
-}
-
-.cue-round em {
+.channel-line em {
   color: var(--dim);
   font-family: var(--font-mono);
   font-size: var(--fs-2xs);
   font-style: normal;
-}
-
-.cue-body {
-  display: flex;
-  min-width: 0;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.25rem;
 }
 
 .cue-foot {
@@ -2375,13 +2357,19 @@ select {
 }
 
 .round-table .col-result {
-  width: auto;
+  width: 8rem;
 }
 
 .round-table th,
 .round-table td {
   overflow: hidden;
+  text-align: center;
   text-overflow: ellipsis;
+}
+
+.round-table th:first-child,
+.round-table td:first-child {
+  text-align: center;
 }
 
 .round-table tr .win {
