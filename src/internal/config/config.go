@@ -21,6 +21,7 @@ type Config struct {
 	Index     bool
 	DemoLinks bool
 	Force     bool
+	Update    bool
 	Quiet     bool
 	Verbose   bool
 	Timeout   time.Duration

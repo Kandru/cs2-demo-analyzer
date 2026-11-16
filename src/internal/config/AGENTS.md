@@ -3,7 +3,7 @@
 Runtime configuration shared by analyze/watch.
 
 - Defaults: recursive, 4 workers (analyze), 15 m timeout, 5 s interval, 2 s
-  debounce, cheat+aim on, JSON off.
+  debounce, cheat+aim on, JSON off, update off.
 - `Validate` normalizes input/output paths, creates the output directory, and
   rejects empty/invalid values.
 - `ManifestDir` is the output dir, else the first input directory, else CWD.

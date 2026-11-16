@@ -16,6 +16,10 @@ CLI parsing, discovery, and per-demo pipeline.
   `--demo-download` opts in to relative links across directories.
 - `index.html` is written when `--index` is set or when reports sit next to their
   demos. Index entries come from the directory scan plus the store mapping.
+- `update` is the only command that writes the binary. `--update` on
+  analyze/watch is best-effort: check/apply failures log a warning and never
+  block processing. Normal runs make no network calls.
+- `update --check` must not download the release archive or modify the binary.
 - Do not log player names as structured fields.
 
 ## Flags

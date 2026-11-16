@@ -46,6 +46,7 @@ demo takes roughly 9–11 s on a modern CPU (both passes included).
 | `internal/watch` | Discovery loop, settle window, worker queue | report |
 | `internal/app` | CLI, wiring, processor, output index | report internals |
 | `internal/demofile` | Demo extension checks, report base names, sibling lookup | parser, report, app |
+| `internal/update` | GitHub release check, checksum verification, atomic self-replace | parser, report, app |
 | `internal/units` | Human-readable byte sizes shared by logs and reports | anything |
 | `internal/version` | Build-time version vars | anything |
 
@@ -97,6 +98,9 @@ demo takes roughly 9–11 s on a modern CPU (both passes included).
    call it from `app.Processor`; keep the `model` contract unchanged.
 7. **New watcher source** (S3/SFTP): implement the `watch.Processor` boundary
    and feed it paths; do not put I/O into the parser.
+8. **New release platform**: add it to `RELEASE_TARGETS` in the `Makefile` and
+   to the updater/install architecture mapping; keep archive names and
+   `SHA256SUMS` stable.
 
 ## Detection architecture
 

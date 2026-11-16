@@ -40,6 +40,8 @@ func Run(ctx context.Context, args []string) int {
 		return runAnalyze(ctx, args[1:])
 	case "watch":
 		return runWatch(ctx, args[1:])
+	case "update":
+		return runUpdate(ctx, args[1:])
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command %q\n\n", args[0])
 		printUsage(os.Stderr)
@@ -66,6 +68,7 @@ func runAnalyze(ctx context.Context, args []string) int {
 		return 2
 	}
 	logger := newLogger(cfg)
+	maybeUpdate(ctx, cfg.Update, logger)
 	demos, err := discover(cfg.Inputs, cfg.Recursive)
 	if err != nil {
 		logger.Error("discover demos", "error", err)
@@ -141,6 +144,7 @@ func runWatch(ctx context.Context, args []string) int {
 		return 2
 	}
 	logger := newLogger(cfg)
+	maybeUpdate(ctx, cfg.Update, logger)
 	st, err := store.Open(cfg.ManifestDir())
 	if err != nil {
 		logger.Error("open manifest", "error", err)
@@ -170,6 +174,7 @@ func commonFlags(fs *flag.FlagSet, cfg *config.Config) {
 	fs.BoolVar(&cfg.Index, "index", envBool("CS2_DEMO_ANALYZER_INDEX", cfg.Index), "write index.html listing reports in each output directory")
 	fs.BoolVar(&cfg.DemoLinks, "demo-download", envBool("CS2_DEMO_ANALYZER_DEMO_DOWNLOAD", cfg.DemoLinks), "link the source demo for download even when it is outside the report directory")
 	fs.BoolVar(&cfg.Force, "force", cfg.Force, "reprocess demos even if unchanged")
+	fs.BoolVar(&cfg.Update, "update", envBool("CS2_DEMO_ANALYZER_UPDATE", cfg.Update), "self-update to the latest release before running")
 	fs.BoolVar(&cfg.Quiet, "quiet", cfg.Quiet, "only log errors")
 	fs.BoolVar(&cfg.Verbose, "verbose", cfg.Verbose, "debug logging")
 	fs.DurationVar(&cfg.Timeout, "timeout", cfg.Timeout, "per-demo processing timeout")
@@ -280,6 +285,7 @@ func printUsage(w io.Writer) {
 Usage:
   cs2-demo-analyzer analyze [flags] <demo|directory>...
   cs2-demo-analyzer watch   [flags] <directory>...
+  cs2-demo-analyzer update  [--check] [--force]
   cs2-demo-analyzer version
   cs2-demo-analyzer help
 
@@ -290,6 +296,11 @@ Analyze:
 Watch (default: reports written next to each demo):
   cs2-demo-analyzer watch --input /demos --output /reports
   cs2-demo-analyzer watch --input /demos --cheat=false --interval 10s
+
+Update (GitHub releases; requires write access to the binary):
+  cs2-demo-analyzer update --check
+  cs2-demo-analyzer update
+  sudo cs2-demo-analyzer update
 
 Flags:
   -i, --input PATH       input directory/file (repeatable; watch accepts positional too)
@@ -302,11 +313,15 @@ Flags:
       --index            also write index.html in each report directory
       --demo-download    link demos outside the report directory for download
       --force            reprocess unchanged demos
+      --update           self-update to the latest release before running
       --timeout 15m      per-demo timeout
       --quiet / --verbose
   Watch only:
       --interval 5s      fallback rescan interval
       --debounce 2s      settle window for new files
+  Update only:
+      --check            only report whether a newer release is available
+      --force            reinstall the latest release even if the version matches
 
 Environment:
   CS2_DEMO_ANALYZER_INPUT     path-list separated inputs
@@ -316,6 +331,7 @@ Environment:
   CS2_DEMO_ANALYZER_AIM       true/false
   CS2_DEMO_ANALYZER_INDEX     true/false
   CS2_DEMO_ANALYZER_DEMO_DOWNLOAD  true/false
+  CS2_DEMO_ANALYZER_UPDATE    true/false (update before analyze/watch)
 
 Output:
   <demo>.html  self-contained dark match report
