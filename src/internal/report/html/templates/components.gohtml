@@ -13,14 +13,13 @@
     {{if .Chrome.ShowSearch}}
     <div class="topsearch" id="topsearch" role="search" hidden>
       <label class="sr-only" for="report-search">Search this report</label>
-      <input id="report-search" type="search" placeholder="Search players, rounds, cues" autocomplete="off" spellcheck="false">
-      <span id="search-status" class="search-status" role="status" aria-live="polite"></span>
+      <input id="report-search" type="search" placeholder="Search players, rounds, cues" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="search-results" aria-autocomplete="list">
+      <div id="search-results" class="search-pop" hidden>
+        <ul id="search-results-list" role="listbox" aria-label="Search results"></ul>
+        <p class="search-empty" hidden>No matches</p>
+      </div>
     </div>
     {{end}}
-    <div class="topmeta">
-      {{if .Chrome.BackHref}}<a class="nav-back" href="{{.Chrome.BackHref}}">{{.Chrome.BackLabel}}</a>{{end}}
-      {{range .Chrome.Meta}}<span class="tag">{{.}}</span>{{end}}
-    </div>
   </div>
 </header>
 {{- end}}
@@ -29,16 +28,24 @@
 <footer class="footer">
   <div class="wrap footer-inner">
     <div class="footer-brand">
-      <img src="{{.Assets.BrandMark}}" alt="" width="28" height="28">
-      <span><a href="{{.Footer.RepoURL}}" rel="noopener noreferrer">CS2 Demo Analyzer</a> v{{.Footer.Version}}</span>
+      <img src="{{.Assets.BrandMark}}" alt="" width="24" height="24">
+      <span><a href="{{.Footer.RepoURL}}" target="_blank" rel="noopener noreferrer">CS2 Demo Analyzer</a> v{{.Footer.Version}}</span>
     </div>
     <div class="footer-meta">
       <span>generated {{.Footer.GeneratedAt}}</span>
       {{if .Footer.ParserVersion}}<span>parser {{.Footer.ParserVersion}}</span>{{end}}
-      <span>{{byline}}</span>
+      <span>by <a href="{{.Footer.RepoURL}}" target="_blank" rel="noopener noreferrer">cs2-demo-analyzer</a> from <a href="{{.Footer.SiteURL}}" target="_blank" rel="noopener noreferrer">kandru.net</a></span>
     </div>
   </div>
 </footer>
+{{- end}}
+
+{{define "search-index" -}}
+<nav id="search-index" class="search-index" hidden aria-hidden="true">
+  {{range .SearchIndex}}
+  <a href="{{.Href}}" data-kind="{{.Kind}}" data-label="{{.Label}}" data-detail="{{.Detail}}" data-search="{{.Search}}">{{.Label}}{{if .Detail}} <span>{{.Detail}}</span>{{end}}</a>
+  {{end}}
+</nav>
 {{- end}}
 
 {{define "icon" -}}
@@ -49,7 +56,7 @@
 <li class="tl-row {{.Class}}" data-type="{{.Type}}" data-players="{{.DataPlayers}}">
   <span class="tl-time">{{.AbsoluteTime}}</span>
   <span class="tl-node" aria-hidden="true">{{template "icon" .Icon}}</span>
-  <span class="tl-text">{{range .Parts}}{{if .Href}}<a href="{{.Href}}">{{.Text}}</a>{{else}}{{.Text}}{{end}}{{end}}{{range .Badges}}<span class="badge">{{.}}</span>{{end}}</span>
+  <span class="tl-text">{{range .Parts}}{{if .Href}}<a href="{{.Href}}">{{.Text}}</a>{{else}}{{.Text}}{{end}}{{end}}{{range .Badges}}<span class="badge badge--{{.Class}}">{{.Text}}</span>{{end}}</span>
   {{if .RoundTime}}<span class="tl-rel" title="Round time">{{.RoundTime}}</span>{{end}}
 </li>
 {{- end}}
@@ -82,6 +89,20 @@
     {{end}}
   </div>
   {{end}}
+  {{if .Buys}}
+  <div class="tl-buys">
+    {{range .Buys}}
+    <div class="buy-team {{.Class}}">
+      <span class="buy-team-name"><i class="side-dot {{lower .Side}}" aria-hidden="true"></i>{{.Name}} buys</span>
+      <ul class="buy-list">
+        {{range .Buyers}}
+        <li><a href="{{.Href}}">{{.Name}}</a>{{range .Items}}<span class="badge badge--neutral">{{.}}</span>{{end}}</li>
+        {{end}}
+      </ul>
+    </div>
+    {{end}}
+  </div>
+  {{end}}
   <ol class="tl-rows" role="list">
     {{range .Rows}}{{template "event-row" .}}{{end}}
   </ol>
@@ -92,7 +113,7 @@
 <li class="cue {{.Class}}">
   <span class="cue-time">{{.Time}}</span>
   <span class="cue-round">{{if .RoundAnchor}}<a href="#{{.RoundAnchor}}">{{.RoundLabel}}</a>{{else}}{{.RoundLabel}}{{end}}{{if .RoundTime}} <em>{{.RoundTime}}</em>{{end}}</span>
-  <span class="cue-body">{{range .Reasons}}<span class="cue-tag {{.Kind}}" title="{{.Detail}}"><b>{{.Label}}</b> {{.Value}}</span>{{end}}{{if .Weapon}}<span class="cue-meta">{{.Weapon}}</span>{{end}}{{if .Opponent}}<span class="cue-meta">vs {{.Opponent}}</span>{{end}}</span>
+  <span class="cue-body">{{range .Reasons}}<span class="badge badge--neutral cue-tag {{.Kind}}" title="{{.Detail}}"><b>{{.Label}}</b> {{.Value}}</span>{{end}}{{if .Weapon}}<span class="cue-meta">{{.Weapon}}</span>{{end}}{{if .Opponent}}<span class="cue-meta">vs {{.Opponent}}</span>{{end}}</span>
   <button type="button" class="tick-copy" data-copy="{{.DemoCommand}}" title="Copy {{.DemoCommand}}" aria-label="Copy {{.DemoCommand}}">tick {{.Tick}}</button>
 </li>
 {{- end}}
@@ -110,12 +131,21 @@
     <span class="channel-rank" aria-hidden="true">{{.Rank}}</span>
     <span class="channel-main">
       <span class="channel-line"><b>{{.Channel.Label}}</b><span class="zone {{.ZoneClass}}">{{if eq .Zone "no_data"}}no data{{else}}{{.Zone}}{{end}}</span></span>
-      <span class="channel-vals"><span>{{.Raw}}</span><span>{{.ScorePct}}% evidence</span><span>{{.ConfPct}}% conf</span>{{if .Channel.Samples}}<span>n={{.Channel.Samples}}</span>{{end}}</span>
+      <span class="channel-vals"><span>{{.Raw}}</span><span>{{.ScorePct}}% evidence</span><span>{{.ConfPct}}% conf</span>{{if .Channel.Samples}}<span>{{.SampleLabel}}</span>{{end}}</span>
       <span class="bar channel-bar"><i class="{{.BarClass}}" style="width:{{.ScorePct}}%"></i></span>
     </span>
   </li>
   {{end}}
 </ol>
+{{- end}}
+
+{{define "adjustments" -}}
+<div class="adjustment-panel">
+  <h4>Score adjustments</h4>
+  <ul class="adjustment-list">
+    {{range .}}<li><span class="badge badge--warning">{{.Label}}</span>{{if .Detail}}<span class="adjust-detail">{{.Detail}}</span>{{end}}</li>{{end}}
+  </ul>
+</div>
 {{- end}}
 
 {{define "sprite" -}}
@@ -134,5 +164,8 @@
   <symbol id="i-connect" viewBox="0 0 24 24"><path d="M4 12h12M12 6l6 6-6 6M20 4v16"/></symbol>
   <symbol id="i-disconnect" viewBox="0 0 24 24"><path d="M4 12h12M12 6l6 6-6 6M20 4l-4 16"/></symbol>
   <symbol id="i-swap" viewBox="0 0 24 24"><path d="M4 8h14l-3-3M20 16H6l3 3"/></symbol>
+  <symbol id="i-flash" viewBox="0 0 24 24"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></symbol>
+  <symbol id="i-bomb-drop" viewBox="0 0 24 24"><circle cx="11" cy="12" r="5"/><path d="M15 5l4-3M4 20l7-7"/></symbol>
+  <symbol id="i-hostage" viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><path d="M8 21v-4a4 4 0 018 0v4M5 13l3-3M19 13l-3-3"/></symbol>
 </svg>
 {{- end}}

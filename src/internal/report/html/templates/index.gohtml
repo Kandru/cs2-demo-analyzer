@@ -19,11 +19,9 @@
 {{template "topbar" .}}
 
 <main id="main" class="wrap">
-  <section class="index-hero cs-panel" aria-labelledby="reports-title">
+  <section class="index-hero cs-panel" aria-label="Report index summary">
     <img class="index-logo" src="{{.Assets.Logo}}" alt="" width="560" height="313">
     <div class="index-hero-text">
-      <span class="eyebrow">Reports</span>
-      <h1 id="reports-title">Match reports</h1>
       <p class="hero-sub">Newest first - grouped by server - {{byline}}</p>
       <div class="index-stats">
         <span><b>{{.Count}}</b> report(s)</span>
@@ -33,10 +31,9 @@
     </div>
   </section>
 
-  <section class="section" aria-labelledby="reports-title-list">
+  <section class="section" aria-labelledby="reports-list">
     <div class="section-head">
-      <h2 id="reports-title-list">All reports</h2>
-      <span class="section-note">Select a card to open the full match report</span>
+      <h2 id="reports-list">All reports</h2>
     </div>
 
     {{if .Groups}}
@@ -59,12 +56,9 @@
                 {{if .ServerName}}<span class="index-server">{{.ServerName}}</span>{{end}}
                 {{if .Played}}<span class="index-date">{{if .ServerName}} - {{end}}{{.Played}}</span>{{end}}
               </span>
-              <span class="index-open">Open report</span>
             </a>
             {{with .Demo}}
             <a class="index-demo" href="{{.Href}}" download="{{.Name}}" title="Download {{.Name}}">Download demo{{if .Size}} - {{.Size}}{{end}}</a>
-            {{else}}
-            <span class="index-demo muted">Demo not linked</span>
             {{end}}
           </article>
           {{end}}

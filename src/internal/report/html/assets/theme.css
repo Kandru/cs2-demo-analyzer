@@ -101,12 +101,17 @@
   /* typography */
   --font-ui: "Segoe UI", Tahoma, Verdana, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-  --fs-xs: 0.68rem;
-  --fs-sm: 0.78rem;
-  --fs-base: 0.92rem;
-  --fs-md: 1rem;
-  --fs-lg: 1.18rem;
-  --fs-3xl: clamp(2rem, 3vw, 3.4rem);
+  --fs-2xs: 0.75rem;
+  --fs-xs: 0.8125rem;
+  --fs-sm: 0.9375rem;
+  --fs-base: 1rem;
+  --fs-md: 1.125rem;
+  --fs-lg: 1.375rem;
+  --fs-xl: 1.75rem;
+  --fs-2xl: clamp(1.6rem, 1.8vw, 2.4rem);
+  --fs-3xl: clamp(2rem, 2.8vw, 3.25rem);
+  --fs-display: clamp(2rem, 3.8vw, 3.4rem);
+  --fs-display-sm: clamp(1.1rem, 2vw, 1.8rem);
   --lh-tight: 1.15;
   --lh-base: 1.5;
 
@@ -120,8 +125,17 @@
   --radius: 0;
   --border-w: 2px;
   --tap: 2.75rem;
-  --content-max: 3000px;
+  --content-max: 2400px;
+  --measure: 78ch;
   --touch-gap: 0.5rem;
+  --header-h: 2.75rem;
+  --footer-h: 2.25rem;
+  --section-gap: clamp(1.5rem, 3vw, 3rem);
+  --section-head-h: 3.2rem;
+  --badge-pad: 0.15rem 0.45rem;
+  --badge-fs: var(--fs-xs);
+  --tl-time-w: 3.9rem;
+  --tl-node-w: 1.5rem;
 
   /* framework overrides: keep new.css as a reset only */
   --nc-font-sans: var(--font-ui);

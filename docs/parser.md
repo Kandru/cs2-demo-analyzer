@@ -22,12 +22,15 @@ pass, and the anti-cheat detector is a separate pass in `internal/anticheat`.
 | Event | Model effect |
 |---|---|
 | `RoundStart` | Ensure teams/players; warmup vs official decision; new `Round` |
-| `RoundFreezetimeEnd` | Economy snapshot: freeze-time-end equipment, team money, buy type |
+| `RoundFreezetimeEnd` | Economy snapshot plus per-player `RoundStat.Bought` inventory |
 | `Kill` | Round/aggregate kills/deaths/assists/HS, weapon kills, first kill/death, trades, teamkill/suicide classification |
-| `PlayerHurt` | Damage (using `HealthDamageTaken`), utility damage, aim shots/hits. **Not present in some early CS2 demos**; metrics degrade gracefully |
+| `PlayerHurt` | Damage (using `HealthDamageTaken`), utility damage, aim shots/hits, `grenade_damage` timeline rows. **Not present in some early CS2 demos**; metrics degrade gracefully |
 | `WeaponFire` | Aim accuracy, counter-strafe, spray bursts |
 | `BombPlanted` / `BombDefused` / `BombExplode` | Timeline + plant/defuse counts |
+| `BombPickup` / `BombDropped` | `bomb_pickup` / `bomb_drop` timeline rows; a drop at the plant tick is suppressed |
 | `GrenadeProjectileThrow` | Timeline utility entry (type/name) |
+| `PlayerFlashed` | `flash` timeline row with attacker, victim and blind duration |
+| `HostageStateChanged` / `HostageRescued` / `HostageKilled` | Hostage pickup/drop/rescue/kill timeline rows |
 | `RoundMVPAnnouncement` | MVP; falls back to round top fragger when absent |
 | `RoundEnd` | Winner, reason, score, duration, end event |
 | `RoundEndOfficial` | Safety net if `RoundEnd` was missed |
@@ -94,7 +97,14 @@ or a halftime team change keeps its real demo timestamp.
 
 ## Adding an event
 
-1. Extend `model.Event` fields and `EventType` documentation.
-2. Add a handler in `parser.installHandlers`; update the round/stat aggregates.
-3. Add parts/badges/icon in `report/html/view.go` and `assets/style.css`.
-4. Add a parser test if the event affects round accounting.
+1. Add a `model.Event*` identifier in `internal/model/event_types.go`.
+2. Add the handler in `internal/parser/timeline.go` and register it in
+   `parser.installHandlers`. Use `addEvent` so round/warmup routing stays
+   correct. Only touch round accounting when the event changes statistics.
+3. Add parts, badges, icon and class in `report/html/view.go`; add the sprite
+   symbol in `templates/components.gohtml`.
+4. Style with existing tokens/components; update the JS filter category in
+   `assets/app.js` if the event belongs to a group.
+5. Add a parser test if the event affects round accounting and a render test
+   for new markup.
+6. Update `docs/report-schema.md`, `docs/report-ui.md` and `docs/ui.md`.

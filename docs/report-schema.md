@@ -125,17 +125,25 @@ filled by `internal/analysis` from the match round model.
 
 `RoundStat`: side, kills, deaths, assists, damage, headshotKills, firstKill,
 firstDeath, tradeKill, traded, kast, survived, clutch, equipValue, spent,
-plants, defuses, utilityDamage, flashAssists, result.
+`bought[]` (freeze-time-end inventory for that player), plants, defuses,
+utilityDamage, flashAssists, result. `bought` is additive in schema v1; older
+artifacts simply omit it.
 
 ## `Event`
 
 `seq`, `tick`, `offsetSeconds`, `type`, actor/victim/assister IDs and names,
 `weapon`, `headshot`, `wallbang`, `noscope`, `throughSmoke`, `assistedFlash`,
-`site`, `grenade`, `teamKill`, `suicide`, `text`, `score`.
+`site`, `grenade`, `teamKill`, `suicide`, `text`, `score`, `amount`.
+
+`amount` is additive: flash duration in seconds for `flash`, damage for
+`grenade_damage`.
 
 Types currently emitted: `round_start`, `freeze_end`, `kill`, `teamkill`,
-`suicide`, `bomb_plant`, `bomb_defuse`, `bomb_explode`, `grenade`, `mvp`,
-`round_end`.
+`suicide`, `bomb_plant`, `bomb_defuse`, `bomb_explode`, `bomb_pickup`,
+`bomb_drop`, `grenade`, `grenade_damage`, `flash`, `mvp`, `round_end`,
+`hostage_pickup`, `hostage_drop`, `hostage_rescue`, `hostage_killed`.
+Match lifecycle events use the same shape in `Match.events`:
+`player_connect`, `player_disconnect`, `team_change`, `team_swap`.
 
 ## `Summary`
 

@@ -30,25 +30,24 @@
         {{range $i, $team := .Teams}}
         {{if eq $i 1}}
         <div class="hero-score-num">
-          {{if $.Summary}}<span>{{index $.Summary.Score 0}}</span><em>:</em><span>{{index $.Summary.Score 1}}</span>{{end}}
+          {{if $.Summary}}<span class="{{(index $.Teams 0).ScoreClass}}">{{index $.Summary.Score 0}}</span><em>:</em><span class="{{.ScoreClass}}">{{index $.Summary.Score 1}}</span>{{end}}
         </div>
         {{end}}
         <a class="hero-team {{lower .Side}} {{if .Win}}winner{{end}}" href="#scoreboard">
-          <span class="hero-team-name">{{.Team.Name}}</span>
+          <span class="hero-team-name">{{.DisplayName}}</span>
           <span class="hero-team-side"><i class="side-dot {{lower .Side}}" aria-hidden="true"></i>{{.Side}} start{{if .Win}} - winner{{end}}</span>
         </a>
         {{end}}
       </div>
 
       <div class="hero-verdict">
-        {{if .Summary}}<span class="hero-winner">{{if .Summary.WinnerName}}{{.Summary.WinnerName}}{{else}}Draw{{end}}</span><span class="hero-winner-label">{{if .Summary.WinnerName}}wins the match{{else}}match drawn{{end}}</span>{{end}}
-        {{if .Match.Warnings}}<span class="warning-pill" title="{{range .Match.Warnings}}{{.}}&#10;{{end}}">{{len .Match.Warnings}} warning(s)</span>{{end}}
+        {{if .Summary}}{{if .Summary.WinnerName}}<span class="hero-winner">{{.Summary.WinnerName}}</span><span class="hero-winner-label">wins the match</span>{{end}}{{end}}
+        {{if .Match.Warnings}}<span class="badge badge--warning" title="{{range .Match.Warnings}}{{.}}&#10;{{end}}">{{len .Match.Warnings}} warning(s)</span>{{end}}
       </div>
     </div>
 
     <div class="hero-meta">
-      <span><b>Demo</b> {{.Match.DemoName}}</span>
-      {{with .DemoDownload}}<a class="demo-download" href="{{.Href}}" download="{{.Name}}" title="Download {{.Name}}">Download demo{{if .Size}} - {{.Size}}{{end}}</a>{{end}}
+      {{with .DemoDownload}}<a class="demo-download" href="{{.Href}}" download="{{.Name}}" title="Download {{.Name}}">Download demo{{if .Size}} - {{.Size}}{{end}}</a>{{else}}<span><b>Demo</b> {{.Match.DemoName}}</span>{{end}}
       {{if .Match.ServerName}}<span><b>Server</b> {{.Match.ServerName}}</span>{{end}}
       <span><b>Played</b> {{.Match.FileTime.Format "Mon, 02 Jan 2006 15:04"}}</span>
       <span><b>Players</b> {{len .Match.Players}}</span>
@@ -61,6 +60,18 @@
     <div class="section-head">
       <h2>Overview</h2>
       <span class="section-note">The match at a glance</span>
+    </div>
+
+    <div class="badge-row match-badges">
+      <span class="badge badge--accent">{{.Match.Map}}</span>
+      <span class="badge">{{.Match.Mode}}</span>
+      <span class="badge">{{clock .Match.Duration}}</span>
+      <span class="badge">{{if .Summary}}{{.Summary.Rounds}}{{else}}{{len .Match.Rounds}}{{end}} rounds</span>
+      <span class="badge">{{len .Match.Players}} players</span>
+      <span class="badge">{{zero .Match.TickRate}} tick</span>
+      <span class="badge">{{.Match.FileTime.Format "02 Jan 2006"}}</span>
+      {{if .Match.ServerName}}<span class="badge badge--info">{{.Match.ServerName}}</span>{{end}}
+      {{if .Match.Warnings}}<span class="badge badge--warning">{{len .Match.Warnings}} warning(s)</span>{{end}}
     </div>
 
     {{with .Summary}}
@@ -81,9 +92,9 @@
         <span class="stat-sub">{{if .BestAimName}}{{zero .BestAimRating}} - {{.BestAimGrade}}{{else}}no sample{{end}}</span>
       </div>
       <a class="stat-tile stat-link {{if gt .FlaggedPlayers 0}}is-alert{{end}}" href="#cheaters">
-        <span class="stat-label">Cheat flags</span>
+        <span class="stat-label">Watchlist</span>
         <span class="stat-value">{{.FlaggedPlayers}}{{if $.Cheaters}} <em>/ {{len $.Cheaters}}</em>{{end}}</span>
-        <span class="stat-sub">{{if gt .FlaggedPlayers 0}}flagged - watch list open{{else if $.Cheaters}}review list open{{else}}no player above 50%{{end}}</span>
+        <span class="stat-sub">{{if gt .FlaggedPlayers 0}}flagged players{{else if $.Cheaters}}review players{{else}}no player above 25%{{end}}</span>
       </a>
       <div class="stat-tile">
         <span class="stat-label">Rounds</span>
@@ -93,60 +104,90 @@
     </div>
     {{end}}
 
-    <div class="overview-grid">
-      <div class="cs-panel round-history">
-        <div class="panel-head">
-          <h3 class="panel-title">Round history</h3>
-          <div class="legend">
-            <span><i class="legend-swatch ct"></i>CT win</span>
-            <span><i class="legend-swatch t"></i>T win</span>
-            <span><i class="legend-dot"></i>flagged</span>
-          </div>
-        </div>
-        <div class="round-strip" role="list">
-          {{range .RoundStrip}}
-          <a class="round-cell {{.Class}} {{if .HasFlag}}has-flag{{end}}" href="#{{.Anchor}}" title="{{.Title}}" role="listitem">
-            <span class="round-cell-num">{{.Label}}{{if .Overtime}}<em>OT</em>{{end}}</span>
-            <span class="round-cell-score">{{.Score}}</span>
-            <span class="round-cell-buy {{.BuyClass}}" aria-hidden="true"></span>
-            {{if .HasFlag}}<span class="round-cell-flag" aria-label="flagged activity">&#9873;</span>{{end}}
-          </a>
-          {{end}}
+    <div class="cs-panel round-history">
+      <div class="panel-head">
+        <h3 class="panel-title">Round history</h3>
+        <div class="legend">
+          <span><i class="legend-swatch ct"></i>CT win</span>
+          <span><i class="legend-swatch t"></i>T win</span>
+          <span><i class="legend-dot"></i>flagged</span>
         </div>
       </div>
-
-      <div class="cs-panel">
-        <h3 class="panel-title">Team comparison</h3>
-        <div class="team-compare">
-          {{range .TeamStats}}
-          <div class="compare-row">
-            <div class="compare-head"><b><i class="side-dot {{lower .Side}}" aria-hidden="true"></i> {{.Name}}</b><span class="muted">{{.Kills}} / {{.Deaths}} / {{.Assists}}</span></div>
-            <div class="compare-metrics">
-              <div class="metric-line"><span>ADR</span><span class="bar"><i class="{{lower .Side}}" style="width:{{.ADR}}%"></i></span><b>{{one .ADR}}</b></div>
-              <div class="metric-line"><span>HS</span><span class="bar"><i class="{{lower .Side}}" style="width:{{.HSPercent}}%"></i></span><b>{{zero .HSPercent}}%</b></div>
-              <div class="metric-line"><span>Aim</span><span class="bar"><i class="accent" style="width:{{.AimRating}}%"></i></span><b>{{zero .AimRating}}</b></div>
-            </div>
-          </div>
-          {{end}}
-        </div>
-      </div>
-
-      <div class="cs-panel">
-        <h3 class="panel-title">Cheat watch</h3>
-        {{if .Cheaters}}
-        <ul class="flag-list">
-          {{range .Cheaters}}
-          <li>
-            <a href="#cheater-{{.Player.Player.Slug}}" class="flag-name">{{.Player.Player.Name}}</a>
-            <span class="verdict {{.Cheat.VerdictClass}}">{{.Cheat.Verdict}}</span>
-            <span class="flag-score">{{.Cheat.LikelihoodPct}}</span>
-          </li>
-          {{end}}
-        </ul>
-        {{else}}
-        <p class="muted">No player reached the 25% review level. Player cards still show every channel and sample count.</p>
+      <div class="round-strip" role="list">
+        {{range .RoundStrip}}
+        <a class="round-cell {{.Class}} {{if .HasFlag}}has-flag{{end}}" href="#{{.Anchor}}" title="{{.Title}}" role="listitem">
+          <span class="round-cell-num">{{.Label}}{{if .Overtime}}<em>OT</em>{{end}}</span>
+          <span class="round-cell-score">{{.Score}}</span>
+          <span class="round-cell-buy {{.BuyClass}}" aria-hidden="true"></span>
+          {{if .HasFlag}}<span class="round-cell-flag" aria-label="flagged activity">&#9873;</span>{{end}}
+        </a>
         {{end}}
-        <p class="disclaimer small">Statistical signal only - not proof of cheating. Review the demo and context.</p>
+      </div>
+    </div>
+
+    <div id="scoreboard" class="overview-scoreboard">
+      <div class="panel-head">
+        <h3 class="panel-title">Scoreboard</h3>
+        <span class="section-note">Match totals - select a player for details</span>
+      </div>
+      <div class="teams">
+        {{range .Teams}}
+        <div class="cs-panel team-board {{lower .Side}} {{if .Win}}is-winner{{end}}">
+          <div class="team-head">
+            <div>
+              <span class="team-side"><i class="side-dot {{lower .Side}}" aria-hidden="true"></i> {{.Side}}</span>
+              <h3>{{.DisplayName}}</h3>
+            </div>
+            <div class="team-score {{.ScoreClass}}">{{.Team.Score}}{{if .Win}}<span class="win-mark">WIN</span>{{end}}</div>
+          </div>
+          <div class="team-aggregate">
+            <span class="badge">{{.Stats.Kills}} K</span>
+            <span class="badge">{{.Stats.Deaths}} D</span>
+            <span class="badge">{{.Stats.Assists}} A</span>
+            <span class="badge badge--accent">{{one .Stats.ADR}} ADR</span>
+            <span class="badge">{{zero .Stats.HSPercent}}% HS</span>
+            <span class="badge badge--accent">{{zero .Stats.AimRating}} AIM</span>
+          </div>
+          <div class="table-scroll">
+          <table class="score-table">
+            <caption class="sr-only">{{.DisplayName}} scoreboard</caption>
+            <thead>
+              <tr><th scope="col" class="name">Player</th><th scope="col">Score</th><th scope="col">K</th><th scope="col">D</th><th scope="col">A</th><th scope="col">K/D</th><th scope="col">ADR</th><th scope="col">HS</th><th scope="col">AIM</th><th scope="col">MVP</th></tr>
+            </thead>
+            <tbody>
+            {{range .Players}}
+              <tr class="{{if .Flagged}}flagged{{end}}">
+                <th scope="row" class="name"><a href="#{{.Anchor}}">{{.Player.Name}}</a>{{if .Player.ClanTag}} <span class="clan">[{{.Player.ClanTag}}]</span>{{end}}{{if .Flagged}} <span class="flag-dot" role="img" aria-label="flagged by anti-cheat" title="Flagged by anti-cheat">&#9873;</span>{{end}}{{if .Player.IsBot}} <span class="badge badge--neutral">BOT</span>{{end}}</th>
+                <td>{{.ScoreDisplay}}</td>
+                <td>{{.Player.Stats.Kills}}</td>
+                <td>{{.Player.Stats.Deaths}}</td>
+                <td>{{.Player.Stats.Assists}}</td>
+                <td>{{.KDDisplay}}</td>
+                <td>{{.ADRDisplay}}</td>
+                <td>{{.HSDisplay}}</td>
+                <td class="aim-cell">{{if .AimDisplay}}{{.AimDisplay}} <span class="grade {{gradeClass .AimGrade}}">{{.AimGrade}}</span>{{else}}-{{end}}</td>
+                <td>{{.Player.Stats.MVPs}}</td>
+              </tr>
+            {{end}}
+            </tbody>
+            <tfoot>
+              <tr>
+                <th scope="row" class="name">Team total</th>
+                <td>-</td>
+                <td>{{.Stats.Kills}}</td>
+                <td>{{.Stats.Deaths}}</td>
+                <td>{{.Stats.Assists}}</td>
+                <td>-</td>
+                <td>{{one .Stats.ADR}}</td>
+                <td>{{zero .Stats.HSPercent}}%</td>
+                <td>{{zero .Stats.AimRating}}</td>
+                <td>-</td>
+              </tr>
+            </tfoot>
+          </table>
+          </div>
+        </div>
+        {{end}}
       </div>
     </div>
 
@@ -158,67 +199,9 @@
     {{end}}
   </section>
 
-  <section id="scoreboard" class="section">
-    <div class="section-head">
-      <h2>Scoreboard</h2>
-      <span class="section-note">Match totals - select a player for details</span>
-    </div>
-    <div class="teams">
-      {{range .Teams}}
-      <div class="cs-panel team-board {{lower .Side}} {{if .Win}}is-winner{{end}}">
-        <div class="team-head">
-          <div>
-            <span class="team-side"><i class="side-dot {{lower .Side}}" aria-hidden="true"></i> {{.Side}}</span>
-            <h3>{{.Team.Name}}</h3>
-          </div>
-          <div class="team-score">{{.Team.Score}}{{if .Win}}<span class="win-mark">WIN</span>{{end}}</div>
-        </div>
-        <div class="table-scroll">
-        <table class="score-table">
-          <caption class="sr-only">{{.Team.Name}} scoreboard</caption>
-          <thead>
-            <tr><th scope="col" class="name">Player</th><th scope="col">Score</th><th scope="col">K</th><th scope="col">D</th><th scope="col">A</th><th scope="col">K/D</th><th scope="col">ADR</th><th scope="col">HS</th><th scope="col">AIM</th><th scope="col">MVP</th></tr>
-          </thead>
-          <tbody>
-          {{range .Players}}
-            <tr class="{{if .Flagged}}flagged{{end}}">
-              <th scope="row" class="name"><a href="#{{.Anchor}}">{{.Player.Name}}</a>{{if .Player.ClanTag}} <span class="clan">[{{.Player.ClanTag}}]</span>{{end}}{{if .Flagged}} <span class="flag-dot" role="img" aria-label="flagged by anti-cheat" title="Flagged by anti-cheat">&#9873;</span>{{end}}{{if .Player.IsBot}} <span class="bot">BOT</span>{{end}}</th>
-              <td>{{.ScoreDisplay}}</td>
-              <td>{{.Player.Stats.Kills}}</td>
-              <td>{{.Player.Stats.Deaths}}</td>
-              <td>{{.Player.Stats.Assists}}</td>
-              <td>{{.KDDisplay}}</td>
-              <td>{{.ADRDisplay}}</td>
-              <td>{{.HSDisplay}}</td>
-              <td class="aim-cell">{{if .AimDisplay}}{{.AimDisplay}} <span class="grade {{gradeClass .AimGrade}}">{{.AimGrade}}</span>{{else}}-{{end}}</td>
-              <td>{{.Player.Stats.MVPs}}</td>
-            </tr>
-          {{end}}
-          </tbody>
-          <tfoot>
-            <tr>
-              <th scope="row" class="name">Team total</th>
-              <td>-</td>
-              <td>{{.Stats.Kills}}</td>
-              <td>{{.Stats.Deaths}}</td>
-              <td>{{.Stats.Assists}}</td>
-              <td>-</td>
-              <td>{{one .Stats.ADR}}</td>
-              <td>{{zero .Stats.HSPercent}}%</td>
-              <td>{{zero .Stats.AimRating}}</td>
-              <td>-</td>
-            </tr>
-          </tfoot>
-        </table>
-        </div>
-      </div>
-      {{end}}
-    </div>
-  </section>
-
   <section id="cheaters" class="section">
     <div class="section-head">
-      <h2>Cheat watch</h2>
+      <h2>Watchlist</h2>
       <span class="section-note">Flagged and review-level players - timestamps point at the demo</span>
     </div>
 
@@ -232,10 +215,10 @@
             <div>
               <h3><a href="#{{.Player.Anchor}}">{{.Player.Player.Name}}</a>{{if .Player.Player.ClanTag}} <span class="clan">[{{.Player.Player.ClanTag}}]</span>{{end}}</h3>
               <div class="cheater-sub">
-                {{if .Player.TeamName}}<span class="team-tag {{lower .Player.Side}}">{{.Player.TeamName}}</span>{{end}}
+                {{if .Player.TeamName}}<span class="badge badge--{{if eq .Player.Side "CT"}}ct{{else if eq .Player.Side "T"}}t{{else}}neutral{{end}}">{{.Player.TeamName}}</span>{{end}}
                 <span>{{.Player.Player.RoundsPlayed}} rounds</span>
                 <span>{{.Player.Player.Stats.Kills}} / {{.Player.Player.Stats.Deaths}} / {{.Player.Player.Stats.Assists}}</span>
-                {{if .Player.Player.IsBot}}<span class="bot">BOT</span>{{end}}
+                {{if .Player.Player.IsBot}}<span class="badge badge--neutral">BOT</span>{{end}}
               </div>
             </div>
           </div>
@@ -252,36 +235,33 @@
             <h4>Signals</h4>
             {{template "channel-list" .TopChannels}}
             {{if .Cheat.Grades}}
-            <div class="grades">
+            <div class="badge-row grades">
               {{range .Cheat.Grades}}<span class="grade-chip"><span>{{.Label}}</span><b class="grade {{gradeClass .Grade}}">{{.Grade}}</b></span>{{end}}
               {{if .Cheat.OverallGrade}}<span class="grade-chip overall"><span>Overall</span><b class="grade {{gradeClass .Cheat.OverallGrade}}">{{.Cheat.OverallGrade}}</b></span>{{end}}
             </div>
             {{end}}
-            {{if .Cheat.Adjustments}}
-            <details class="details-compact">
-              <summary>Score adjustments ({{len .Cheat.Adjustments}})</summary>
-              <div class="adjustments">{{range .Cheat.Adjustments}}<span class="adjust">{{.Label}}{{if .Detail}} <em>{{.Detail}}</em>{{end}}</span>{{end}}</div>
-            </details>
-            {{end}}
-            <p><a href="#{{.Player.Anchor}}">Open full analysis</a></p>
+            {{if .Cheat.Adjustments}}{{template "adjustments" .Cheat.Adjustments}}{{end}}
           </div>
           <div>
             <h4>When to look</h4>
             {{if .TopMoments}}
             {{template "cue-list" .TopMoments}}
             {{else}}
-            <p class="muted">No timestamped cue passed the recording thresholds. Read the aggregate channels for context.</p>
+            <p class="muted">No timestamped cue passed the recording thresholds.</p>
             {{end}}
-            <p class="disclaimer small">Cues mark where a detector channel became interesting, not where cheating happened. Statistical signal, not proof.</p>
+            <p class="disclaimer small">Cues mark detector thresholds, not confirmed cheating. Statistical signal, not proof.</p>
           </div>
         </div>
+        <footer class="cheater-foot">
+          <a href="#{{.Player.Anchor}}">Open full analysis</a>
+        </footer>
       </article>
       {{end}}
     </div>
     {{else}}
     <div class="cs-panel empty-state">
-      <h3>No players on the watch list</h3>
-      <p class="muted">Nobody crossed the 25% review level or the 50% flag threshold. Player cards still show every channel and sample count.</p>
+      <h3>No players on the watchlist</h3>
+      <p class="muted">Nobody crossed the 25% review level or the 50% flag threshold.</p>
       <p><a href="#players">Open player details</a></p>
     </div>
     {{end}}
@@ -289,7 +269,7 @@
 
   <section id="rounds" class="section">
     <div class="section-head">
-      <h2>Rounds and timeline</h2>
+      <h2>Timeline</h2>
       <span class="section-note">One continuous demo time scale - absolute timestamps</span>
     </div>
 
@@ -332,10 +312,10 @@
         <div class="player-id">
           <h3>{{.Player.Name}}{{if .Flagged}} <span class="flag-dot" role="img" aria-label="flagged by anti-cheat">&#9873;</span>{{end}}</h3>
           <div class="player-sub">
-            {{if .TeamName}}<span class="team-tag {{lower .Side}}">{{.TeamName}}</span>{{end}}
-            {{if .Player.SteamID64}}<a href="https://steamcommunity.com/profiles/{{.Player.SteamID64}}" rel="noopener noreferrer">Steam profile</a>{{end}}
+            {{if .TeamName}}<span class="badge badge--{{if eq .Side "CT"}}ct{{else if eq .Side "T"}}t{{else}}neutral{{end}}">{{.TeamName}}</span>{{end}}
+            {{if .Player.SteamID64}}<a class="badge badge--info" href="https://steamcommunity.com/profiles/{{.Player.SteamID64}}" target="_blank" rel="noopener noreferrer">Steam profile</a>{{end}}
             <span>{{.Player.RoundsPlayed}} rounds</span>
-            {{if .Player.IsBot}}<span class="bot">BOT</span>{{end}}
+            {{if .Player.IsBot}}<span class="badge badge--neutral">BOT</span>{{end}}
           </div>
         </div>
         <div class="player-verdicts">
@@ -379,11 +359,11 @@
             </div>
             <div class="aim-grid">
               {{range .Aim}}
-              <div class="aim-tile {{.Class}}" title="{{.Tooltip}} (n={{.Samples}})">
+              <div class="aim-tile {{.Class}}" title="{{.Tooltip}} ({{.SampleLabel}})">
                 <span class="aim-label">{{.Label}}</span>
                 <span class="aim-value">{{.Display}}</span>
                 <span class="bar aim-bar"><i style="width:{{.ScorePct}}%"></i></span>
-                <span class="aim-sample">{{if .LowSample}}low sample - {{end}}n={{.Samples}}</span>
+                <span class="aim-sample">{{if .LowSample}}low sample - {{end}}{{.SampleLabel}}</span>
               </div>
               {{end}}
             </div>
@@ -418,20 +398,14 @@
               <b class="cheat-likelihood">{{.LikelihoodPct}}</b>
               <span class="muted">likelihood - flag at 50%</span>
             </div>
-            {{if .Narrative}}<p class="narrative">{{.Narrative}}</p>{{end}}
             {{if .Grades}}
-            <div class="grades">
+            <div class="badge-row grades">
               {{range .Grades}}<span class="grade-chip"><span>{{.Label}}</span><b class="grade {{gradeClass .Grade}}">{{.Grade}}</b></span>{{end}}
               {{if .OverallGrade}}<span class="grade-chip overall"><span>Overall</span><b class="grade {{gradeClass .OverallGrade}}">{{.OverallGrade}}</b></span>{{end}}
             </div>
             {{end}}
             {{template "channel-list" .Channels}}
-            {{if .Adjustments}}
-            <details class="details-compact">
-              <summary>Score adjustments ({{len .Adjustments}})</summary>
-              <div class="adjustments">{{range .Adjustments}}<span class="adjust">{{.Label}}{{if .Detail}} <em>{{.Detail}}</em>{{end}}</span>{{end}}</div>
-            </details>
-            {{end}}
+            {{if .Adjustments}}{{template "adjustments" .Adjustments}}{{end}}
             <p class="disclaimer small">Detector: vendored demo-anticheat (10-channel Bayesian model). Statistical signal, not proof. Small samples reduce confidence.</p>
             {{else}}
             <p class="error-text">Cheat analysis unavailable: {{.Error}}</p>
@@ -479,6 +453,7 @@
   </section>
 </main>
 
+{{template "search-index" .}}
 {{template "footer" .}}
 {{template "sprite" .}}
 <script>{{.JS}}</script>

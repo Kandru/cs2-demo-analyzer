@@ -131,12 +131,16 @@ func TestRenderHeaderLinksToIndexWhenPresent(t *testing.T) {
 	page := buf.String()
 	for _, want := range []string{
 		`class="brand" href="index.html"`,
-		`class="nav-back" href="index.html"`,
 		`aria-label="Back to report index"`,
-		"All reports",
+		`id="search-index"`,
 	} {
 		if !strings.Contains(page, want) {
 			t.Errorf("missing %q in report header", want)
+		}
+	}
+	for _, unwanted := range []string{`class="nav-back"`, "All reports"} {
+		if strings.Contains(page, unwanted) {
+			t.Errorf("legacy header item %q is still rendered", unwanted)
 		}
 	}
 }
@@ -164,15 +168,19 @@ func TestRenderIncludesSearchableData(t *testing.T) {
 	for _, want := range []string{
 		`id="topsearch"`,
 		`id="report-search"`,
-		`id="search-status"`,
+		`id="search-results"`,
+		`role="combobox"`,
+		`id="search-index"`,
 		`data-target="player-kalle-000001"`,
 		`data-search="1 &lt;b&gt;kalle&lt;/b&gt; kalle-000001 alpha`,
 		`data-search="round 1 round 1 bomb exploded`,
-		"search-hidden",
 	} {
 		if !strings.Contains(page, want) {
 			t.Errorf("missing %q in rendered report", want)
 		}
+	}
+	if strings.Contains(page, "search-status") || strings.Contains(page, "search-hidden") {
+		t.Fatal("legacy live-search markup is still rendered")
 	}
 }
 
@@ -185,9 +193,14 @@ func TestRenderContainsCoreSectionsAndEscapesNames(t *testing.T) {
 		t.Fatal(err)
 	}
 	page := buf.String()
-	for _, want := range []string{"DEMO ANALYZER", "Scoreboard", "Rounds", "Players", "Aim", "Cheat analysis", "Warmup", "de_mirage", "26.11.1", "Cheat watch", "When to look", "demo_gototick 120", "tick 120", "Round history", "Download demo", "match.dem", "12.0 MiB"} {
+	for _, want := range []string{"DEMO ANALYZER", "Overview", "Watchlist", "Timeline", "Players", "Aim", "Cheat analysis", "Warmup", "de_mirage", "26.11.1", "When to look", "demo_gototick 120", "tick 120", "Round history", "Download demo", "match.dem", "12.0 MiB"} {
 		if !strings.Contains(page, want) {
 			t.Errorf("missing %q in rendered report", want)
+		}
+	}
+	for _, unwanted := range []string{"Cheat watch", "Select a card", "Open report", "All reports"} {
+		if strings.Contains(page, unwanted) {
+			t.Errorf("legacy UI text %q is still rendered", unwanted)
 		}
 	}
 	if !strings.Contains(page, `download="match&#34;demo.dem"`) {
@@ -301,8 +314,9 @@ func TestRenderMetadataFooterAndRemovedDisclaimer(t *testing.T) {
 	page := buf.String()
 	for _, want := range []string{
 		`<meta name="author" content="cs2-demo-analyzer from kandru.net">`,
-		`by cs2-demo-analyzer from kandru.net`,
-		`href="https://github.com/Kandru/cs2-demo-analyzer"`,
+		`href="https://github.com/Kandru/cs2-demo-analyzer" target="_blank" rel="noopener noreferrer"`,
+		`href="https://kandru.net" target="_blank" rel="noopener noreferrer"`,
+		`>kandru.net</a>`,
 		`rel="icon"`,
 		`apple-touch-icon`,
 	} {
@@ -326,7 +340,7 @@ func TestIndexMetadataAndSharedFooter(t *testing.T) {
 		Count:       1,
 		Groups: []IndexServerGroup{{
 			Name:    "Server",
-			Entries: []IndexEntry{{Href: "match.html", Name: "Mirage", Played: "2026-11-15 12:00"}},
+			Entries: []IndexEntry{{Href: "match.html", Name: "Mirage", Played: "2026-11-15 12:00", Demo: &DemoLink{Href: "match.dem", Name: "match.dem", Size: "1.0 MiB"}}},
 		}},
 	}
 	var buf bytes.Buffer
@@ -336,15 +350,155 @@ func TestIndexMetadataAndSharedFooter(t *testing.T) {
 	page := buf.String()
 	for _, want := range []string{
 		`<meta name="author" content="cs2-demo-analyzer from kandru.net">`,
-		`by cs2-demo-analyzer from kandru.net`,
-		`href="https://github.com/Kandru/cs2-demo-analyzer"`,
+		`href="https://github.com/Kandru/cs2-demo-analyzer" target="_blank" rel="noopener noreferrer"`,
+		`href="https://kandru.net" target="_blank" rel="noopener noreferrer"`,
 		`rel="icon"`,
 		"CS2 Demo Analyzer",
 		"vtest",
+		"Download demo",
 	} {
 		if !strings.Contains(page, want) {
 			t.Errorf("missing %q in index", want)
 		}
+	}
+	for _, unwanted := range []string{"reports-title", "Select a card", "Open report", "Demo not linked"} {
+		if strings.Contains(page, unwanted) {
+			t.Errorf("legacy index markup %q is still rendered", unwanted)
+		}
+	}
+}
+
+func TestDisplayTeamNameNormalisesLegacyFallbacks(t *testing.T) {
+	cases := []struct {
+		name string
+		team *model.Team
+		want string
+	}{
+		{"empty", &model.Team{StartSide: model.SideCT}, "CT"},
+		{"legacy A", &model.Team{Name: "Team A", StartSide: model.SideT}, "T"},
+		{"legacy B", &model.Team{Name: "team b", StartSide: model.SideCT}, "CT"},
+		{"real", &model.Team{Name: "Alpha", StartSide: model.SideT}, "Alpha"},
+		{"unknown side", &model.Team{Name: "Team A"}, "Team A"},
+		{"nil", nil, "Team"},
+	}
+	for _, tc := range cases {
+		if got := displayTeamName(tc.team); got != tc.want {
+			t.Errorf("%s: got %q, want %q", tc.name, got, tc.want)
+		}
+	}
+}
+
+func TestRenderNormalisesLegacyTeamNamesAndScores(t *testing.T) {
+	m := testMatch()
+	m.Teams[0].Name = "Team A"
+	m.Teams[0].ClanName = "Team A"
+	m.Teams[1].Name = "Team B"
+	m.Teams[1].ClanName = "Team B"
+	m.Summary.WinnerTeamID = 2
+	m.Summary.WinnerName = "T"
+	var buf bytes.Buffer
+	if err := Render(&buf, testDocument(m, "test"), Options{}); err != nil {
+		t.Fatal(err)
+	}
+	page := buf.String()
+	for _, want := range []string{
+		`<span class="win">13</span>`,
+		`<span class="loss">7</span>`,
+		`class="team-score win"`,
+		`class="team-score loss"`,
+		`<span class="hero-team-name">T</span>`,
+		`<span class="hero-team-name">CT</span>`,
+	} {
+		if !strings.Contains(page, want) {
+			t.Errorf("missing %q in normalised report", want)
+		}
+	}
+	for _, unwanted := range []string{"Team A", "Team B", "match drawn", `hero-winner">Draw`} {
+		if strings.Contains(page, unwanted) {
+			t.Errorf("legacy score/team text %q is still rendered", unwanted)
+		}
+	}
+}
+
+func TestRenderDetailedTimelineEventsAndBuys(t *testing.T) {
+	m := testMatch()
+	m.Rounds[0].Players["1"].Bought = []string{"AK-47", "Kevlar Vest", "Smoke Grenade"}
+	m.Rounds[0].Events = append(m.Rounds[0].Events,
+		&model.Event{Type: "flash", Offset: 21, ActorID: "1", ActorName: "kalle", VictimID: "2", VictimName: "victim", Amount: 2.4},
+		&model.Event{Type: "grenade_damage", Offset: 22, ActorID: "1", ActorName: "kalle", VictimID: "2", VictimName: "victim", Weapon: "HE Grenade", Amount: 43},
+		&model.Event{Type: "bomb_pickup", Offset: 23, ActorID: "1", ActorName: "kalle"},
+		&model.Event{Type: "bomb_drop", Offset: 24, ActorID: "1", ActorName: "kalle"},
+		&model.Event{Type: "hostage_rescue", Offset: 25, ActorID: "1", ActorName: "kalle"},
+	)
+	var buf bytes.Buffer
+	if err := Render(&buf, testDocument(m, "test"), Options{}); err != nil {
+		t.Fatal(err)
+	}
+	page := buf.String()
+	for _, want := range []string{
+		"2.4s blind",
+		"43 damage",
+		"picked up the bomb",
+		"dropped the bomb",
+		"rescued a hostage",
+		"AK-47",
+		"Kevlar Vest",
+		"Smoke Grenade",
+		`class="buy-list"`,
+	} {
+		if !strings.Contains(page, want) {
+			t.Errorf("missing %q in detailed timeline", want)
+		}
+	}
+}
+
+func TestRenderKeepsSearchIndexEscaped(t *testing.T) {
+	m := testMatch()
+	m.Players[0].Name = `<img src=x onerror=alert(1)>`
+	m.Players[0].Cheat = nil
+	var buf bytes.Buffer
+	if err := Render(&buf, testDocument(m, "test"), Options{}); err != nil {
+		t.Fatal(err)
+	}
+	page := buf.String()
+	if strings.Contains(page, `<img src=x onerror=alert(1)>`) {
+		t.Fatal("search index did not escape player name")
+	}
+	if !strings.Contains(page, "&lt;img src=x onerror=alert(1)&gt;") {
+		t.Fatal("escaped search label missing")
+	}
+}
+
+func TestRenderTimelineSaysFreezeTimeEnded(t *testing.T) {
+	m := testMatch()
+	m.Rounds[0].Events = append(m.Rounds[0].Events, &model.Event{Type: "freeze_end", Offset: 1})
+	var buf bytes.Buffer
+	if err := Render(&buf, testDocument(m, "test"), Options{}); err != nil {
+		t.Fatal(err)
+	}
+	page := buf.String()
+	if !strings.Contains(page, "Freeze time ended") || strings.Contains(page, "weapons are live") {
+		t.Fatal("freeze-time label was not updated")
+	}
+}
+
+func TestIndexOmitsDownloadWhenDisabled(t *testing.T) {
+	v := &IndexView{
+		Title:   "Match reports",
+		Version: "test",
+		Count:   1,
+		Groups: []IndexServerGroup{{
+			Name:    "Server",
+			Entries: []IndexEntry{{Href: "match.html", Name: "Mirage", Played: "2026-11-15 12:00"}},
+		}},
+	}
+	var buf bytes.Buffer
+	if err := RenderIndex(&buf, v); err != nil {
+		t.Fatal(err)
+	}
+	page := buf.String()
+	if strings.Contains(page, "Download demo") || strings.Contains(page, "Demo not linked") {
+		t.Fatal("index rendered a demo link or placeholder when no download is enabled")
 	}
 }
 

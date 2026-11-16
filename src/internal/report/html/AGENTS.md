@@ -7,8 +7,9 @@ Self-contained, flat report renderer with a shared CS 1.6-inspired dark theme.
 - `view.go` - presentation view model, continuous timeline, builders.
 - `index.go` - output-directory index view and renderer.
 - `renderer.go` - embedded templates/assets, CSS assembly, `Render`.
-- `templates/components.gohtml` - shared topbar, footer, icons, timeline rows,
-  cue lists and channel lists. Parsed into both pages.
+- `templates/components.gohtml` - shared topbar, footer, search index, icons,
+  timeline rows, cue lists, channel lists and adjustment panels. Parsed into
+  both pages.
 - `templates/report.gohtml` - one HTML document.
 - `templates/index.gohtml` - self-contained report index.
 - `assets/vendor/new.css` - vendored MIT framework/reset. Do not edit.
@@ -24,8 +25,21 @@ Self-contained, flat report renderer with a shared CS 1.6-inspired dark theme.
   embedded as data URIs from `assets/`.
 - `assets/theme.css` is the single colour source. Never add a raw `#hex`,
   `rgb()`, `rgba()` or `hsl()` to `style.css`, templates or `app.js`.
-- Read `docs/theme.md` before changing colours. A new colour role needs a token
-  plus a guideline entry.
+- Read `docs/theme.md` before changing colours and `docs/ui.md` before
+  changing typography, badges, headings, search or layout components.
+- One badge primitive: `.badge` plus a semantic modifier. Do not add a new
+  badge class with its own font size or padding.
+- The header is a single row: brand, nav, search. No map/mode tags and no
+  "All reports" link.
+- Search is a server-rendered `#search-index` plus a JS combobox dropdown.
+  Never filter by hiding page content and never move the header while typing.
+- The footer is pinned to the bottom, compact and vertically centred. External
+  links use `target="_blank" rel="noopener noreferrer"`.
+- Section headers and a timeline filter bar stick below `--header-h`.
+- Player cards are one per row at every width.
+- Score adjustments are always visible; never put them behind `<details>`.
+- Match score colours follow win/loss; draw is neutral and is not announced in
+  the hero.
 - CS2 CT blue and T yellow are identity colours only. Gold is the CS 1.6 accent
   and interactive colour. Round alternation uses structural gold/steel.
 - Keep the dark palette, hard corners, 2 px bevel language and dense numeric
@@ -58,6 +72,9 @@ Self-contained, flat report renderer with a shared CS 1.6-inspired dark theme.
   `round_start` row.
 - Every round gets a round-end marker, synthesised when the parser did not emit
   one.
+- Detailed round rows include flash blinds, grenade damage, bomb pickup/drop,
+  hostage pickup/drop/rescue/kill and per-player purchases when the data model
+  provides them.
 - Lifecycle rows (connect, disconnect, team change, team swap) live in
   intermission, warmup or pre-match blocks, not in player aggregates.
 - Winner side is a labelled chip; alternating round markers must not imply a
@@ -72,5 +89,6 @@ Self-contained, flat report renderer with a shared CS 1.6-inspired dark theme.
 3. Add an event icon to the sprite and `iconByType` if needed.
 4. Style with existing tokens; support <=480 px and very wide screens.
 5. Add a render test assertion in `render_test.go` for new sections or
-   contracts. Theme tests enforce raw-colour and docs sync.
-6. Update `docs/report-ui.md`, `docs/theme.md` and `docs/report-schema.md`.
+   contracts. Theme tests enforce raw-colour, font-size and docs sync.
+6. Update `docs/report-ui.md`, `docs/ui.md`, `docs/theme.md` and
+   `docs/report-schema.md`.

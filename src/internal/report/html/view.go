@@ -24,14 +24,25 @@ type View struct {
 	Players      []*PlayerView
 	Timeline     []*TimelineSection
 	Summary      *model.Summary
-	TeamStats    []model.TeamStats
 	Warnings     []string
 	Cheaters     []*CheaterView
 	RoundStrip   []RoundStripView
 	DemoDownload *DemoLink
+	SearchIndex  []SearchEntry
 	Chrome       *ChromeView
 	Footer       *FooterView
 	Assets       *AssetView
+}
+
+// SearchEntry is one server-rendered target for the header search dropdown.
+// Names stay plain strings so the template escapes them; app.js only reads
+// text content and never builds HTML.
+type SearchEntry struct {
+	Kind   string
+	Label  string
+	Detail string
+	Href   string
+	Search string
 }
 
 // ChromeView is the shared topbar model for report and index pages.
@@ -40,9 +51,6 @@ type ChromeView struct {
 	BrandLabel string
 	ShowSearch bool
 	Nav        []NavLink
-	Meta       []string
-	BackHref   string
-	BackLabel  string
 }
 
 // NavLink is one topbar tab.
@@ -56,6 +64,7 @@ type NavLink struct {
 // FooterView is the shared footer model. Both pages render the same component.
 type FooterView struct {
 	RepoURL       string
+	SiteURL       string
 	Version       string
 	GeneratedAt   string
 	ParserVersion string
@@ -86,7 +95,23 @@ type TimelineSection struct {
 	HasFlag  bool
 	IsRound  bool
 	Economy  []EconomyView
+	Buys     []TeamBuysView
 	Rows     []EventView
+}
+
+// TeamBuysView groups the freeze-time-end inventory of one team.
+type TeamBuysView struct {
+	Name   string
+	Side   string
+	Class  string
+	Buyers []PlayerBuyView
+}
+
+// PlayerBuyView is one player's purchase list inside a round header.
+type PlayerBuyView struct {
+	Name  string
+	Href  string
+	Items []string
 }
 
 // DemoLink is a direct download link for a source demo.
@@ -98,11 +123,13 @@ type DemoLink struct {
 
 // TeamView groups scoreboard rows.
 type TeamView struct {
-	Team    *model.Team
-	Players []*PlayerView
-	Stats   model.TeamStats
-	Win     bool
-	Side    string
+	Team        *model.Team
+	DisplayName string
+	Players     []*PlayerView
+	Stats       model.TeamStats
+	Win         bool
+	ScoreClass  string
+	Side        string
 }
 
 // PlayerView is the template view of one player.
@@ -170,13 +197,14 @@ type WeaponView struct {
 
 // MetricView is one aim tile.
 type MetricView struct {
-	Label     string
-	Display   string
-	ScorePct  int
-	Samples   int
-	LowSample bool
-	Tooltip   string
-	Class     string
+	Label       string
+	Display     string
+	ScorePct    int
+	Samples     int
+	SampleLabel string
+	LowSample   bool
+	Tooltip     string
+	Class       string
 }
 
 // CheatView is the anti-cheat card model.
@@ -190,23 +218,23 @@ type CheatView struct {
 	Grades        []model.Grade
 	Channels      []ChannelView
 	Adjustments   []model.Adjustment
-	Narrative     string
 	Error         string
 }
 
 // ChannelView is one detector channel row.
 type ChannelView struct {
-	Channel   model.CheatChannel
-	Rank      int
-	ScorePct  int
-	ConfPct   int
-	Raw       string
-	BarClass  string
-	Zone      string
-	ZoneClass string
+	Channel     model.CheatChannel
+	Rank        int
+	ScorePct    int
+	ConfPct     int
+	Raw         string
+	SampleLabel string
+	BarClass    string
+	Zone        string
+	ZoneClass   string
 }
 
-// CheaterView groups one flagged or review-level player for the Cheat watch
+// CheaterView groups one flagged or review-level player for the Watchlist
 // section. It reuses the player card data so both surfaces stay consistent.
 type CheaterView struct {
 	Player      *PlayerView
@@ -268,9 +296,15 @@ type EventView struct {
 	RoundTime    string
 	Icon         string
 	Parts        []EventPart
-	Badges       []string
+	Badges       []BadgeView
 	DataPlayers  string
 	Class        string
+}
+
+// BadgeView is one semantic badge.
+type BadgeView struct {
+	Text  string
+	Class string
 }
 
 // EventPart is a text fragment, optionally a player link.
@@ -294,18 +328,16 @@ func newView(doc *report.Document, opts Options) *View {
 		title = "CS2"
 	}
 	if len(m.Teams) >= 2 {
-		title += " - " + m.Teams[0].Name + " vs " + m.Teams[1].Name
+		title += " - " + displayTeamName(m.Teams[0]) + " vs " + displayTeamName(m.Teams[1])
 	}
 	v.Title = title
-	if m.Summary != nil {
-		v.TeamStats = m.Summary.TeamStats
-	}
 	v.Players = buildPlayers(m)
-	v.Teams = buildTeams(m, v.TeamStats, v.Players)
+	v.Teams = buildTeams(m, v.Players)
 	v.RoundStrip = buildRoundStrip(m)
 	v.Cheaters = buildCheaters(v.Players)
 	v.Timeline = buildTimeline(m)
 	markFlaggedRounds(v, m)
+	v.SearchIndex = buildSearchIndex(v)
 	v.Warnings = m.Warnings
 	v.Description = fmt.Sprintf("CS2 match report for %s - %s - %s", v.Title, m.Mode, byline)
 	v.Chrome = &ChromeView{
@@ -314,19 +346,14 @@ func newView(doc *report.Document, opts Options) *View {
 		ShowSearch: true,
 		Nav: []NavLink{
 			{Href: "#overview", Label: "Overview", Active: true},
-			{Href: "#scoreboard", Label: "Scoreboard"},
-			{Href: "#cheaters", Label: "Watch list", Count: len(v.Cheaters)},
+			{Href: "#cheaters", Label: "Watchlist", Count: len(v.Cheaters)},
 			{Href: "#rounds", Label: "Timeline"},
 			{Href: "#players", Label: "Players"},
 		},
-		Meta: compact(m.Map, m.Mode),
-	}
-	if opts.IndexHref != "" {
-		v.Chrome.BackHref = opts.IndexHref
-		v.Chrome.BackLabel = "All reports"
 	}
 	v.Footer = &FooterView{
 		RepoURL:       repoURL,
+		SiteURL:       siteURL,
 		Version:       v.Version,
 		GeneratedAt:   generatedAt,
 		ParserVersion: m.ParserVersion,
@@ -348,10 +375,36 @@ func brandLabel(indexHref string) string {
 	return "CS2 Demo Analyzer home"
 }
 
-func buildTeams(m *model.Match, stats []model.TeamStats, players []*PlayerView) []*TeamView {
+// displayTeamName normalises legacy and missing clan names. "Team A"/"Team B"
+// came from older parser versions and are not useful in a report; use the side
+// the team started on instead. Real clan names pass through unchanged.
+func displayTeamName(t *model.Team) string {
+	if t == nil {
+		return "Team"
+	}
+	name := strings.TrimSpace(t.Name)
+	legacy := strings.EqualFold(name, "Team A") || strings.EqualFold(name, "Team B")
+	if name == "" || legacy {
+		switch t.StartSide {
+		case model.SideCT:
+			return "CT"
+		case model.SideT:
+			return "T"
+		}
+		if legacy {
+			return name
+		}
+		return "Team"
+	}
+	return name
+}
+
+func buildTeams(m *model.Match, players []*PlayerView) []*TeamView {
 	byID := map[int]model.TeamStats{}
-	for _, s := range stats {
-		byID[s.TeamID] = s
+	if m.Summary != nil {
+		for _, s := range m.Summary.TeamStats {
+			byID[s.TeamID] = s
+		}
 	}
 	winner := 0
 	if m.Summary != nil {
@@ -359,7 +412,22 @@ func buildTeams(m *model.Match, stats []model.TeamStats, players []*PlayerView) 
 	}
 	out := make([]*TeamView, 0, len(m.Teams))
 	for _, t := range m.Teams {
-		tv := &TeamView{Team: t, Stats: byID[t.ID], Win: t.ID == winner, Side: string(t.StartSide)}
+		scoreClass := "draw"
+		if winner != 0 {
+			if t.ID == winner {
+				scoreClass = "win"
+			} else {
+				scoreClass = "loss"
+			}
+		}
+		tv := &TeamView{
+			Team:        t,
+			DisplayName: displayTeamName(t),
+			Stats:       byID[t.ID],
+			Win:         t.ID == winner,
+			ScoreClass:  scoreClass,
+			Side:        string(t.StartSide),
+		}
 		for _, pv := range players {
 			if pv.Player.TeamID == t.ID {
 				tv.Players = append(tv.Players, pv)
@@ -396,7 +464,7 @@ func buildPlayer(m *model.Match, p *model.Player) *PlayerView {
 		ScoreDisplay: fmt.Sprintf("%d", p.Stats.Score),
 	}
 	if team := m.TeamByID(p.TeamID); team != nil {
-		pv.TeamName = team.Name
+		pv.TeamName = displayTeamName(team)
 		pv.Side = string(team.StartSide)
 	}
 	terms := []string{p.ID, p.Name, p.Slug, p.ClanTag, pv.TeamName}
@@ -522,14 +590,40 @@ func metricView(mt model.AimMetric) MetricView {
 		}
 	}
 	return MetricView{
-		Label:     mt.Label,
-		Display:   plainDashes(mt.Display),
-		ScorePct:  clampPct(mt.Score),
-		Samples:   mt.Samples,
-		LowSample: mt.LowSample,
-		Tooltip:   plainDashes(mt.Tooltip),
-		Class:     class,
+		Label:       mt.Label,
+		Display:     plainDashes(mt.Display),
+		ScorePct:    clampPct(mt.Score),
+		Samples:     mt.Samples,
+		SampleLabel: metricSampleLabel(mt.ID, mt.Samples),
+		LowSample:   mt.LowSample,
+		Tooltip:     plainDashes(mt.Tooltip),
+		Class:       class,
 	}
+}
+
+// metricSampleLabel explains what an aim sample actually is. Detector channels
+// use their own labels; aim metrics have a small, stable set of nouns.
+func metricSampleLabel(id string, n int) string {
+	noun := "samples"
+	switch id {
+	case "accuracy", "counter_strafe", "spray":
+		noun = "shots"
+	case "head_accuracy":
+		noun = "hits"
+	case "damage_speed", "reaction", "preaim":
+		noun = "engagements"
+	}
+	if n == 1 {
+		noun = strings.TrimSuffix(noun, "s")
+	}
+	return fmt.Sprintf("%d %s", n, noun)
+}
+
+func sampleCount(noun string, n int) string {
+	if n == 1 {
+		return fmt.Sprintf("1 %s", strings.TrimSuffix(noun, "s"))
+	}
+	return fmt.Sprintf("%d %s", n, noun)
 }
 
 func buildCheat(cr *model.CheatReport) *CheatView {
@@ -541,7 +635,6 @@ func buildCheat(cr *model.CheatReport) *CheatView {
 		OverallGrade:  cr.OverallGrade,
 		Grades:        cr.Grades,
 		Adjustments:   cr.Adjustments,
-		Narrative:     plainDashes(cr.Narrative),
 		Error:         cr.Error,
 		Likelihood:    cr.Likelihood,
 		LikelihoodPct: fmt.Sprintf("%.0f%%", cr.Likelihood),
@@ -563,13 +656,14 @@ func buildCheat(cr *model.CheatReport) *CheatView {
 	for _, ch := range cr.Channels {
 		ch.Description = plainDashes(ch.Description)
 		cvm := ChannelView{
-			Channel:   ch,
-			Rank:      len(cv.Channels) + 1,
-			ScorePct:  clampPct(ch.Score * 100),
-			ConfPct:   clampPct(ch.Confidence * 100),
-			BarClass:  zoneClass(ch.Zone),
-			Zone:      ch.Zone,
-			ZoneClass: zoneClass(ch.Zone),
+			Channel:     ch,
+			Rank:        len(cv.Channels) + 1,
+			ScorePct:    clampPct(ch.Score * 100),
+			ConfPct:     clampPct(ch.Confidence * 100),
+			SampleLabel: sampleCount("samples", ch.Samples),
+			BarClass:    zoneClass(ch.Zone),
+			Zone:        ch.Zone,
+			ZoneClass:   zoneClass(ch.Zone),
 		}
 		if ch.HasData {
 			cvm.Raw = rawMetric(ch)
@@ -590,6 +684,41 @@ func buildCheat(cr *model.CheatReport) *CheatView {
 		cv.Channels[i].Rank = i + 1
 	}
 	return cv
+}
+
+func buildSearchIndex(v *View) []SearchEntry {
+	out := make([]SearchEntry, 0, len(v.Players)+len(v.RoundStrip)+8)
+	add := func(kind, label, detail, href string, terms ...string) {
+		label = strings.TrimSpace(label)
+		if label == "" || href == "" {
+			return
+		}
+		out = append(out, SearchEntry{
+			Kind:   kind,
+			Label:  label,
+			Detail: strings.TrimSpace(detail),
+			Href:   href,
+			Search: searchKey(append([]string{kind, label, detail, href}, terms...)...),
+		})
+	}
+	add("section", "Overview", "Match at a glance", "#overview")
+	add("section", "Timeline", "Rounds and events", "#rounds")
+	add("section", "Players", "Stats and cheat analysis", "#players")
+	if len(v.Cheaters) > 0 {
+		add("section", "Watchlist", fmt.Sprintf("%d player(s)", len(v.Cheaters)), "#cheaters")
+	}
+	for _, c := range v.Cheaters {
+		add("watchlist", c.Player.Player.Name, c.Cheat.Verdict+" - "+c.Cheat.LikelihoodPct,
+			"#cheater-"+c.Player.Player.Slug, c.Search)
+	}
+	for _, p := range v.Players {
+		detail := strings.Join(compact(p.TeamName, p.Player.ClanTag), " ")
+		add("player", p.Player.Name, detail, "#"+p.Anchor, p.Search)
+	}
+	for _, r := range v.RoundStrip {
+		add("round", "Round "+r.Label, r.Score+" - "+r.Title, "#"+r.Anchor)
+	}
+	return out
 }
 
 func buildCheaters(players []*PlayerView) []*CheaterView {
@@ -786,7 +915,15 @@ func roundLabel(r *model.Round) string {
 
 func roundWinner(m *model.Match, r *model.Round) string {
 	if t := m.TeamByID(r.WinnerTeamID); t != nil {
-		return t.Name
+		name := displayTeamName(t)
+		// Fallback names ("CT"/"T") describe the start side, which is not the
+		// winning side after a half-time swap. Prefer the round's winner side.
+		if name == "CT" || name == "T" {
+			if r.Winner != "" && r.Winner != model.SideUnknown {
+				return string(r.Winner)
+			}
+		}
+		return name
 	}
 	return "Draw"
 }
@@ -983,6 +1120,7 @@ func buildTimeline(m *model.Match) []*TimelineSection {
 			Number:   r.Number,
 			IsRound:  true,
 			Economy:  buildEconomy(r, m),
+			Buys:     buildBuys(r, m),
 			Rows:     timelineViews(rows),
 		})
 
@@ -1072,10 +1210,47 @@ func buildEconomy(r *model.Round, m *model.Match) []EconomyView {
 	for _, e := range r.Economy {
 		ev := EconomyView{Equip: e.EquipmentValue, BuyType: e.BuyType, Class: buyClass(e.BuyType)}
 		if t := m.TeamByID(e.TeamID); t != nil {
-			ev.TeamName = t.Name
+			ev.TeamName = displayTeamName(t)
 		}
 		ev.Side = string(e.Side)
 		out = append(out, ev)
+	}
+	return out
+}
+
+// buildBuys groups the freeze-time inventory snapshot by team and player.
+// Older reports have no Bought data and simply render nothing.
+func buildBuys(r *model.Round, m *model.Match) []TeamBuysView {
+	teams := append([]*model.Team(nil), m.Teams...)
+	sort.SliceStable(teams, func(i, j int) bool {
+		if teams[i].StartSide != teams[j].StartSide {
+			return teams[i].StartSide < teams[j].StartSide
+		}
+		return teams[i].ID < teams[j].ID
+	})
+	out := make([]TeamBuysView, 0, len(teams))
+	for _, t := range teams {
+		tv := TeamBuysView{Name: displayTeamName(t), Side: string(t.StartSide), Class: teamSideClass(t.StartSide)}
+		for _, p := range m.Players {
+			if p.TeamID != t.ID {
+				continue
+			}
+			rs := r.Players[p.ID]
+			if rs == nil || len(rs.Bought) == 0 {
+				continue
+			}
+			tv.Buyers = append(tv.Buyers, PlayerBuyView{
+				Name:  p.Name,
+				Href:  "#player-" + p.Slug,
+				Items: append([]string(nil), rs.Bought...),
+			})
+		}
+		sort.SliceStable(tv.Buyers, func(i, j int) bool {
+			return tv.Buyers[i].Name < tv.Buyers[j].Name
+		})
+		if len(tv.Buyers) > 0 {
+			out = append(out, tv)
+		}
 	}
 	return out
 }
@@ -1102,11 +1277,11 @@ func globalEventsWithFallback(m *model.Match) []*model.Event {
 			text := "Teams switched sides"
 			var ctName, tName string
 			for id, side := range cur {
-				if team := m.TeamByID(id); team != nil && team.Name != "" {
+				if team := m.TeamByID(id); team != nil && displayTeamName(team) != "" {
 					if side == model.SideCT {
-						ctName = team.Name
+						ctName = displayTeamName(team)
 					} else if side == model.SideT {
-						tName = team.Name
+						tName = displayTeamName(team)
 					}
 				}
 			}
@@ -1200,21 +1375,29 @@ func rawMetric(ch model.CheatChannel) string {
 }
 
 var iconByType = map[string]string{
-	"round_start":       "flag",
-	"freeze_end":        "buy",
-	"kill":              "kill",
-	"teamkill":          "warning",
-	"suicide":           "warning",
-	"bomb_plant":        "bomb",
-	"bomb_defuse":       "defuse",
-	"bomb_explode":      "explosion",
-	"grenade":           "grenade",
-	"mvp":               "star",
-	"round_end":         "trophy",
-	"player_connect":    "connect",
-	"player_disconnect": "disconnect",
-	"team_change":       "swap",
-	"team_swap":         "swap",
+	model.EventRoundStart:    "flag",
+	model.EventFreezeEnd:     "buy",
+	model.EventKill:          "kill",
+	model.EventTeamKill:      "warning",
+	model.EventSuicide:       "warning",
+	model.EventBombPlant:     "bomb",
+	model.EventBombDefuse:    "defuse",
+	model.EventBombExplode:   "explosion",
+	model.EventBombPickup:    "bomb",
+	model.EventBombDrop:      "bomb-drop",
+	model.EventGrenade:       "grenade",
+	model.EventGrenadeDamage: "grenade",
+	model.EventFlash:         "flash",
+	model.EventMVP:           "star",
+	model.EventRoundEnd:      "trophy",
+	model.EventPlayerConnect: "connect",
+	model.EventPlayerLeave:   "disconnect",
+	model.EventTeamChange:    "swap",
+	model.EventTeamSwap:      "swap",
+	model.EventHostagePickup: "hostage",
+	model.EventHostageDrop:   "hostage",
+	model.EventHostageRescue: "hostage",
+	model.EventHostageKilled: "hostage",
 }
 
 func buildEvent(e *model.Event, m *model.Match, base float64) EventView {
@@ -1248,11 +1431,11 @@ func buildEvent(e *model.Event, m *model.Match, base float64) EventView {
 		return EventPart{Text: name}
 	}
 	switch e.Type {
-	case "round_start":
+	case model.EventRoundStart:
 		ev.Parts = []EventPart{{Text: "Round started"}}
-	case "freeze_end":
-		ev.Parts = []EventPart{{Text: "Freeze time ended - weapons are live"}}
-	case "kill":
+	case model.EventFreezeEnd:
+		ev.Parts = []EventPart{{Text: "Freeze time ended"}}
+	case model.EventKill:
 		ev.Parts = append(ev.Parts, link(e.ActorID, e.ActorName))
 		ev.Parts = append(ev.Parts, EventPart{Text: " eliminated "})
 		ev.Parts = append(ev.Parts, link(e.VictimID, e.VictimName))
@@ -1265,63 +1448,108 @@ func buildEvent(e *model.Event, m *model.Match, base float64) EventView {
 			ev.Parts = append(ev.Parts, EventPart{Text: ")"})
 		}
 		addKillBadges(&ev, e)
-	case "teamkill":
+	case model.EventTeamKill:
 		ev.Parts = append(ev.Parts, link(e.ActorID, e.ActorName))
 		ev.Parts = append(ev.Parts, EventPart{Text: " team-killed "})
 		ev.Parts = append(ev.Parts, link(e.VictimID, e.VictimName))
 		if e.Weapon != "" {
 			ev.Parts = append(ev.Parts, EventPart{Text: " with " + e.Weapon})
 		}
+		ev.addBadge("Teamkill", "danger")
 		addKillBadges(&ev, e)
-	case "suicide":
+	case model.EventSuicide:
 		ev.Parts = append(ev.Parts, link(e.VictimID, e.VictimName))
 		ev.Parts = append(ev.Parts, EventPart{Text: " died"})
 		if e.Weapon != "" && e.Weapon != "World" {
 			ev.Parts = append(ev.Parts, EventPart{Text: " (" + e.Weapon + ")"})
 		}
-	case "bomb_plant":
+		ev.addBadge("Suicide", "danger")
+	case model.EventBombPlant:
 		ev.Parts = append(ev.Parts, link(e.ActorID, e.ActorName))
 		ev.Parts = append(ev.Parts, EventPart{Text: " planted the bomb"})
 		if e.Site != "" {
-			ev.Parts = append(ev.Parts, EventPart{Text: " at site " + e.Site})
+			ev.addBadge("Site "+e.Site, "warning")
 		}
-	case "bomb_defuse":
+	case model.EventBombDefuse:
 		ev.Parts = append(ev.Parts, link(e.ActorID, e.ActorName))
 		ev.Parts = append(ev.Parts, EventPart{Text: " defused the bomb"})
 		if e.Site != "" {
-			ev.Parts = append(ev.Parts, EventPart{Text: " at site " + e.Site})
+			ev.addBadge("Site "+e.Site, "success")
 		}
-	case "bomb_explode":
+	case model.EventBombExplode:
 		ev.Parts = []EventPart{{Text: "The bomb exploded"}}
-	case "grenade":
+	case model.EventBombPickup:
+		ev.Parts = append(ev.Parts, link(e.ActorID, actorName(e)))
+		ev.Parts = append(ev.Parts, EventPart{Text: " picked up the bomb"})
+		ev.addBadge("Bomb carrier", "warning")
+	case model.EventBombDrop:
+		ev.Parts = append(ev.Parts, link(e.ActorID, actorName(e)))
+		ev.Parts = append(ev.Parts, EventPart{Text: " dropped the bomb"})
+		ev.addBadge("Bomb dropped", "warning")
+	case model.EventGrenade:
 		ev.Parts = append(ev.Parts, link(e.ActorID, e.ActorName))
 		ev.Parts = append(ev.Parts, EventPart{Text: " threw " + article(e.Grenade) + e.Grenade})
-	case "mvp":
+		ev.addBadge("Utility", "info")
+	case model.EventGrenadeDamage:
+		ev.Parts = append(ev.Parts, link(e.ActorID, actorName(e)))
+		ev.Parts = append(ev.Parts, EventPart{Text: " hit "})
+		ev.Parts = append(ev.Parts, link(e.VictimID, e.VictimName))
+		if e.Weapon != "" {
+			ev.Parts = append(ev.Parts, EventPart{Text: " with " + e.Weapon})
+		}
+		ev.addBadge(fmt.Sprintf("%.0f damage", e.Amount), "warning")
+	case model.EventFlash:
+		ev.Parts = append(ev.Parts, link(e.ActorID, actorName(e)))
+		ev.Parts = append(ev.Parts, EventPart{Text: " flashed "})
+		ev.Parts = append(ev.Parts, link(e.VictimID, e.VictimName))
+		if e.Amount > 0 {
+			ev.addBadge(fmt.Sprintf("%.1fs blind", e.Amount), "info")
+		} else {
+			ev.addBadge("Blind", "info")
+		}
+	case model.EventMVP:
 		ev.Parts = append(ev.Parts, link(e.ActorID, e.ActorName))
 		ev.Parts = append(ev.Parts, EventPart{Text: " was awarded the round MVP"})
-	case "round_end":
+		ev.addBadge("MVP", "success")
+	case model.EventRoundEnd:
 		ev.Parts = []EventPart{{Text: e.Text}}
 		if e.Score != [2]int{} {
-			ev.Parts = append(ev.Parts, EventPart{Text: fmt.Sprintf(" - %d : %d", e.Score[0], e.Score[1])})
+			ev.addBadge(fmt.Sprintf("%d : %d", e.Score[0], e.Score[1]), "neutral")
 		}
-	case "player_connect":
+	case model.EventPlayerConnect:
 		ev.Parts = append(ev.Parts, link(e.ActorID, actorName(e)))
 		ev.Parts = append(ev.Parts, EventPart{Text: " connected"})
-	case "player_disconnect":
+	case model.EventPlayerLeave:
 		ev.Parts = append(ev.Parts, link(e.ActorID, actorName(e)))
 		ev.Parts = append(ev.Parts, EventPart{Text: " disconnected"})
-	case "team_change":
+	case model.EventTeamChange:
 		ev.Parts = append(ev.Parts, link(e.ActorID, actorName(e)))
 		ev.Parts = append(ev.Parts, EventPart{Text: teamChangeText(e)})
 		if e.NewSide != model.SideUnknown {
-			ev.Badges = append(ev.Badges, string(e.NewSide))
+			ev.addBadge(string(e.NewSide), strings.ToLower(string(e.NewSide)))
 		}
-	case "team_swap":
+	case model.EventTeamSwap:
 		text := e.Text
 		if text == "" {
 			text = "Teams switched sides"
 		}
 		ev.Parts = []EventPart{{Text: text}}
+	case model.EventHostagePickup:
+		ev.Parts = append(ev.Parts, link(e.ActorID, actorName(e)))
+		ev.Parts = append(ev.Parts, EventPart{Text: " picked up a hostage"})
+		ev.addBadge("Hostage", "info")
+	case model.EventHostageDrop:
+		ev.Parts = append(ev.Parts, link(e.ActorID, actorName(e)))
+		ev.Parts = append(ev.Parts, EventPart{Text: " dropped a hostage"})
+		ev.addBadge("Hostage", "info")
+	case model.EventHostageRescue:
+		ev.Parts = append(ev.Parts, link(e.ActorID, actorName(e)))
+		ev.Parts = append(ev.Parts, EventPart{Text: " rescued a hostage"})
+		ev.addBadge("Rescued", "success")
+	case model.EventHostageKilled:
+		ev.Parts = append(ev.Parts, link(e.ActorID, actorName(e)))
+		ev.Parts = append(ev.Parts, EventPart{Text: " killed a hostage"})
+		ev.addBadge("Hostage killed", "danger")
 	default:
 		ev.Parts = []EventPart{{Text: e.Type}}
 	}
@@ -1362,40 +1590,51 @@ func sideLabel(s model.Side) string {
 	}
 }
 
+func (ev *EventView) addBadge(text, class string) {
+	if text == "" {
+		return
+	}
+	ev.Badges = append(ev.Badges, BadgeView{Text: text, Class: class})
+}
+
 func addKillBadges(ev *EventView, e *model.Event) {
 	if e.Headshot {
-		ev.Badges = append(ev.Badges, "HS")
+		ev.addBadge("Headshot", "accent")
 	}
 	if e.Wallbang {
-		ev.Badges = append(ev.Badges, "WB")
+		ev.addBadge("Wallbang", "warning")
 	}
 	if e.Noscope {
-		ev.Badges = append(ev.Badges, "No-scope")
+		ev.addBadge("No-scope", "warning")
 	}
 	if e.ThroughSmoke {
-		ev.Badges = append(ev.Badges, "Smoke")
+		ev.addBadge("Through smoke", "warning")
 	}
 	if e.AssistedFlash {
-		ev.Badges = append(ev.Badges, "Flash assist")
+		ev.addBadge("Flash assist", "info")
 	}
 }
 
 func eventClass(e *model.Event) string {
 	switch e.Type {
-	case "kill":
+	case model.EventKill:
 		return "evt-kill"
-	case "teamkill", "suicide":
+	case model.EventTeamKill, model.EventSuicide:
 		return "evt-bad"
-	case "bomb_plant", "bomb_defuse", "bomb_explode":
+	case model.EventBombPlant, model.EventBombDefuse, model.EventBombExplode, model.EventBombPickup, model.EventBombDrop:
 		return "evt-bomb"
-	case "mvp":
+	case model.EventGrenade, model.EventGrenadeDamage, model.EventFlash:
+		return "evt-utility"
+	case model.EventMVP:
 		return "evt-mvp"
-	case "round_end":
+	case model.EventRoundEnd:
 		return "evt-end"
-	case "player_connect", "player_disconnect", "team_change":
+	case model.EventPlayerConnect, model.EventPlayerLeave, model.EventTeamChange:
 		return "evt-life"
-	case "team_swap":
+	case model.EventTeamSwap:
 		return "evt-swap"
+	case model.EventHostagePickup, model.EventHostageDrop, model.EventHostageRescue, model.EventHostageKilled:
+		return "evt-hostage"
 	default:
 		return "evt-" + e.Type
 	}

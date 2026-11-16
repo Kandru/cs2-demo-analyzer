@@ -160,12 +160,17 @@ team colour.
 |---|---|
 | `--font-ui` | system UI stack, no web fonts |
 | `--font-mono` | timestamps and numeric tables |
-| `--fs-xs` | 0.68rem small labels |
-| `--fs-sm` | 0.78rem table and metadata text |
-| `--fs-base` | 0.92rem body text |
-| `--fs-md` | 1rem emphasis |
-| `--fs-lg` | 1.18rem card headings |
+| `--fs-2xs` | 0.75rem fine print and tick labels |
+| `--fs-xs` | 0.8125rem small labels and badges |
+| `--fs-sm` | 0.9375rem table and metadata text |
+| `--fs-base` | 1rem body text |
+| `--fs-md` | 1.125rem emphasis |
+| `--fs-lg` | 1.375rem card headings |
+| `--fs-xl` | 1.75rem large card values |
+| `--fs-2xl` | fluid section title |
 | `--fs-3xl` | fluid page title |
+| `--fs-display` | fluid hero score |
+| `--fs-display-sm` | fluid hero score separator |
 | `--lh-tight` / `--lh-base` | heading and body line height |
 | `--space-1` | 0.25rem |
 | `--space-2` | 0.5rem |
@@ -178,20 +183,31 @@ team colour.
 | `--tap` | minimum interactive target |
 | `--touch-gap` | minimum gap between touch targets |
 | `--content-max` | maximum content width for 4K screens |
+| `--measure` | maximum prose line length |
+| `--header-h` | header height and sticky offset |
+| `--footer-h` | compact footer minimum height |
+| `--section-gap` | spacing between major sections |
+| `--section-head-h` | sticky section-head height used by the filter bar |
+| `--badge-pad` | shared badge padding |
+| `--badge-fs` | shared badge font size |
+| `--tl-time-w` | timeline timestamp column |
+| `--tl-node-w` | timeline event node column |
 
 Media-query breakpoints are documented here because CSS custom properties
 cannot be used inside `@media`:
 
 | Width | Behaviour |
 |---|---|
-| `<= 480px` | single column, stacked timeline timestamps, scrollable tables |
-| `<= 720px` | single-column cards, compact topbar, wrapped filters |
-| `<= 1024px` | two-column overview collapses, player cards one column |
-| `<= 1280px` | dashboard and player side panels collapse |
-| `>= 1600px` | two-column player grid, stacked card bodies |
-| `>= 2600px` | three-column player grid |
-| `>= 2200px` | larger root type and content width |
+| `<= 480px` | single-column stat tiles, three round cells, stacked timeline timestamps, scrollable tables |
+| `<= 720px` | single-column cards, compact topbar, four round cells, wrapped filters |
+| `<= 1024px` | scoreboards stack, six round cells, index hero narrows |
+| `<= 1280px` | hero verdict wraps, player card body becomes one column |
+| `>= 1600px` | wider index grid |
+| `>= 2200px` | wider content gutters |
 | `>= 3000px` | full 4K layout, no cramped columns |
+
+The root font size is fluid (`clamp(1rem, 0.42vw + 0.625rem, 1.5rem)`) so
+1080p, 2K and 4K screens all get a readable base size without browser zoom.
 
 ## Component recipes
 
@@ -223,11 +239,17 @@ border-radius: var(--radius);
 
 ### Badges and verdicts
 
-- Flagged: `--danger-text` on `--danger-soft`, `--danger-border`.
-- Review: `--warning-text` on `--warning-soft`, `--warning-border`.
-- Clean: `--success-text` on `--success-soft`, `--success-border`.
-- Unavailable: `--dim` on `--neutral-soft`.
+- One primitive: `.badge` with a semantic modifier.
+- Flagged/danger: `.badge--danger`.
+- Review/unusual: `.badge--warning`.
+- Clean/positive: `.badge--success`.
+- Informational: `.badge--info`.
+- Accent/feature: `.badge--accent`.
+- Neutral/unknown: `.badge--neutral`.
+- Team identity: `.badge--ct` / `.badge--t`.
 - Always include the verdict word, not only the colour.
+- Component-specific classes (`verdict`, `grade`, `zone`, `result-chip`) must
+  reuse the badge padding, font size and weight tokens.
 
 ### Bars
 

@@ -15,6 +15,9 @@ const IndexFileName = "index.html"
 // repoURL is the public project page linked from generated pages.
 const repoURL = "https://github.com/Kandru/cs2-demo-analyzer"
 
+// siteURL is the author's project site linked from the footer.
+const siteURL = "https://kandru.net"
+
 // author is the single author attribution rendered on both pages.
 const author = "cs2-demo-analyzer from kandru.net"
 
@@ -105,10 +108,10 @@ func RenderIndex(w io.Writer, v *IndexView) error {
 		BrandHref:  IndexFileName,
 		BrandLabel: "CS2 Demo Analyzer report index",
 		Nav:        []NavLink{{Href: IndexFileName, Label: "Reports", Active: true}},
-		Meta:       []string{fmt.Sprintf("%d report(s)", v.Count)},
 	}
 	v.Footer = &FooterView{
 		RepoURL:     repoURL,
+		SiteURL:     siteURL,
 		Version:     v.Version,
 		GeneratedAt: v.GeneratedAt,
 	}

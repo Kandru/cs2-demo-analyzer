@@ -5,6 +5,8 @@ Converts a CS2 demo into `model.Match` in one demoinfocs pass.
 ## Files
 
 - `parser.go` — lifecycle, handlers, round builder, warmup, scores, stats.
+- `timeline.go` — optional detailed timeline events, purchases and their
+  handlers. Add new timeline events here.
 - `helpers.go` — finalization, summary, slugs, reason/buy strings.
 
 ## Invariants
@@ -18,6 +20,14 @@ Converts a CS2 demo into `model.Match` in one demoinfocs pass.
 - A round with no damage and no score change is `Pregame` (`Number=0`).
 - Any event added to the timeline must be escaped by the renderer only; names
   are stored raw.
+- Timeline event type identifiers live in `internal/model/event_types.go`. New
+  event: add the constant, register a handler in `installHandlers`, emit via
+  `addEvent`, then label it in `report/html/view.go`.
+- `timeline.go` events are additive in schema v1. Do not make them required or
+  break old cached reports.
+- `RoundStat.Bought` is the freeze-time-end inventory snapshot. It must not
+  affect scoring or aggregate stats.
+- Team name fallback is the starting side (`CT`/`T`), never `Team A`/`Team B`.
 - Round and warmup event offsets are section-relative. `Match.Events` is the
   match lifecycle stream and uses absolute demo offsets.
 - Lifecycle events: `player_connect`, `player_disconnect`, `team_change`,

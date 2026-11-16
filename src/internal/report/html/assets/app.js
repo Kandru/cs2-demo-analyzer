@@ -1,10 +1,28 @@
 /* CS2 Demo Analyzer - progressive enhancement.
  *
  * The report is fully readable without JavaScript. This only adds navigation
- * highlighting, timeline filtering, and copying demo tick commands.
+ * highlighting, the header search dropdown, timeline filtering, and copying
+ * demo tick commands.
  */
 (function () {
   "use strict";
+
+  // The sticky timeline filter bar sits below the sticky section header. Measure
+  // the real header height so the filter never overlaps the section title.
+  const sectionHead = document.querySelector(".section-head");
+  if (sectionHead) {
+    const syncSectionHead = () => {
+      const height = sectionHead.getBoundingClientRect().height;
+      if (height > 0) {
+        document.documentElement.style.setProperty("--section-head-h", height + "px");
+      }
+    };
+    syncSectionHead();
+    window.addEventListener("resize", syncSectionHead);
+    if ("ResizeObserver" in window) {
+      new ResizeObserver(syncSectionHead).observe(sectionHead);
+    }
+  }
 
   const navLinks = Array.from(document.querySelectorAll(".mainnav a"));
   const sections = navLinks
@@ -36,67 +54,154 @@
     sections.forEach((s) => observer.observe(s));
   }
 
-  // Report search filters player cards, cheat cards and timeline sections by
-  // their pre-computed data-search text. All content stays visible without JS.
+  // Header search is a combobox backed by a server-rendered list of anchors.
+  // Names are read from data attributes and inserted with textContent, so
+  // untrusted player/server strings never become HTML.
   const searchWrap = document.getElementById("topsearch");
   const searchBox = document.getElementById("report-search");
-  const searchStatus = document.getElementById("search-status");
-  if (searchWrap && searchBox) {
+  const searchPop = document.getElementById("search-results");
+  const searchList = document.getElementById("search-results-list");
+  const searchEmpty = searchPop ? searchPop.querySelector(".search-empty") : null;
+
+  if (searchWrap && searchBox && searchPop && searchList) {
     searchWrap.hidden = false;
 
-    const playerCards = Array.from(document.querySelectorAll(".player-card[data-search]"));
-    const cheaterCards = Array.from(document.querySelectorAll(".cheater-card[data-search]"));
-    const timelineSections = Array.from(document.querySelectorAll("[data-timeline-section][data-search]"));
-    const pills = Array.from(document.querySelectorAll(".player-pills .pill[data-target]"));
+    const entries = Array.from(document.querySelectorAll("#search-index a")).map((a) => ({
+      href: a.getAttribute("href") || "",
+      label: a.dataset.label || a.textContent || "",
+      detail: a.dataset.detail || "",
+      kind: a.dataset.kind || "",
+      search: (a.dataset.search || "").toLowerCase(),
+    }));
 
-    const searchMatches = (el, query) => !query || (el.dataset.search || "").indexOf(query) !== -1;
+    let results = [];
+    let active = -1;
 
-    function applySearch() {
-      const query = searchBox.value.trim().toLowerCase();
-      const active = query.length > 0;
-      let players = 0;
-      let rounds = 0;
-
-      playerCards.forEach((card) => {
-        const ok = searchMatches(card, query);
-        card.classList.toggle("search-hidden", !ok);
-        if (ok && active) players++;
-      });
-
-      pills.forEach((pill) => {
-        const card = document.getElementById(pill.dataset.target || "");
-        const ok = !active || (card && !card.classList.contains("search-hidden"));
-        pill.classList.toggle("search-hidden", !ok);
-      });
-
-      cheaterCards.forEach((card) => {
-        card.classList.toggle("search-hidden", !searchMatches(card, query));
-      });
-
-      timelineSections.forEach((section) => {
-        const ok = searchMatches(section, query);
-        section.classList.toggle("search-hidden", !ok);
-        if (ok && active && section.classList.contains("tl-round")) rounds++;
-      });
-
-      if (!active) {
-        searchStatus.textContent = "";
-        return;
-      }
-      const parts = [];
-      if (playerCards.length) parts.push(players + (players === 1 ? " player" : " players"));
-      if (timelineSections.length) parts.push(rounds + (rounds === 1 ? " round" : " rounds"));
-      searchStatus.textContent = parts.join(" - ");
+    function close() {
+      searchPop.hidden = true;
+      searchList.textContent = "";
+      if (searchEmpty) searchEmpty.hidden = true;
+      searchBox.setAttribute("aria-expanded", "false");
+      searchBox.removeAttribute("aria-activedescendant");
+      active = -1;
     }
 
-    searchBox.addEventListener("input", applySearch);
-    searchBox.addEventListener("search", applySearch);
+    function open() {
+      searchPop.hidden = false;
+      searchBox.setAttribute("aria-expanded", "true");
+    }
+
+    function select(index) {
+      const items = Array.from(searchList.children);
+      if (!items.length) return;
+      active = (index + items.length) % items.length;
+      items.forEach((item, i) => {
+        item.classList.toggle("is-active", i === active);
+        item.setAttribute("aria-selected", i === active ? "true" : "false");
+      });
+      searchBox.setAttribute("aria-activedescendant", items[active].id);
+    }
+
+    function go(entry) {
+      if (!entry || !entry.href) return;
+      if (entry.href.charAt(0) === "#") {
+        location.hash = entry.href;
+        const target = document.getElementById(entry.href.slice(1));
+        if (target) target.scrollIntoView({ block: "start" });
+      } else {
+        location.href = entry.href;
+      }
+      searchBox.value = "";
+      close();
+      searchBox.blur();
+    }
+
+    function render(query) {
+      const q = query.trim().toLowerCase();
+      results = !q
+        ? []
+        : entries.filter((e) => e.search.indexOf(q) !== -1).slice(0, 12);
+      searchList.textContent = "";
+      active = -1;
+      if (!q) {
+        close();
+        return;
+      }
+      if (!results.length) {
+        open();
+        if (searchEmpty) searchEmpty.hidden = false;
+        return;
+      }
+      results.forEach((entry, i) => {
+        const li = document.createElement("li");
+        li.id = "search-opt-" + i;
+        li.setAttribute("role", "option");
+        li.setAttribute("aria-selected", "false");
+        li.dataset.index = String(i);
+        const button = document.createElement("button");
+        button.type = "button";
+        const label = document.createElement("b");
+        label.textContent = entry.label;
+        button.appendChild(label);
+        if (entry.detail) {
+          const detail = document.createElement("span");
+          detail.textContent = entry.detail;
+          button.appendChild(detail);
+        }
+        const kind = document.createElement("em");
+        kind.textContent = entry.kind;
+        button.appendChild(kind);
+        li.appendChild(button);
+        searchList.appendChild(li);
+      });
+      if (searchEmpty) searchEmpty.hidden = true;
+      open();
+    }
+
+    searchBox.addEventListener("input", () => render(searchBox.value));
+    searchBox.addEventListener("focus", () => {
+      if (searchBox.value.trim()) render(searchBox.value);
+    });
     searchBox.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (searchPop.hidden) render(searchBox.value);
+        select(active + 1);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        select(active - 1);
+      } else if (e.key === "Home" && active >= 0) {
+        e.preventDefault();
+        select(0);
+      } else if (e.key === "End" && active >= 0) {
+        e.preventDefault();
+        select(results.length - 1);
+      } else if (e.key === "Enter") {
+        if (active >= 0) {
+          e.preventDefault();
+          go(results[active]);
+        } else if (results.length === 1) {
+          e.preventDefault();
+          go(results[0]);
+        }
+      } else if (e.key === "Escape") {
         searchBox.value = "";
-        applySearch();
+        close();
         searchBox.blur();
       }
+    });
+
+    searchList.addEventListener("click", (e) => {
+      const button = e.target.closest("button");
+      if (!button) return;
+      const li = button.closest("li");
+      const index = Number(li && li.dataset.index);
+      go(results[index]);
+    });
+
+    document.addEventListener("mousedown", (e) => {
+      if (searchWrap.contains(e.target)) return;
+      close();
     });
 
     document.addEventListener("keydown", (e) => {
@@ -126,10 +231,28 @@
     if (evtType === "all") return true;
     if (evtType === "kill") return type === "kill" || type === "teamkill" || type === "suicide";
     if (evtType === "bomb") {
-      return type === "bomb_plant" || type === "bomb_defuse" || type === "bomb_explode";
+      return (
+        type === "bomb_plant" ||
+        type === "bomb_defuse" ||
+        type === "bomb_explode" ||
+        type === "bomb_pickup" ||
+        type === "bomb_drop"
+      );
+    }
+    if (evtType === "grenade") {
+      return type === "grenade" || type === "grenade_damage" || type === "flash";
     }
     if (evtType === "lifecycle") {
-      return type === "player_connect" || type === "player_disconnect" || type === "team_change" || type === "team_swap";
+      return (
+        type === "player_connect" ||
+        type === "player_disconnect" ||
+        type === "team_change" ||
+        type === "team_swap" ||
+        type === "hostage_pickup" ||
+        type === "hostage_drop" ||
+        type === "hostage_rescue" ||
+        type === "hostage_killed"
+      );
     }
     if (evtType === "round") return type === "round_end" || type === "freeze_end";
     return type === evtType;
@@ -205,14 +328,10 @@
 
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
-    if (playerFilter) {
+    if (playerFilter && player) {
       player = "";
       playerFilter.value = "";
       applyFilter();
-    }
-    if (searchBox) {
-      searchBox.value = "";
-      searchBox.dispatchEvent(new Event("input"));
     }
   });
 

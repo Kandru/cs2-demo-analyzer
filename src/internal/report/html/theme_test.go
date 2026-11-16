@@ -7,6 +7,21 @@ import (
 	"testing"
 )
 
+// TestFontSizesUseTokens keeps the type scale in theme.css authoritative.
+func TestFontSizesUseTokens(t *testing.T) {
+	re := regexp.MustCompile(`font-size:\s*([^;]+);`)
+	for _, match := range re.FindAllStringSubmatch(styleCSS, -1) {
+		value := strings.TrimSpace(match[1])
+		if strings.HasPrefix(value, "var(--fs-") ||
+			strings.HasPrefix(value, "var(--badge-fs)") ||
+			strings.HasSuffix(value, "em") ||
+			value == "clamp(1rem, 0.42vw + 0.625rem, 1.5rem)" {
+			continue
+		}
+		t.Errorf("style.css hardcodes font-size %q; use a --fs-* token", value)
+	}
+}
+
 func TestNoRawColorsOutsideTheme(t *testing.T) {
 	colorLiteral := regexp.MustCompile(`(?i)(?:^|[^&\w])#[0-9a-f]{3,8}\b|\brgba?\s*\(|\bhsla?\s*\(`)
 	files := map[string]string{

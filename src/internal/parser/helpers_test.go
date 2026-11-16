@@ -22,6 +22,12 @@ func TestSlugify(t *testing.T) {
 	}
 }
 
+func TestInventoryNamesNil(t *testing.T) {
+	if got := inventoryNames(nil); got != nil {
+		t.Fatalf("inventoryNames(nil)=%v, want nil", got)
+	}
+}
+
 func TestBuyType(t *testing.T) {
 	if buyType(500, 1) != "Pistol" || buyType(2500, 3) != "Force buy" || buyType(4500, 3) != "Full buy" || buyType(100, 3) != "Eco" {
 		t.Fatal("unexpected buy classification")
