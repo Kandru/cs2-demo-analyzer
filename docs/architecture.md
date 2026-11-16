@@ -69,6 +69,9 @@ current.
 - `Overtime` is set for rounds beyond the 24th regulation round (MR12).
 - Every `Event` has a global sequence and a round-relative offset. Events with
   the same tick keep insertion order.
+- `Match.Events` is a separate match-level lifecycle stream (connects,
+  disconnects, team changes, side swaps) whose offsets are absolute demo
+  seconds. The HTML renderer merges it with round events into one timeline.
 
 ## Interaction & state
 
