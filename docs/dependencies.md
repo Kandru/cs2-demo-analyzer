@@ -66,16 +66,22 @@ fork: a private fork would drift from upstream parser and security fixes.
 ## Upstream proposals
 
 These changes are prepared for demoinfocs upstream. They are not applied
-locally until they ship in a release.
+locally until they ship in a release. Ready-to-apply patches and an issue draft
+live in [`hack/upstream/demoinfocs/`](../hack/upstream/demoinfocs/README.md).
 
 ### 1. Replace `golang.org/x/exp/maps`
 
 `pkg/demoinfocs/sendtables/sendtablescs2/entity.go` uses
-`maps.Keys` from `golang.org/x/exp`. Since demoinfocs targets Go 1.24+, the
-standard library can provide the same result:
+`maps.Keys` from `golang.org/x/exp`, and
+`pkg/demoinfocs/fake/parser.go` uses `x/exp/constraints.Ordered`. Since
+demoinfocs targets Go 1.24+, the standard library can provide both:
 
 ```go
-props := slices.Sorted(maps.Keys(e.updateHandlers))
+props := slices.Collect(maps.Keys(e.updateHandlers))
+```
+
+```go
+func maxKey[T any, N cmp.Ordered](numbers map[N]T) (maxNumber N)
 ```
 
 The `golang.org/x/exp` requirement can then be dropped.

@@ -1,0 +1,273 @@
+diff --git a/go.mod b/go.mod
+index 7057c8c..edba42f 100644
+--- a/go.mod
++++ b/go.mod
+@@ -12,7 +12,6 @@ require (
+ 	github.com/markus-wa/ice-cipher-go v0.0.0-20230901094113-348096939ba7
+ 	github.com/markus-wa/quickhull-go/v2 v2.2.0
+ 	github.com/oklog/ulid/v2 v2.1.1
+-	github.com/pkg/errors v0.9.1
+ 	github.com/samber/lo v1.47.0
+ 	github.com/stretchr/testify v1.11.1
+ 	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63
+diff --git a/go.sum b/go.sum
+index 2093e09..bed4fd7 100644
+--- a/go.sum
++++ b/go.sum
+@@ -32,8 +32,6 @@ github.com/markus-wa/quickhull-go/v2 v2.2.0/go.mod h1:EuLMucfr4B+62eipXm335hOs23
+ github.com/oklog/ulid/v2 v2.1.1 h1:suPZ4ARWLOJLegGFiZZ1dFAkqzhMjL3J1TzI+5wHz8s=
+ github.com/oklog/ulid/v2 v2.1.1/go.mod h1:rcEKHmBBKfef9DhnvX7y1HZBYxjXb0cP5ExxNsTT1QQ=
+ github.com/pborman/getopt v0.0.0-20170112200414-7148bc3a4c30/go.mod h1:85jBQOZwpVEaDAr341tbn15RS4fCAsIst0qp7i8ex1o=
+-github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
+-github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
+ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
+ github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
+ github.com/samber/lo v1.47.0 h1:z7RynLwP5nbyRscyvcD043DWYoOcYRv3mV8lBeqOCLc=
+diff --git a/internal/bitread/bitread.go b/internal/bitread/bitread.go
+index df10814..6c3e422 100644
+--- a/internal/bitread/bitread.go
++++ b/internal/bitread/bitread.go
+@@ -4,12 +4,12 @@
+ package bitread
+ 
+ import (
++	"fmt"
+ 	"io"
+ 	"math"
+ 	"sync"
+ 
+ 	bitread "github.com/markus-wa/gobitread"
+-	"github.com/pkg/errors"
+ )
+ 
+ const (
+@@ -122,7 +122,7 @@ var bitReaderPool = sync.Pool{
+ func (r *BitReader) Pool() error {
+ 	err := r.Close()
+ 	if err != nil {
+-		return errors.Wrap(err, "failed to close BitReader before pooling")
++		return fmt.Errorf("failed to close BitReader before pooling: %w", err)
+ 	}
+ 
+ 	if len(*r.buffer) == smallBuffer {
+diff --git a/pkg/demoinfocs/common/player.go b/pkg/demoinfocs/common/player.go
+index 4759950..3e79b90 100644
+--- a/pkg/demoinfocs/common/player.go
++++ b/pkg/demoinfocs/common/player.go
+@@ -1,10 +1,10 @@
+ package common
+ 
+ import (
++	"errors"
+ 	"time"
+ 
+ 	"github.com/golang/geo/r3"
+-	"github.com/pkg/errors"
+ 
+ 	"github.com/markus-wa/demoinfocs-golang/v5/pkg/demoinfocs/constants"
+ 	st "github.com/markus-wa/demoinfocs-golang/v5/pkg/demoinfocs/sendtables"
+diff --git a/pkg/demoinfocs/cstv/cstv.go b/pkg/demoinfocs/cstv/cstv.go
+index 17cb38b..abf6fff 100644
+--- a/pkg/demoinfocs/cstv/cstv.go
++++ b/pkg/demoinfocs/cstv/cstv.go
+@@ -3,13 +3,12 @@ package cstv
+ import (
+ 	"bytes"
+ 	"encoding/json"
++	"errors"
+ 	"fmt"
+ 	"io"
+ 	"net/http"
+ 	"net/url"
+ 	"time"
+-
+-	"github.com/pkg/errors"
+ )
+ 
+ type sync struct {
+diff --git a/pkg/demoinfocs/game_events.go b/pkg/demoinfocs/game_events.go
+index d12290a..7376b1c 100644
+--- a/pkg/demoinfocs/game_events.go
++++ b/pkg/demoinfocs/game_events.go
+@@ -1,13 +1,13 @@
+ package demoinfocs
+ 
+ import (
++	"errors"
+ 	"fmt"
+ 	"math"
+ 	"time"
+ 
+ 	"github.com/golang/geo/r3"
+ 	"github.com/markus-wa/go-unassert"
+-	"github.com/pkg/errors"
+ 	"google.golang.org/protobuf/proto"
+ 
+ 	common "github.com/markus-wa/demoinfocs-golang/v5/pkg/demoinfocs/common"
+@@ -820,7 +820,7 @@ func (geh gameEventHandler) bombEvent(data map[string]*msg.CMsgSource1LegacyGame
+ 		// when not found, only error if site is not 0, for retake games it may be 0 => unknown
+ 		if t == nil {
+ 			if !geh.ignoreBombsiteIndexNotFound {
+-				return bombEvent, errors.Wrapf(ErrBombsiteIndexNotFound, "bombsite with index %d not found", site)
++				return bombEvent, fmt.Errorf("bombsite with index %d not found: %w", site, ErrBombsiteIndexNotFound)
+ 			}
+ 		} else {
+ 			if t.contains(geh.parser.bombsiteA.center) {
+diff --git a/pkg/demoinfocs/matchinfo.go b/pkg/demoinfocs/matchinfo.go
+index 2060e70..3714b42 100644
+--- a/pkg/demoinfocs/matchinfo.go
++++ b/pkg/demoinfocs/matchinfo.go
+@@ -5,7 +5,6 @@ import (
+ 	"strings"
+ 
+ 	"github.com/markus-wa/demoinfocs-golang/v5/pkg/demoinfocs/msg"
+-	"github.com/pkg/errors"
+ 	"google.golang.org/protobuf/proto"
+ )
+ 
+@@ -17,7 +16,7 @@ func MatchInfoDecryptionKey(b []byte) ([]byte, error) {
+ 
+ 	err := proto.Unmarshal(b, m)
+ 	if err != nil {
+-		return nil, errors.Wrap(err, "failed to unmarshal MatchInfo message")
++		return nil, fmt.Errorf("failed to unmarshal MatchInfo message: %w", err)
+ 	}
+ 
+ 	k := []byte(strings.ToUpper(fmt.Sprintf("%016x", m.GetWatchablematchinfo().GetClDecryptdataKeyPub())))
+diff --git a/pkg/demoinfocs/parser.go b/pkg/demoinfocs/parser.go
+index 6b2d76b..849ad53 100644
+--- a/pkg/demoinfocs/parser.go
++++ b/pkg/demoinfocs/parser.go
+@@ -11,7 +11,6 @@ import (
+ 
+ 	"github.com/golang/geo/r3"
+ 	dp "github.com/markus-wa/godispatch"
+-	"github.com/pkg/errors"
+ 	"google.golang.org/protobuf/proto"
+ 
+ 	bit "github.com/markus-wa/demoinfocs-golang/v5/internal/bitread"
+@@ -300,7 +299,7 @@ func (p *parser) Close() error {
+ 	if p.bitReader != nil {
+ 		err := p.bitReader.Close()
+ 		if err != nil {
+-			return errors.Wrap(err, "failed to close BitReader")
++			return fmt.Errorf("failed to close BitReader: %w", err)
+ 		}
+ 	}
+ 
+diff --git a/pkg/demoinfocs/parsing.go b/pkg/demoinfocs/parsing.go
+index f7fa036..f998357 100644
+--- a/pkg/demoinfocs/parsing.go
++++ b/pkg/demoinfocs/parsing.go
+@@ -1,6 +1,7 @@
+ package demoinfocs
+ 
+ import (
++	"errors"
+ 	"fmt"
+ 	"io"
+ 	"math"
+@@ -8,7 +9,6 @@ import (
+ 
+ 	"github.com/golang/snappy"
+ 	dispatch "github.com/markus-wa/godispatch"
+-	"github.com/pkg/errors"
+ 	"google.golang.org/protobuf/proto"
+ 
+ 	"github.com/markus-wa/demoinfocs-golang/v5/pkg/demoinfocs/msg"
+@@ -157,7 +157,7 @@ func recoverFromUnexpectedEOF(r any) error {
+ 	}
+ 
+ 	if r == io.ErrUnexpectedEOF || r == io.EOF {
+-		return errors.Wrap(ErrUnexpectedEndOfDemo, "unexpected EOF")
++		return fmt.Errorf("unexpected EOF: %w", ErrUnexpectedEndOfDemo)
+ 	}
+ 
+ 	switch err := r.(type) {
+diff --git a/pkg/demoinfocs/s2_commands.go b/pkg/demoinfocs/s2_commands.go
+index 9b3569c..32f5594 100644
+--- a/pkg/demoinfocs/s2_commands.go
++++ b/pkg/demoinfocs/s2_commands.go
+@@ -7,7 +7,6 @@ import (
+ 	"slices"
+ 	"time"
+ 
+-	"github.com/pkg/errors"
+ 	"google.golang.org/protobuf/proto"
+ 
+ 	"github.com/markus-wa/demoinfocs-golang/v5/internal/bitread"
+@@ -18,7 +17,7 @@ import (
+ func (p *parser) handleSendTables(msg *msg.CDemoSendTables) {
+ 	err := p.stParser.ParsePacket(msg.Data)
+ 	if err != nil {
+-		panic(errors.Wrap(err, "failed to unmarshal flattened serializer"))
++		panic(fmt.Errorf("failed to unmarshal flattened serializer: %w", err))
+ 	}
+ }
+ 
+diff --git a/pkg/demoinfocs/stringtables.go b/pkg/demoinfocs/stringtables.go
+index 8483f94..1846705 100644
+--- a/pkg/demoinfocs/stringtables.go
++++ b/pkg/demoinfocs/stringtables.go
+@@ -11,7 +11,6 @@ import (
+ 	"strings"
+ 
+ 	"github.com/golang/snappy"
+-	"github.com/pkg/errors"
+ 	"google.golang.org/protobuf/proto"
+ 
+ 	bit "github.com/markus-wa/demoinfocs-golang/v5/internal/bitread"
+@@ -88,7 +87,7 @@ func (p *parser) parseSingleStringTable(name string) {
+ 
+ 				playerIndex, err := strconv.Atoi(stringName)
+ 				if err != nil {
+-					panic(errors.Wrap(err, "couldn't parse playerIndex from string"))
++					panic(fmt.Errorf("couldn't parse playerIndex from string: %w", err))
+ 				}
+ 
+ 				p.setRawPlayer(playerIndex, player)
+@@ -96,7 +95,7 @@ func (p *parser) parseSingleStringTable(name string) {
+ 			case stNameInstanceBaseline:
+ 				classID, err := strconv.Atoi(stringName)
+ 				if err != nil {
+-					panic(errors.Wrap(err, "couldn't parse serverClassID from string"))
++					panic(fmt.Errorf("couldn't parse serverClassID from string: %w", err))
+ 				}
+ 
+ 				p.stParser.SetInstanceBaseline(classID, data)
+@@ -362,7 +361,7 @@ func (p *parser) processStringTable(tab *msg.CSVCMsg_CreateStringTable) {
+ 
+ 			classID, err := strconv.Atoi(item.Key)
+ 			if err != nil {
+-				panic(errors.Wrap(err, "failed to parse serverClassID"))
++				panic(fmt.Errorf("failed to parse serverClassID: %w", err))
+ 			}
+ 
+ 			p.stParser.SetInstanceBaseline(classID, item.Value)
+@@ -445,7 +444,7 @@ func (p *parser) handleStringTables(msg *msg.CDemoStringTables) {
+ 
+ 				classID, err := strconv.Atoi(key)
+ 				if err != nil {
+-					panic(errors.Wrap(err, "failed to parse serverClassID"))
++					panic(fmt.Errorf("failed to parse serverClassID: %w", err))
+ 				}
+ 
+ 				p.stParser.SetInstanceBaseline(classID, item.GetData())
+@@ -454,7 +453,7 @@ func (p *parser) handleStringTables(msg *msg.CDemoStringTables) {
+ 			for _, item := range tab.GetItems() {
+ 				playerIndex, err := strconv.Atoi(item.GetStr())
+ 				if err != nil {
+-					panic(errors.Wrap(err, "failed to parse playerIndex"))
++					panic(fmt.Errorf("failed to parse playerIndex: %w", err))
+ 				}
+ 
+ 				p.parseUserInfo(item.GetData(), playerIndex)
+@@ -471,7 +470,7 @@ func (p *parser) parseUserInfo(data []byte, playerIndex int) {
+ 	var userInfo msg.CMsgPlayerInfo
+ 	err := proto.Unmarshal(data, &userInfo)
+ 	if err != nil {
+-		panic(errors.Wrap(err, "failed to parse CMsgPlayerInfo msg"))
++		panic(fmt.Errorf("failed to parse CMsgPlayerInfo msg: %w", err))
+ 	}
+ 
+ 	xuid := userInfo.GetXuid() // TODO: what to do with userInfo.GetSteamid()? (seems to be the same, but maybe not in China?)
