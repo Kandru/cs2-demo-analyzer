@@ -637,14 +637,6 @@ func topChannels(channels []ChannelView, n int) []ChannelView {
 			}
 		}
 	}
-	sort.SliceStable(filtered, func(i, j int) bool {
-		si := filtered[i].Channel.Score * filtered[i].Channel.Confidence * filtered[i].Channel.Weight
-		sj := filtered[j].Channel.Score * filtered[j].Channel.Confidence * filtered[j].Channel.Weight
-		if si != sj {
-			return si > sj
-		}
-		return filtered[i].Channel.Score > filtered[j].Channel.Score
-	})
 	if len(filtered) > n {
 		filtered = filtered[:n]
 	}
