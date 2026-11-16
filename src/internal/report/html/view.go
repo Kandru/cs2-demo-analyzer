@@ -554,7 +554,7 @@ func buildPlayer(m *model.Match, p *model.Player) *PlayerView {
 	})
 	pv.Cheat = buildCheat(p.Cheat)
 	if p.Cheat != nil {
-		cheatTerms := []string{p.Cheat.Narrative, p.Cheat.OverallGrade}
+		cheatTerms := []string{plainDashes(p.Cheat.Narrative), p.Cheat.OverallGrade}
 		if pv.Cheat != nil {
 			cheatTerms = append(cheatTerms, pv.Cheat.Verdict)
 		}
@@ -562,10 +562,10 @@ func buildPlayer(m *model.Match, p *model.Player) *PlayerView {
 			cheatTerms = append(cheatTerms, g.Category, g.Label, g.Grade)
 		}
 		for _, ch := range p.Cheat.Channels {
-			cheatTerms = append(cheatTerms, ch.ID, ch.Label, ch.Zone, ch.Description)
+			cheatTerms = append(cheatTerms, ch.ID, ch.Label, ch.Zone, plainDashes(ch.Description))
 		}
 		for _, mo := range p.Cheat.Moments {
-			cheatTerms = append(cheatTerms, mo.Kind, mo.Label, mo.ValueText, mo.Opponent, mo.Weapon)
+			cheatTerms = append(cheatTerms, mo.Kind, plainDashes(mo.Label), plainDashes(mo.ValueText), mo.Opponent, mo.Weapon)
 		}
 		pv.Search = searchKey(append([]string{pv.Search}, cheatTerms...)...)
 	}
@@ -600,7 +600,7 @@ func metricView(mt model.AimMetric) MetricView {
 		ScorePct:  clampPct(mt.Score),
 		Samples:   mt.Samples,
 		LowSample: mt.LowSample,
-		Tooltip:   mt.Tooltip,
+		Tooltip:   plainDashes(mt.Tooltip),
 		Class:     class,
 	}
 }
@@ -615,7 +615,7 @@ func buildCheat(cr *model.CheatReport) *CheatView {
 		OverallGrade:  cr.OverallGrade,
 		Grades:        cr.Grades,
 		Adjustments:   cr.Adjustments,
-		Narrative:     cr.Narrative,
+		Narrative:     plainDashes(cr.Narrative),
 		Error:         cr.Error,
 		Likelihood:    cr.Likelihood,
 		LikelihoodPct: fmt.Sprintf("%.0f%%", cr.Likelihood),
@@ -635,6 +635,7 @@ func buildCheat(cr *model.CheatReport) *CheatView {
 		cv.VerdictClass = "clean"
 	}
 	for _, ch := range cr.Channels {
+		ch.Description = plainDashes(ch.Description)
 		cvm := ChannelView{
 			Channel:   ch,
 			Rank:      len(cv.Channels) + 1,
@@ -650,6 +651,17 @@ func buildCheat(cr *model.CheatReport) *CheatView {
 			cvm.Raw = "-"
 		}
 		cv.Channels = append(cv.Channels, cvm)
+	}
+	sort.SliceStable(cv.Channels, func(i, j int) bool {
+		si := cv.Channels[i].Channel.Score * cv.Channels[i].Channel.Confidence * cv.Channels[i].Channel.Weight
+		sj := cv.Channels[j].Channel.Score * cv.Channels[j].Channel.Confidence * cv.Channels[j].Channel.Weight
+		if si != sj {
+			return si > sj
+		}
+		return cv.Channels[i].Channel.Score > cv.Channels[j].Channel.Score
+	})
+	for i := range cv.Channels {
+		cv.Channels[i].Rank = i + 1
 	}
 	return cv
 }
@@ -806,7 +818,7 @@ func momentReason(rm model.CheatMoment) (MomentReason, int) {
 	if rank < 1 {
 		rank = 1
 	}
-	return MomentReason{Kind: rm.Kind, Label: label, Value: value, Detail: rm.Detail}, rank
+	return MomentReason{Kind: rm.Kind, Label: plainDashes(label), Value: plainDashes(value), Detail: plainDashes(rm.Detail)}, rank
 }
 
 func momentClass(rank int) string {
@@ -908,7 +920,9 @@ func buildTimeline(m *model.Match) []*TimelineSection {
 	var pre []timelineEntry
 	if preLimit >= 0 {
 		for i, entry := range globalEntries {
-			if entry.offset < preLimit {
+			beforeWarmup := entry.offset < preLimit
+			afterWarmup := hasWarmup && entry.offset > warmupEnd && firstStart >= 0 && entry.offset < firstStart
+			if beforeWarmup || afterWarmup {
 				pre = append(pre, entry)
 				usedGlobal[i] = true
 			}
@@ -1069,10 +1083,16 @@ func buildTimeline(m *model.Match) []*TimelineSection {
 	}
 	if len(rest) > 0 {
 		sortTimelineEntries(rest)
+		label := "After the last round"
+		search := searchKey("after the last round", "post-match")
+		if len(m.Rounds) == 0 {
+			label = "Match events"
+			search = searchKey("match events")
+		}
 		sections = append(sections, &TimelineSection{
 			Kind:   "post",
-			Label:  "After the last round",
-			Search: searchKey("after the last round", "post-match"),
+			Label:  label,
+			Search: search,
 			Time:   rest[0].view.Time,
 			Rows:   timelineViews(rest),
 			Class:  "gap",
@@ -1645,6 +1665,12 @@ func article(g string) string {
 	default:
 		return "a "
 	}
+}
+
+// plainDashes keeps generated UI text to the project's plain "-" style. It is
+// only applied to analyser/parser text, never to untrusted player names.
+func plainDashes(s string) string {
+	return strings.NewReplacer("\u2014", "-", "\u2013", "-", "\u00b7", "-").Replace(s)
 }
 
 func clock(seconds float64) string {

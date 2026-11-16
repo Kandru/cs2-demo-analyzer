@@ -68,7 +68,7 @@
       <span class="tl-head-time">{{.Time}} to {{.EndTime}} - {{.Duration}}</span>
     </div>
     <div class="tl-head-result">
-      <span class="result-chip {{.Side}}">{{if eq .Side "CT"}}CT win{{else if eq .Side "T"}}T win{{else}}Draw{{end}}</span>
+      <span class="result-chip {{lower .Side}}">{{if eq .Side "CT"}}CT win{{else if eq .Side "T"}}T win{{else}}Draw{{end}}</span>
       <span class="tl-score">{{.Score}}</span>
     </div>
     <p class="tl-reason">{{.Reason}}</p>

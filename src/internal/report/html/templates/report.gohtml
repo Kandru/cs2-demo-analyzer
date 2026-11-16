@@ -27,7 +27,7 @@
         <p class="hero-sub">{{.Match.Mode}} - {{clock .Match.Duration}} - {{if .Summary}}{{.Summary.Rounds}}{{else}}{{len .Match.Rounds}}{{end}} rounds</p>
       </div>
 
-      <div class="hero-score" aria-label="Match score">
+      <div class="hero-score" role="group" aria-label="Match score">
         {{range $i, $team := .Teams}}
         {{if eq $i 1}}
         <div class="hero-score-num">

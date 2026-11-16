@@ -2798,3 +2798,27 @@ select {
     flex-wrap: wrap;
   }
 }
+
+/* ------------------------------- refinements ------------------------------- */
+
+[hidden] {
+  display: none !important;
+}
+
+.tl-section:not(.tl-round) .tl-head {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.tl-section:not(.tl-round) .tl-head-title {
+  grid-column: 1 / -1;
+}
+
+.tl-section.tl-warmup .tl-head {
+  background: var(--accent-soft);
+}
+
+.tl-section.tl-gap .tl-head,
+.tl-section.tl-pre .tl-head,
+.tl-section.tl-post .tl-head {
+  background: var(--bg-2);
+}
