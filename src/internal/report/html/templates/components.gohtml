@@ -64,7 +64,7 @@
     {{if .IsRound}}
     <span class="tl-round-badge" aria-hidden="true">{{.Number}}</span>
     <div class="tl-head-title">
-      <h3>{{.Label}}{{if .HasFlag}} <span class="flag-dot" title="Flagged activity this round">&#9873;</span>{{end}}</h3>
+      <h3>{{.Label}}{{if .HasFlag}} <span class="flag-dot" role="img" aria-label="flagged activity this round" title="Flagged activity this round">&#9873;</span>{{end}}</h3>
       <span class="tl-head-time">{{.Time}} to {{.EndTime}} - {{.Duration}}</span>
     </div>
     <div class="tl-head-result">

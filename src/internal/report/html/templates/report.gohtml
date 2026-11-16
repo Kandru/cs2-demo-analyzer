@@ -182,7 +182,7 @@
           <tbody>
           {{range .Players}}
             <tr class="{{if .Flagged}}flagged{{end}}">
-              <th scope="row" class="name"><a href="#{{.Anchor}}">{{.Player.Name}}</a>{{if .Player.ClanTag}} <span class="clan">[{{.Player.ClanTag}}]</span>{{end}}{{if .Flagged}} <span class="flag-dot" title="Flagged by anti-cheat">&#9873;</span>{{end}}{{if .Player.IsBot}} <span class="bot">BOT</span>{{end}}</th>
+              <th scope="row" class="name"><a href="#{{.Anchor}}">{{.Player.Name}}</a>{{if .Player.ClanTag}} <span class="clan">[{{.Player.ClanTag}}]</span>{{end}}{{if .Flagged}} <span class="flag-dot" role="img" aria-label="flagged by anti-cheat" title="Flagged by anti-cheat">&#9873;</span>{{end}}{{if .Player.IsBot}} <span class="bot">BOT</span>{{end}}</th>
               <td>{{.ScoreDisplay}}</td>
               <td>{{.Player.Stats.Kills}}</td>
               <td>{{.Player.Stats.Deaths}}</td>
@@ -330,7 +330,7 @@
       <header class="player-head">
         <div class="avatar {{lower .Side}}">{{.Initials}}</div>
         <div class="player-id">
-          <h3>{{.Player.Name}}{{if .Flagged}} <span class="flag-dot">&#9873;</span>{{end}}</h3>
+          <h3>{{.Player.Name}}{{if .Flagged}} <span class="flag-dot" role="img" aria-label="flagged by anti-cheat">&#9873;</span>{{end}}</h3>
           <div class="player-sub">
             {{if .TeamName}}<span class="team-tag {{lower .Side}}">{{.TeamName}}</span>{{end}}
             {{if .Player.SteamID64}}<a href="https://steamcommunity.com/profiles/{{.Player.SteamID64}}" rel="noopener noreferrer">Steam profile</a>{{end}}
