@@ -32,7 +32,7 @@ modules below are compiled into the binary. The list is current as of
 | `github.com/markus-wa/ice-cipher-go` | v0.0.0-20230901094113-348096939ba7 | MIT | encrypted net messages in demoinfocs | No — we never configure a decryption key |
 | `github.com/markus-wa/quickhull-go/v2` | v2.2.0 | MIT | `Fires.ConvexHull3D` in demoinfocs | No — method is never called |
 | `github.com/pkg/errors` | v0.9.1 | BSD-2-Clause | error wrapping in demoinfocs | Yes |
-| `golang.org/x/exp` | v0.0.0-20230817173708-d852ddb80c63 | BSD-3-Clause | one `maps.Keys` call in demoinfocs | Yes |
+| `golang.org/x/exp` | v0.0.0-20230817173708-d852ddb80c63 | BSD-3-Clause | `maps.Keys` and `constraints` in demoinfocs | Yes |
 | `golang.org/x/sys` | v0.50.0 | BSD-3-Clause | Unix backend of fsnotify | Yes |
 | `google.golang.org/protobuf` | v1.36.11 | BSD-3-Clause | demo wire format | Yes |
 
@@ -117,6 +117,9 @@ dead from upstream's perspective, even if this project does not enable it.
   modules, Docker images, and Actions.
 - **CI:** `.github/workflows/ci.yaml` runs tests, vet, module tidiness, module
   verification, and `govulncheck`.
+- **Update channel:** `install.sh` and the self-updater verify `SHA256SUMS` from
+  the same GitHub release. This detects corruption, not a compromised release
+  account. See [install.md](install.md) for the trust model.
 
 ## Adding a dependency
 

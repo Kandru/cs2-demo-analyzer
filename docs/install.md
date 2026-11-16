@@ -83,6 +83,14 @@ The updater:
 
 Update failures report the underlying error; permission failures name the
 target path and suggest running with `sudo` or reinstalling with `install.sh`.
+
+**Trust model:** `SHA256SUMS` proves the archive matches the checksum published
+in the same GitHub release. It does not prove who built it. A compromised
+GitHub account or release can replace both the archive and its checksum, so
+treat the GitHub release channel as the root of trust. Signed releases or
+GitHub artifact attestations would remove that assumption; until then, verify
+an archive independently if you need stronger provenance.
+
 Windows self-update is not supported because a running `.exe` cannot be
 replaced; use the release archive instead. macOS and Linux self-update are
 supported.
