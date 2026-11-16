@@ -199,12 +199,13 @@ type state struct {
 	aim     *aim.Tracker
 	skipAim bool
 
-	teamsByID   map[int]*model.Team
-	playersByID map[string]*model.Player
-	playerSlugs map[string]bool
-	globalSeen  map[string]int
-	lastTTeam   int
-	lastCTTeam  int
+	teamsByID      map[int]*model.Team
+	playersByID    map[string]*model.Player
+	playerSlugs    map[string]bool
+	lastGlobalKey  string
+	lastGlobalTick int
+	lastTTeam      int
+	lastCTTeam     int
 
 	current       *roundBuilder
 	official      int
@@ -253,7 +254,6 @@ func newState(ctx context.Context, m *model.Match, p dem.Parser, opts Options) *
 		teamsByID:   map[int]*model.Team{},
 		playersByID: map[string]*model.Player{},
 		playerSlugs: map[string]bool{},
-		globalSeen:  map[string]int{},
 	}
 }
 
@@ -800,6 +800,16 @@ func playerID(p *common.Player) string {
 	return ""
 }
 
+func playerName(p *common.Player) string {
+	if p == nil {
+		return ""
+	}
+	if p.Name != "" {
+		return p.Name
+	}
+	return fmt.Sprintf("Player %d", p.EntityID)
+}
+
 func (s *state) syncTick() {
 	if s.p != nil {
 		s.lastTick = s.p.CurrentFrame()
@@ -808,41 +818,32 @@ func (s *state) syncTick() {
 
 // addGlobalEvent records a match-level lifecycle event. Its offset is absolute
 // demo time so the report can place it on the continuous match timeline.
-func (s *state) addGlobalEvent(e *model.Event) *model.Event {
+func (s *state) addGlobalEvent(e *model.Event) {
 	s.syncTick()
 	key := fmt.Sprintf("%s|%s|%s|%s", e.Type, e.ActorID, e.OldSide, e.NewSide)
-	if tick, ok := s.globalSeen[key]; ok && tick == s.lastTick {
-		return e
+	if key == s.lastGlobalKey && s.lastTick == s.lastGlobalTick {
+		return
 	}
-	s.globalSeen[key] = s.lastTick
+	s.lastGlobalKey, s.lastGlobalTick = key, s.lastTick
 	s.eventSeq++
 	e.Seq = s.eventSeq
 	e.Tick = s.lastTick
 	e.Offset = s.offset()
 	s.m.Events = append(s.m.Events, e)
-	return e
 }
 
 func (s *state) onPlayerConnect(p *common.Player) {
 	if p == nil || p.IsUnknown {
 		return
 	}
-	name := p.Name
-	if name == "" {
-		name = fmt.Sprintf("Player %d", p.EntityID)
-	}
-	s.addGlobalEvent(&model.Event{Type: "player_connect", ActorID: playerID(p), ActorName: name})
+	s.addGlobalEvent(&model.Event{Type: "player_connect", ActorID: playerID(p), ActorName: playerName(p)})
 }
 
 func (s *state) onPlayerDisconnected(p *common.Player) {
 	if p == nil || p.IsUnknown {
 		return
 	}
-	name := p.Name
-	if name == "" {
-		name = fmt.Sprintf("Player %d", p.EntityID)
-	}
-	s.addGlobalEvent(&model.Event{Type: "player_disconnect", ActorID: playerID(p), ActorName: name})
+	s.addGlobalEvent(&model.Event{Type: "player_disconnect", ActorID: playerID(p), ActorName: playerName(p)})
 }
 
 func (s *state) onPlayerTeamChange(e events.PlayerTeamChange) {
@@ -861,14 +862,10 @@ func (s *state) onPlayerTeamChange(e events.PlayerTeamChange) {
 	if oldSide == model.SideUnknown && newSide == model.SideUnknown {
 		return
 	}
-	name := e.Player.Name
-	if name == "" {
-		name = fmt.Sprintf("Player %d", e.Player.EntityID)
-	}
 	s.addGlobalEvent(&model.Event{
 		Type:      "team_change",
 		ActorID:   playerID(e.Player),
-		ActorName: name,
+		ActorName: playerName(e.Player),
 		OldSide:   oldSide,
 		NewSide:   newSide,
 	})
