@@ -15,9 +15,6 @@ const (
 
 	// MinAngleDiffThreshold is the minimum angle difference in degrees that indicates a stopped movement
 	MinAngleDiffThreshold = 0.2
-
-	// Conversion factor from radians to degrees
-	RadToDeg = 57.2958
 )
 
 // ViewAngleSnapshot stores a player's view angle at a specific tick

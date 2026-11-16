@@ -16,19 +16,21 @@ This project vendors one Go package and depends on several modules.
 
 | File | Change |
 |---|---|
-| `stats/snap_collectors.go` | Removed a double degree→radian conversion that inflated snap velocity ~57×; record timestamped snap cues |
-| `stats/reaction_collectors.go` | Dropped same-tick TTD artifacts, publish `sub_100ms_count`; record timestamped TTD cues |
-| `stats/behavioral_collectors.go` | Record timestamped pre-FOV cues (scoring unchanged) |
-| `stats/cheatscore_overrides.go` | Tightened sub-100 ms floor sample/pre-FOV gates |
-| `stats/recoil_collectors.go` | Removed debug stdout; record timestamped near-perfect spray cues |
+| `stats/collect_snap.go` | Removed a double degree→radian conversion that inflated snap velocity ~57×; record timestamped snap cues |
+| `stats/collect_reaction.go` | Dropped same-tick TTD artifacts, publish `sub_100ms_count`; record timestamped TTD cues |
+| `stats/collect_behavioral.go`, `..._prefov.go`, `..._backkill.go`, `..._attention.go` | Split the upstream behavioral collector by metric; record timestamped pre-FOV cues (scoring unchanged) |
+| `stats/mod_ttd_sub100_floor.go` | Tightened sub-100 ms floor sample/pre-FOV gates |
+| `stats/collect_recoil.go`, `stats/spray_patterns.go` | Removed debug stdout; record timestamped near-perfect spray cues; split the pattern data from the collector |
 | `stats/types.go` | Added `EvidenceMoment` storage with caps (metadata only, never scored) |
-| `stats/evidence_collector.go` | **New file**: wallbang/smoke/no-scope review cues |
+| `stats/collect_evidence.go` | **New file**: wallbang/smoke/no-scope review cues |
 | `analyzer/analyzer.go` | Added `AnalyzeReader` so compressed demos can be analyzed without a temp file |
-| `stats/term_*.go`, `stats/html_reporter.go`, `stats/reporters.go`, `stats/report.tmpl.html` | Removed unused upstream terminal/HTML reporters so the battlelog owns rendering and the binary stays slim; `intMetric` kept in `metrics_util.go` |
+| Upstream `term_*.go`, `html_reporter.go`, `reporters.go`, `report.tmpl.html`, `collectors.go` weapon-usage collector | Removed unused terminal/HTML reporters and the unused weapon-usage collector so the battlelog owns rendering and the binary stays slim; `intMetric` kept in `metrics_util.go` |
 | `stats/battlelog.go` | **New file**: exposes detector metrics for the report |
+| `stats/detect_*.go`, `stats/mod_*.go`, `stats/registry.go`, `stats/run.go`, `stats/combine.go`, `stats/publish.go`, `stats/narrative.go`, `stats/evidence.go` | **New first-party structure**: one file per detection/modifier with an ordered registry. Formulas, weights and thresholds are unchanged from the upstream-equivalent pipeline; this is a structural split, not a retune. |
 | `internal/anticheat/anticheat.go` | **New file**: adapter to `model.CheatReport` |
 
-Scoring logic is otherwise unmodified. See `docs/anticheat.md`.
+Scoring logic is otherwise unmodified. See `docs/anticheat.md` and
+`docs/detections/README.md`.
 
 ## Go modules
 
