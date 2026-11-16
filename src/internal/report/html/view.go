@@ -471,7 +471,7 @@ func buildPlayer(m *model.Match, p *model.Player) *PlayerView {
 		pv.TeamName = displayTeamName(team)
 		pv.Side = string(team.StartSide)
 	}
-	terms := []string{p.ID, p.Name, p.Slug, p.ClanTag, pv.TeamName}
+	terms := []string{p.ID, p.Name, p.Slug, pv.ClanTag, pv.TeamName}
 	terms = append(terms, p.Aliases...)
 	if p.SteamID64 != 0 {
 		terms = append(terms, strconv.FormatUint(p.SteamID64, 10))
@@ -1695,6 +1695,7 @@ func displayClanTag(tag string) string {
 	var last rune
 	repeats := 0
 	count := 0
+	words := 0
 	for _, r := range tag {
 		if !unicode.IsPrint(r) || unicode.IsMark(r) || unicode.Is(unicode.Cf, r) || unicode.Is(unicode.Co, r) {
 			continue
@@ -1712,8 +1713,17 @@ func displayClanTag(tag string) string {
 			b.WriteString("...")
 			break
 		}
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			words++
+		}
 		b.WriteRune(r)
 		count++
+	}
+	// Decorative tags made only from symbols, ligatures or punctuation are
+	// common griefing payloads. They render as an unreadable mess across fonts;
+	// omit them instead of guessing what the game client shows.
+	if words == 0 {
+		return ""
 	}
 	return strings.TrimSpace(b.String())
 }

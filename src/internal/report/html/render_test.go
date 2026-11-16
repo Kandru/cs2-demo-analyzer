@@ -407,7 +407,7 @@ func TestDisplayClanTagStripsFormattingAndNoise(t *testing.T) {
 		"":                 "",
 		"evil":             "evil",
 		"[tag]":            "tag",
-		"᠌﷽﷽﷽﷽?":           "﷽﷽?",
+		"᠌﷽﷽﷽﷽?":           "",
 		"a\nb":             "ab",
 		"abcdefghijklmnop": "abcdefghij...",
 	}

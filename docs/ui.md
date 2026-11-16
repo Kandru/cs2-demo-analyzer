@@ -220,8 +220,8 @@ state adds `is-alert`.
 - The card is one continuous full-width column: stats, aim, weapons, cheat
   analysis, cues and per-round table. Do not reintroduce a side-by-side body.
 - Clan tags are sanitised: control/format characters are removed, repeated
-  runes are collapsed and long tags are truncated. Never print a raw Unicode
-  tag into the page.
+  runes are collapsed and long tags are truncated. Tags with no letters or
+  digits are omitted entirely rather than showing an unreadable symbol mess.
 - Aim and channel samples use readable nouns (shots, hits, engagements,
   samples), never a bare `n=`.
 - Channel rows flow in two columns when there is room.
