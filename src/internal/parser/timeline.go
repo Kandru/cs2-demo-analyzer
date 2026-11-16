@@ -141,6 +141,11 @@ func (s *state) onHostageStateChanged(e events.HostageStateChanged) {
 		})
 	case common.HostageStateGettingDropped:
 		carrier := s.hostageCarrier[id]
+		if carrier == "" && leader != nil {
+			if p := s.ensurePlayer(leader); p != nil {
+				carrier = p.ID
+			}
+		}
 		if carrier == "" {
 			return
 		}

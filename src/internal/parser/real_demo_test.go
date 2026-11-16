@@ -21,6 +21,11 @@ func TestParseRealDemo(t *testing.T) {
 	if len(m.Players) == 0 || len(m.Teams) != 2 {
 		t.Fatalf("players=%d teams=%d", len(m.Players), len(m.Teams))
 	}
+	for _, team := range m.Teams {
+		if team.Name == "Team A" || team.Name == "Team B" {
+			t.Fatalf("legacy team fallback %q leaked into the model", team.Name)
+		}
+	}
 	if len(m.Rounds) == 0 {
 		t.Fatal("no rounds")
 	}
