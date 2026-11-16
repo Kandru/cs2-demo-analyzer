@@ -55,7 +55,7 @@ Feeds the Bayesian combiner and evidence stacking. Gains no direct modifier.
 - Collector: `src/internal/anticheat/stats/collect_recoil.go`
 - Patterns: `src/internal/anticheat/stats/spray_patterns.go`
 - Tests: `src/internal/anticheat/stats/detect_recoil_test.go`
-- Report row: registry metadata in `battlelog.go`
+- Report row: registry metadata in `report.go`
 
 ## Tuning checklist
 

@@ -13,7 +13,7 @@ Folder watcher and queue.
   queue retries on the next scan.
 - One bad demo never stops the watcher. SIGINT/SIGTERM drains workers and saves
   the manifest.
-- Skip hidden dirs and `.cs2battlelog`; optionally recurse.
+- Skip hidden dirs and `.cs2-demo-analyzer`; optionally recurse.
 - Keep the `Processor` interface small (`Process`, `Skip`, `Save`) so it can be
   faked in tests.
 

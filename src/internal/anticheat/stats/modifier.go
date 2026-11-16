@@ -33,7 +33,7 @@ type Modifier struct {
 	// Publish writes the modifier's anti_cheat metrics when it fired.
 	Publish func(ps *PlayerStats, a Applied)
 	// Adjustments returns the human-readable report rows for this modifier.
-	Adjustments func(ps *PlayerStats) []BattlelogAdjustment
+	Adjustments func(ps *PlayerStats) []ReportAdjustment
 }
 
 func yesMetric(ps *PlayerStats, key Key) bool {

@@ -57,7 +57,7 @@ compute asymmetry twice or with different thresholds.
 - Implementation: `src/internal/anticheat/stats/detect_pre_fov_presence.go`
 - Lobby context: `src/internal/anticheat/stats/combine.go`
 - Tests: `src/internal/anticheat/stats/detect_pre_fov_presence_test.go`
-- Report row: registry metadata in `battlelog.go`
+- Report row: registry metadata in `report.go`
 
 ## Tuning checklist
 

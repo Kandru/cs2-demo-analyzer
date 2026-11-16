@@ -14,13 +14,13 @@ RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -buildvcs=false \
       -X github.com/Kandru/cs2-demo-analyzer/internal/version.Version=${VERSION} \
       -X github.com/Kandru/cs2-demo-analyzer/internal/version.Commit=${COMMIT} \
       -X github.com/Kandru/cs2-demo-analyzer/internal/version.Date=${BUILD_DATE}" \
-    -o /out/cs2-battlelog ./cmd/cs2-battlelog
+    -o /out/cs2-demo-analyzer ./cmd/cs2-demo-analyzer
 
 FROM alpine:3.22
 RUN apk add --no-cache ca-certificates tzdata && adduser -D -H -u 1000 app
-COPY --from=build /out/cs2-battlelog /usr/local/bin/cs2-battlelog
+COPY --from=build /out/cs2-demo-analyzer /usr/local/bin/cs2-demo-analyzer
 # The image runs as root by default so bind-mounted output directories work on
 # any host. Run with `--user $(id -u):$(id -g)` if you prefer a non-root UID.
 WORKDIR /reports
-ENTRYPOINT ["cs2-battlelog"]
+ENTRYPOINT ["cs2-demo-analyzer"]
 CMD ["watch", "--input", "/demos", "--output", "/out"]

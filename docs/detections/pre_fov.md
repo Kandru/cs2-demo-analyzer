@@ -66,7 +66,7 @@ screen visibility. Treat tight angles as a review cue, not proof.
 - Implementation: `src/internal/anticheat/stats/detect_pre_fov.go`
 - Collector: `src/internal/anticheat/stats/collect_behavioral_prefov.go`
 - Tests: `src/internal/anticheat/stats/detect_pre_fov_test.go`
-- Report row: registry metadata in `battlelog.go`
+- Report row: registry metadata in `report.go`
 
 ## Tuning checklist
 

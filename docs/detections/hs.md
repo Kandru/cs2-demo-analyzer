@@ -49,7 +49,7 @@ reads it directly.
 
 - Implementation: `src/internal/anticheat/stats/detect_hs.go`
 - Tests: `src/internal/anticheat/stats/detect_hs_test.go`
-- Report row: registry metadata in `battlelog.go`
+- Report row: registry metadata in `report.go`
 
 ## Tuning checklist
 

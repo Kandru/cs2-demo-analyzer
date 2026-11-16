@@ -6,9 +6,9 @@ at commit `635e8c7a152f3026446463cbe8f0ba2e170ec818` (2026-05-18).
 
 - Code lives in `src/internal/anticheat/{analyzer,stats}` and is compiled into
   the binary.
-- It runs as a **second parse pass** so it cannot interfere with the battlelog
+- It runs as a **second parse pass** so it cannot interfere with the match
   timeline.
-- `stats/battlelog.go` exposes the published metrics in a presentation-neutral
+- `stats/report.go` exposes the published metrics in a presentation-neutral
   form; `internal/anticheat/anticheat.go` maps them to `model.CheatReport`.
 - Upstream has **no license file** at this commit. Confirm redistribution
   permission before publishing binaries/source. See `THIRD_PARTY.md`.
@@ -108,7 +108,7 @@ the patches and re-run the calibration plus per-detection tests.
 - Short matches, custom lobbies, and unusual game modes reduce confidence.
   Read the sample counts and zones.
 - No cross-demo history: each report is one match.
-- Warmup is included by the upstream detector; the battlelog timeline excludes
+- Warmup is included by the upstream detector; the match timeline excludes
   it.
 
 ## Responsible use

@@ -57,12 +57,12 @@ func NewMemory() *Store {
 	}
 }
 
-// Open loads (or creates) the manifest under outputDir/.cs2battlelog/.
+// Open loads (or creates) the manifest under outputDir/.cs2-demo-analyzer/.
 func Open(outputDir string) (*Store, error) {
 	if outputDir == "" {
 		return nil, fmt.Errorf("store: empty output directory")
 	}
-	dir := filepath.Join(outputDir, ".cs2battlelog")
+	dir := filepath.Join(outputDir, ".cs2-demo-analyzer")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil, fmt.Errorf("create manifest dir: %w", err)
 	}

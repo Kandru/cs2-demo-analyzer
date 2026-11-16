@@ -1,6 +1,6 @@
 # AGENTS.md — repository guide
 
-This repo turns CS2 demos into a self-contained Battlelog-style HTML report with
+This repo turns CS2 demos into a self-contained, dark HTML report with
 aim stats and a vendored anti-cheat analysis.
 
 ## Read first
@@ -15,11 +15,11 @@ aim stats and a vendored anti-cheat analysis.
 
 - Do not modify `VERSION` unless the task is a release.
 - Never commit demos, generated reports, `stuff/`, `demos/`, `reports/`, or
-  `.cs2battlelog/` (all ignored).
+  `.cs2-demo-analyzer/` (all ignored).
 - Keep the HTML self-contained: no CDN, no external images/fonts/scripts.
 - Treat demo content as untrusted. Render through `html/template`; never
   `template.HTML` for player strings.
-- Battlelog parser and anti-cheat detector are separate passes. Do not merge
+- Match parser and anti-cheat detector are separate passes. Do not merge
   their event handlers into one parser state.
 - Build/test with Docker (`make test`, `make build`). `go` is not assumed on the
   host, though `make build-local` exists.
@@ -31,7 +31,7 @@ aim stats and a vendored anti-cheat analysis.
 ```
 Makefile, Dockerfile, docker-compose.yml, VERSION, .github/workflows/release.yaml
 docs/                     global documentation
-src/cmd/cs2-battlelog/    CLI entrypoint
+src/cmd/cs2-demo-analyzer/    CLI entrypoint
 src/internal/app/         CLI + processor orchestration
 src/internal/config/      runtime config
 src/internal/model/       domain/JSON model
@@ -54,7 +54,7 @@ src/internal/version/     ldflags version
 | Test | `make test` |
 | Format/vet | `make fmt && make vet` |
 | Release archives | `make release` |
-| Run local binary | `go run ./cmd/cs2-battlelog analyze stuff/demo.dem` (from `src/`) |
+| Run local binary | `go run ./cmd/cs2-demo-analyzer analyze stuff/demo.dem` (from `src/`) |
 
 ## Definition of done
 

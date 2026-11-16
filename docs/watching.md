@@ -1,11 +1,11 @@
 # Watching and caching
 
-`cs2-battlelog watch` is designed for a long-running container pointed at a
+`cs2-demo-analyzer watch` is designed for a long-running container pointed at a
 folder that receives demos from a game server, SFTP sync, or manual copy.
 
 ## Lifecycle
 
-1. Load `.cs2battlelog/manifest.json`.
+1. Load `.cs2-demo-analyzer/manifest.json`.
 2. Start workers (default 1).
 3. Start fsnotify watchers recursively; if unavailable, log and rely on polling.
 4. Scan immediately, then every `--interval` and after debounced fsnotify events.
@@ -50,7 +50,7 @@ source hash.
 
 ```yaml
 services:
-  cs2-battlelog:
+  cs2-demo-analyzer:
     build: .
     volumes:
       - /srv/cs2/demos:/demos:ro
@@ -62,7 +62,7 @@ services:
 - The container runs as root by default so bind-mounted output directories work
   without UID mapping. Add `user: "1000:1000"` if you prefer.
 - Mount demos read-only.
-- Keep `--workers` low: each worker holds two parser states (battlelog + cheat).
+- Keep `--workers` low: each worker holds two parser states (statistics + cheat).
 - Memory guidance: assume 0.5–1 GB peak per concurrent worker for large GOTV
   demos.
 
@@ -70,6 +70,6 @@ services:
 
 - `--verbose` logs queue decisions and parse timings.
 - `--interval 2s --debounce 1s` speeds up feedback while testing.
-- Delete `.cs2battlelog/manifest.json` to force a full rescan.
+- Delete `.cs2-demo-analyzer/manifest.json` to force a full rescan.
 - A file that never gets queued: check extension, hidden directory, stability,
   and `--recursive`.

@@ -53,11 +53,11 @@ var modCooccurrence = &Modifier{
 			Description: "×1.2 boost — pre-FOV pre-aim AND back-kill-given both elevated",
 		})
 	},
-	Adjustments: func(ps *PlayerStats) []BattlelogAdjustment {
+	Adjustments: func(ps *PlayerStats) []ReportAdjustment {
 		if !yesMetric(ps, Key("wallhack_co_occurrence_boost")) {
 			return nil
 		}
-		return []BattlelogAdjustment{{
+		return []ReportAdjustment{{
 			Label:  "Wallhack co-occurrence boost",
 			Detail: "pre-FOV pre-aim and back-kill signal both elevated",
 		}}

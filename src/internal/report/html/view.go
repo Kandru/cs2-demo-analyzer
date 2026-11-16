@@ -1,4 +1,4 @@
-// Package html renders the self-contained battlelog report.
+// Package html renders the self-contained match report.
 package html
 
 import (

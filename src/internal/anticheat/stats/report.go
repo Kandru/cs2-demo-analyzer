@@ -6,12 +6,12 @@ import (
 
 // This file is NOT part of the upstream demo-anticheat project. It exposes the
 // detector's published metrics in a presentation-neutral shape so the
-// battlelog report can consume them without duplicating scoring logic.
+// match report can consume them without duplicating scoring logic.
 // Upstream: https://github.com/TimAnthonyAlexander/demo-anticheat
 // Commit:   635e8c7a152f3026446463cbe8f0ba2e170ec818
 
-// BattlelogChannel is one cheat-detection channel with its published values.
-type BattlelogChannel struct {
+// ReportChannel is one cheat-detection channel with its published values.
+type ReportChannel struct {
 	ID          string
 	Label       string
 	Score       float64
@@ -25,22 +25,22 @@ type BattlelogChannel struct {
 	Description string
 }
 
-// BattlelogGrade is a per-category or overall grade.
-type BattlelogGrade struct {
+// ReportGrade is a per-category or overall grade.
+type ReportGrade struct {
 	Category string
 	Label    string
 	Grade    string
 }
 
-// BattlelogAdjustment is one boost/discount/override applied to the verdict.
-type BattlelogAdjustment struct {
+// ReportAdjustment is one boost/discount/override applied to the verdict.
+type ReportAdjustment struct {
 	Label  string
 	Detail string
 }
 
-// BattlelogMoment is one timestamped review cue recorded by a collector.
+// ReportMoment is one timestamped review cue recorded by a collector.
 // Values mirror the channel that produced the signal.
-type BattlelogMoment struct {
+type ReportMoment struct {
 	Kind      string
 	Label     string
 	Rank      int
@@ -53,26 +53,26 @@ type BattlelogMoment struct {
 	Detail    string
 }
 
-// BattlelogPlayerReport is the full detector verdict for one player.
-type BattlelogPlayerReport struct {
+// PlayerReport is the full detector verdict for one player.
+type PlayerReport struct {
 	SteamID64     uint64
 	Name          string
 	Likelihood    float64
 	Flagged       bool
 	FlagThreshold float64
 	OverallGrade  string
-	Grades        []BattlelogGrade
+	Grades        []ReportGrade
 	Narrative     string
-	Channels      []BattlelogChannel
-	Adjustments   []BattlelogAdjustment
-	Moments       []BattlelogMoment
+	Channels      []ReportChannel
+	Adjustments   []ReportAdjustment
+	Moments       []ReportMoment
 }
 
-// BattlelogReports converts the detector's DemoStats into per-player reports
+// BuildPlayerReports converts the detector's DemoStats into per-player reports
 // keyed by SteamID64. The special SteamID 0 placeholder (demo-wide metrics) is
 // skipped.
-func BattlelogReports(ds *DemoStats) map[uint64]*BattlelogPlayerReport {
-	out := map[uint64]*BattlelogPlayerReport{}
+func BuildPlayerReports(ds *DemoStats) map[uint64]*PlayerReport {
+	out := map[uint64]*PlayerReport{}
 	if ds == nil {
 		return out
 	}
@@ -80,7 +80,7 @@ func BattlelogReports(ds *DemoStats) map[uint64]*BattlelogPlayerReport {
 		if sid == 0 || ps == nil {
 			continue
 		}
-		rep := &BattlelogPlayerReport{
+		rep := &PlayerReport{
 			SteamID64:     sid,
 			Name:          ps.Player.Name,
 			FlagThreshold: flagThreshold,
@@ -94,20 +94,20 @@ func BattlelogReports(ds *DemoStats) map[uint64]*BattlelogPlayerReport {
 		if m, ok := ps.GetMetric(Category("rating"), Key("overall")); ok {
 			rep.OverallGrade = m.StringValue
 		}
-		rep.Grades = battlelogGrades(ps)
+		rep.Grades = reportGrades(ps)
 		rep.Narrative = buildCheatscoreNarrative(ps)
-		rep.Channels = battlelogChannels(ps)
-		rep.Adjustments = battlelogAdjustments(ps)
-		rep.Moments = battlelogMoments(ps)
+		rep.Channels = reportChannels(ps)
+		rep.Adjustments = reportAdjustments(ps)
+		rep.Moments = reportMoments(ps)
 		out[sid] = rep
 	}
 	return out
 }
 
-func battlelogMoments(ps *PlayerStats) []BattlelogMoment {
-	out := make([]BattlelogMoment, 0, len(ps.Moments))
+func reportMoments(ps *PlayerStats) []ReportMoment {
+	out := make([]ReportMoment, 0, len(ps.Moments))
 	for _, m := range ps.Moments {
-		out = append(out, BattlelogMoment{
+		out = append(out, ReportMoment{
 			Kind:      m.Kind,
 			Label:     m.Label,
 			Rank:      m.Rank,
@@ -129,7 +129,7 @@ func battlelogMoments(ps *PlayerStats) []BattlelogMoment {
 	return out
 }
 
-func battlelogGrades(ps *PlayerStats) []BattlelogGrade {
+func reportGrades(ps *PlayerStats) []ReportGrade {
 	specs := []struct {
 		category Category
 		label    string
@@ -139,19 +139,19 @@ func battlelogGrades(ps *PlayerStats) []BattlelogGrade {
 		{Category("recoil"), "Recoil"},
 		{Category("grenade"), "Grenades"},
 	}
-	out := make([]BattlelogGrade, 0, len(specs))
+	out := make([]ReportGrade, 0, len(specs))
 	for _, spec := range specs {
 		if m, ok := ps.GetMetric(spec.category, Key("grade")); ok && m.StringValue != "" {
-			out = append(out, BattlelogGrade{Category: string(spec.category), Label: spec.label, Grade: m.StringValue})
+			out = append(out, ReportGrade{Category: string(spec.category), Label: spec.label, Grade: m.StringValue})
 		}
 	}
 	return out
 }
 
-func battlelogChannels(ps *PlayerStats) []BattlelogChannel {
-	out := make([]BattlelogChannel, 0, len(detections))
+func reportChannels(ps *PlayerStats) []ReportChannel {
+	out := make([]ReportChannel, 0, len(detections))
 	for _, det := range detections {
-		ch := BattlelogChannel{
+		ch := ReportChannel{
 			ID:          det.ID,
 			Label:       det.Label,
 			Unit:        det.Unit,
@@ -181,8 +181,8 @@ func battlelogChannels(ps *PlayerStats) []BattlelogChannel {
 	return out
 }
 
-func battlelogAdjustments(ps *PlayerStats) []BattlelogAdjustment {
-	out := make([]BattlelogAdjustment, 0, len(modifiers))
+func reportAdjustments(ps *PlayerStats) []ReportAdjustment {
+	out := make([]ReportAdjustment, 0, len(modifiers))
 	for _, m := range modifiers {
 		if m.Adjustments != nil {
 			out = append(out, m.Adjustments(ps)...)

@@ -1,8 +1,8 @@
-// Package parser converts a CS2 demo into the battlelog domain model.
+// Package parser converts a CS2 demo into the match domain model.
 //
 // It uses one demoinfocs pass for the match timeline and one aim tracker. The
 // vendored anti-cheat detector runs as a separate pass in internal/anticheat,
-// so its handlers can never interfere with the battlelog timeline.
+// so its handlers can never interfere with the match timeline.
 package parser
 
 import (

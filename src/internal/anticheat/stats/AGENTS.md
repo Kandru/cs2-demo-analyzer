@@ -13,8 +13,8 @@ Measurement collectors plus the first-party detection registry.
 | Modifiers | `mod_<id>.go` (one per adjustment) |
 | Collectors | `collect_*.go` |
 | Evidence | `evidence.go`, `types.go` |
-| Report snapshot | `battlelog.go` |
-| Tests | `detect_<id>_test.go`, `modifier_test.go`, `battlelog_test.go`, `registry_test.go`, `calibration_test.go`, `docs_sync_test.go` |
+| Report snapshot | `report.go` |
+| Tests | `detect_<id>_test.go`, `modifier_test.go`, `report_test.go`, `registry_test.go`, `calibration_test.go`, `docs_sync_test.go` |
 
 ## Adding a detection
 
@@ -40,7 +40,7 @@ Adding a modifier is the same pattern with `mod_<id>.go`; order in
   `buildLobbyContext` only.
 - The registry is immutable after package initialization.
 - No per-detection switches in `run.go`, `publish.go`, `narrative.go`,
-  `battlelog.go` or the HTML renderer.
+  `report.go` or the HTML renderer.
 
 ## Verification
 

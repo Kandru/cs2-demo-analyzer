@@ -29,12 +29,12 @@ var modPosition = &Modifier{
 			Description: "Reduction applied for low scoreboard position vs. teammates",
 		})
 	},
-	Adjustments: func(ps *PlayerStats) []BattlelogAdjustment {
+	Adjustments: func(ps *PlayerStats) []ReportAdjustment {
 		m, ok := ps.GetMetric(antiCheatCategory, Key("position_discount"))
 		if !ok || m.FloatValue <= 0 {
 			return nil
 		}
-		return []BattlelogAdjustment{{
+		return []ReportAdjustment{{
 			Label:  "Scoreboard-position discount",
 			Detail: fmt.Sprintf("%.0f%% reduction", m.FloatValue),
 		}}

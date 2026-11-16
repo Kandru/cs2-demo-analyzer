@@ -1,5 +1,5 @@
 // Package anticheat adapts the vendored demo-anticheat detector to the
-// battlelog report model.
+// match report model.
 //
 // The detector code lives in internal/anticheat/{analyzer,stats} and is a
 // vendored copy of https://github.com/TimAnthonyAlexander/demo-anticheat at
@@ -29,7 +29,7 @@ type Report struct {
 }
 
 // Analyze runs the vendored detector against one demo. A failure is returned
-// in Report.Err and is never fatal for the battlelog report.
+// in Report.Err and is never fatal for the match report.
 func Analyze(path string, logger *slog.Logger) (rep Report) {
 	start := time.Now()
 	rep.Players = map[uint64]*model.CheatReport{}
@@ -64,7 +64,7 @@ func Analyze(path string, logger *slog.Logger) (rep Report) {
 		return rep
 	}
 
-	vendored := stats.BattlelogReports(demoStats)
+	vendored := stats.BuildPlayerReports(demoStats)
 	for sid, vr := range vendored {
 		cr := &model.CheatReport{
 			Available:     true,

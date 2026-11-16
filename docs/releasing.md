@@ -27,7 +27,7 @@ git push origin main
 ## Local build
 
 ```sh
-make build      # linux/amd64, dist/cs2-battlelog
+make build      # linux/amd64, dist/cs2-demo-analyzer
 make release    # linux/windows/darwin archives + dist/SHA256SUMS
 make test       # go test ./... in Docker
 ```
@@ -58,7 +58,7 @@ secrets are required.
 ```sh
 make docker-build
 docker run --rm -v "$PWD/demos":/demos:ro -v "$PWD/reports":/out \
-  cs2-battlelog:latest watch --input /demos --output /out
+  cs2-demo-analyzer:latest watch --input /demos --output /out
 ```
 
 The runtime image is Alpine with CA certificates and tzdata. The binary is

@@ -31,13 +31,13 @@ func TestAddMomentCapsPerKindAndPlayer(t *testing.T) {
 	}
 }
 
-func TestBattlelogMomentsArePublishedAndSorted(t *testing.T) {
+func TestReportMomentsArePublishedAndSorted(t *testing.T) {
 	ps := newTestPlayerStats()
 	ps.Player = PlayerIdentifier{SteamID64: 42, Name: "tester"}
 	ps.AddMoment(EvidenceMoment{Kind: "preaim", Tick: 200, Value: 4.2, Unit: "°"})
 	ps.AddMoment(EvidenceMoment{Kind: "ttd", Tick: 100, Value: 88, Unit: "ms"})
 
-	reports := BattlelogReports(&DemoStats{Players: map[uint64]*PlayerStats{42: ps}})
+	reports := BuildPlayerReports(&DemoStats{Players: map[uint64]*PlayerStats{42: ps}})
 	rep := reports[42]
 	if rep == nil {
 		t.Fatal("missing player report")

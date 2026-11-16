@@ -5,7 +5,7 @@ Each descriptive aim metric has one Go spec and one page here. The registry in
 anchors and sample gates.
 
 Aim metrics are **descriptive**, not part of the cheat score. They use the
-battlelog parser's single pass and the `internal/aim.Tracker`, which is
+match parser's single pass and the `internal/aim.Tracker`, which is
 independent of the vendored detector.
 
 ## Composite rating

@@ -50,7 +50,7 @@ is the strongest reading. Very low-death matches must not score.
 - Implementation: `src/internal/anticheat/stats/detect_back_killed.go`
 - Collector: `src/internal/anticheat/stats/collect_behavioral_backkill.go`
 - Tests: `src/internal/anticheat/stats/detect_back_killed_test.go`
-- Report row: registry metadata in `battlelog.go`
+- Report row: registry metadata in `report.go`
 
 ## Tuning checklist
 

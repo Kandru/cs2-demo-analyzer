@@ -57,7 +57,7 @@ func runAnalyze(ctx context.Context, args []string) int {
 			return 0
 		}
 		fmt.Fprintln(os.Stderr, err)
-		fmt.Fprintln(os.Stderr, "run 'cs2-battlelog help' for usage")
+		fmt.Fprintln(os.Stderr, "run 'cs2-demo-analyzer help' for usage")
 		return 2
 	}
 	cfg.Inputs = append(cfg.Inputs, fs.Args()...)
@@ -132,7 +132,7 @@ func runWatch(ctx context.Context, args []string) int {
 			return 0
 		}
 		fmt.Fprintln(os.Stderr, err)
-		fmt.Fprintln(os.Stderr, "run 'cs2-battlelog help' for usage")
+		fmt.Fprintln(os.Stderr, "run 'cs2-demo-analyzer help' for usage")
 		return 2
 	}
 	cfg.Inputs = append(cfg.Inputs, fs.Args()...)
@@ -156,19 +156,19 @@ func runWatch(ctx context.Context, args []string) int {
 }
 
 func commonFlags(fs *flag.FlagSet, cfg *config.Config) {
-	cfg.Inputs = append(cfg.Inputs, splitEnv(os.Getenv("CS2BATTLELOG_INPUT"))...)
+	cfg.Inputs = append(cfg.Inputs, splitEnv(os.Getenv("CS2_DEMO_ANALYZER_INPUT"))...)
 	fs.Var((*multiString)(&cfg.Inputs), "input", "input directory or demo file (repeatable)")
 	fs.Var((*multiString)(&cfg.Inputs), "i", "alias for --input")
-	cfg.Output = envString("CS2BATTLELOG_OUTPUT", cfg.Output)
+	cfg.Output = envString("CS2_DEMO_ANALYZER_OUTPUT", cfg.Output)
 	fs.StringVar(&cfg.Output, "output", cfg.Output, "output directory (default: next to each demo)")
 	fs.StringVar(&cfg.Output, "o", cfg.Output, "alias for --output")
 	fs.BoolVar(&cfg.Recursive, "recursive", cfg.Recursive, "scan directories recursively")
 	fs.IntVar(&cfg.Workers, "workers", cfg.Workers, "parallel demo workers (memory hungry)")
-	fs.BoolVar(&cfg.JSON, "json", envBool("CS2BATTLELOG_JSON", cfg.JSON), "write a JSON sidecar next to the HTML")
-	fs.BoolVar(&cfg.Cheat, "cheat", envBool("CS2BATTLELOG_CHEAT", cfg.Cheat), "run the anti-cheat detector (second parse pass)")
-	fs.BoolVar(&cfg.Aim, "aim", envBool("CS2BATTLELOG_AIM", cfg.Aim), "collect aim statistics")
-	fs.BoolVar(&cfg.Index, "index", envBool("CS2BATTLELOG_INDEX", cfg.Index), "write index.html listing reports in each output directory")
-	fs.BoolVar(&cfg.DemoLinks, "demo-download", envBool("CS2BATTLELOG_DEMO_DOWNLOAD", cfg.DemoLinks), "link the source demo for download even when it is outside the report directory")
+	fs.BoolVar(&cfg.JSON, "json", envBool("CS2_DEMO_ANALYZER_JSON", cfg.JSON), "write a JSON sidecar next to the HTML")
+	fs.BoolVar(&cfg.Cheat, "cheat", envBool("CS2_DEMO_ANALYZER_CHEAT", cfg.Cheat), "run the anti-cheat detector (second parse pass)")
+	fs.BoolVar(&cfg.Aim, "aim", envBool("CS2_DEMO_ANALYZER_AIM", cfg.Aim), "collect aim statistics")
+	fs.BoolVar(&cfg.Index, "index", envBool("CS2_DEMO_ANALYZER_INDEX", cfg.Index), "write index.html listing reports in each output directory")
+	fs.BoolVar(&cfg.DemoLinks, "demo-download", envBool("CS2_DEMO_ANALYZER_DEMO_DOWNLOAD", cfg.DemoLinks), "link the source demo for download even when it is outside the report directory")
 	fs.BoolVar(&cfg.Force, "force", cfg.Force, "reprocess demos even if unchanged")
 	fs.BoolVar(&cfg.Quiet, "quiet", cfg.Quiet, "only log errors")
 	fs.BoolVar(&cfg.Verbose, "verbose", cfg.Verbose, "debug logging")
@@ -208,7 +208,7 @@ func discover(inputs []string, recursive bool) ([]string, error) {
 					return nil
 				}
 				if d.IsDir() {
-					if path != in && (strings.HasPrefix(d.Name(), ".") || d.Name() == ".cs2battlelog") {
+					if path != in && (strings.HasPrefix(d.Name(), ".") || d.Name() == ".cs2-demo-analyzer") {
 						return filepath.SkipDir
 					}
 					if path != in && !recursive {
@@ -275,21 +275,21 @@ func envBool(key string, def bool) bool {
 }
 
 func printUsage(w io.Writer) {
-	fmt.Fprint(w, `CS2 Battlelog — analyze CS2 demos into a self-contained battlelog report.
+	fmt.Fprint(w, `CS2 Demo Analyzer — analyze CS2 demos into a self-contained match report.
 
 Usage:
-  cs2-battlelog analyze [flags] <demo|directory>...
-  cs2-battlelog watch   [flags] <directory>...
-  cs2-battlelog version
-  cs2-battlelog help
+  cs2-demo-analyzer analyze [flags] <demo|directory>...
+  cs2-demo-analyzer watch   [flags] <directory>...
+  cs2-demo-analyzer version
+  cs2-demo-analyzer help
 
 Analyze:
-  cs2-battlelog analyze --output ./reports stuff/
-  cs2-battlelog analyze --json --workers 2 stuff/match.dem
+  cs2-demo-analyzer analyze --output ./reports stuff/
+  cs2-demo-analyzer analyze --json --workers 2 stuff/match.dem
 
 Watch (default: reports written next to each demo):
-  cs2-battlelog watch --input /demos --output /reports
-  cs2-battlelog watch --input /demos --cheat=false --interval 10s
+  cs2-demo-analyzer watch --input /demos --output /reports
+  cs2-demo-analyzer watch --input /demos --cheat=false --interval 10s
 
 Flags:
   -i, --input PATH       input directory/file (repeatable; watch accepts positional too)
@@ -309,19 +309,19 @@ Flags:
       --debounce 2s      settle window for new files
 
 Environment:
-  CS2BATTLELOG_INPUT     path-list separated inputs
-  CS2BATTLELOG_OUTPUT    output directory
-  CS2BATTLELOG_JSON      true/false
-  CS2BATTLELOG_CHEAT     true/false
-  CS2BATTLELOG_AIM       true/false
-  CS2BATTLELOG_INDEX     true/false
-  CS2BATTLELOG_DEMO_DOWNLOAD  true/false
+  CS2_DEMO_ANALYZER_INPUT     path-list separated inputs
+  CS2_DEMO_ANALYZER_OUTPUT    output directory
+  CS2_DEMO_ANALYZER_JSON      true/false
+  CS2_DEMO_ANALYZER_CHEAT     true/false
+  CS2_DEMO_ANALYZER_AIM       true/false
+  CS2_DEMO_ANALYZER_INDEX     true/false
+  CS2_DEMO_ANALYZER_DEMO_DOWNLOAD  true/false
 
 Output:
-  <demo>.html  self-contained dark Battlelog-style report
+  <demo>.html  self-contained dark match report
   <demo>.json  optional machine-readable sidecar (--json)
   index.html   report index when --index or the report sits next to its demo
-  <output>/.cs2battlelog/manifest.json  watch cache
+  <output>/.cs2-demo-analyzer/manifest.json  watch cache
 
 Exit codes: 0 success, 1 processing failure, 2 usage error.
 `)

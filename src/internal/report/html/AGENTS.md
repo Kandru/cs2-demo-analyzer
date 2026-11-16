@@ -1,6 +1,6 @@
 # AGENTS.md — internal/report/html
 
-Self-contained, flat Battlelog-style report renderer.
+Self-contained, flat report renderer.
 
 ## Files
 
@@ -37,4 +37,4 @@ Self-contained, flat Battlelog-style report renderer.
 3. Style with existing tokens; support ≤640 px and very wide screens.
 4. Add a render test assertion in `render_test.go` for new sections or
    contracts.
-5. Update `docs/battlelog-ui.md` and `docs/report-schema.md`.
+5. Update `docs/report-ui.md` and `docs/report-schema.md`.

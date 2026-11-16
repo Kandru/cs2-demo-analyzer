@@ -2,11 +2,11 @@ package stats
 
 import "testing"
 
-// TestBattlelogChannelsMirrorRegistry guards the report metadata path: a
+// TestReportChannelsMirrorRegistry guards the report metadata path: a
 // channel row must carry the detection's label, unit, description and weight.
-func TestBattlelogChannelsMirrorRegistry(t *testing.T) {
+func TestReportChannelsMirrorRegistry(t *testing.T) {
 	ps := newTestPlayerStats()
-	rows := battlelogChannels(ps)
+	rows := reportChannels(ps)
 	if len(rows) != len(detections) {
 		t.Fatalf("got %d channel rows, want %d", len(rows), len(detections))
 	}

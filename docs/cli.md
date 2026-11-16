@@ -1,10 +1,10 @@
 # CLI reference
 
 ```
-cs2-battlelog analyze [flags] <demo|directory>...
-cs2-battlelog watch   [flags] <directory|demo>...
-cs2-battlelog version
-cs2-battlelog help
+cs2-demo-analyzer analyze [flags] <demo|directory>...
+cs2-demo-analyzer watch   [flags] <directory|demo>...
+cs2-demo-analyzer version
+cs2-demo-analyzer help
 ```
 
 No command prints the help. Unknown commands exit `2`.
@@ -33,13 +33,13 @@ No command prints the help. Unknown commands exit `2`.
 
 | Variable | Meaning |
 |---|---|
-| `CS2BATTLELOG_INPUT` | OS path-list separated inputs (`:` on Linux/macOS, `;` on Windows). |
-| `CS2BATTLELOG_OUTPUT` | Output directory. |
-| `CS2BATTLELOG_JSON` | `true`/`false`. |
-| `CS2BATTLELOG_INDEX` | `true`/`false`. |
-| `CS2BATTLELOG_DEMO_DOWNLOAD` | `true`/`false`. |
-| `CS2BATTLELOG_CHEAT` | `true`/`false`. |
-| `CS2BATTLELOG_AIM` | `true`/`false`. |
+| `CS2_DEMO_ANALYZER_INPUT` | OS path-list separated inputs (`:` on Linux/macOS, `;` on Windows). |
+| `CS2_DEMO_ANALYZER_OUTPUT` | Output directory. |
+| `CS2_DEMO_ANALYZER_JSON` | `true`/`false`. |
+| `CS2_DEMO_ANALYZER_INDEX` | `true`/`false`. |
+| `CS2_DEMO_ANALYZER_DEMO_DOWNLOAD` | `true`/`false`. |
+| `CS2_DEMO_ANALYZER_CHEAT` | `true`/`false`. |
+| `CS2_DEMO_ANALYZER_AIM` | `true`/`false`. |
 
 Flags override environment values.
 
@@ -51,7 +51,7 @@ Flags override environment values.
   `docs/report-schema.md`.
 - `index.html` — self-contained list of reports in a report directory. Written
   when `--index` is set or when a report is written next to its demo.
-- `<manifest-dir>/.cs2battlelog/manifest.json` — watch cache. Manifest dir is
+- `<manifest-dir>/.cs2-demo-analyzer/manifest.json` — watch cache. Manifest dir is
   `--output` if set, otherwise the first input directory (or CWD for a single
   file input).
 
@@ -82,7 +82,7 @@ the later one gets a short source-hash suffix: `match-a1b2c3.html`.
 - Failed demos are cached as well; they are retried only when the file changes
   or with `--force`.
 - Files matching `.dem`, `.dem.gz`, `.dem.bz2` (case-insensitive) are eligible.
-- Hidden directories (`.git`, `.cs2battlelog`, …) are skipped.
+- Hidden directories (`.git`, `.cs2-demo-analyzer`, …) are skipped.
 - SIGINT/SIGTERM stops scanning, drains in-flight work, and saves the manifest.
 
 ## Exit codes
@@ -97,16 +97,16 @@ the later one gets a short source-hash suffix: `match-a1b2c3.html`.
 
 ```sh
 # one demo, report alongside it
-cs2-battlelog analyze stuff/match.dem
+cs2-demo-analyzer analyze stuff/match.dem
 
 # whole tree into a shared report directory, with JSON
-cs2-battlelog analyze --output reports --json demos/
+cs2-demo-analyzer analyze --output reports --json demos/
 
 # headless container watch
 docker run --rm \
   -v "$PWD/demos":/demos:ro -v "$PWD/reports":/out \
-  cs2-battlelog:latest watch --input /demos --output /out
+  cs2-demo-analyzer:latest watch --input /demos --output /out
 
 # force a re-analysis after changing the template
-cs2-battlelog watch --input /demos --output /reports --force
+cs2-demo-analyzer watch --input /demos --output /reports --force
 ```

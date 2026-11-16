@@ -26,7 +26,7 @@ modifiers             boosts, discounts, floors and overrides
 publish               cheat_likelihood, <id>_score/_confidence/_zone, flag
 ```
 
-The two parse passes are intentional: the battlelog parser owns the timeline,
+The two parse passes are intentional: the match parser owns the timeline,
 and the detector runs separately so its handlers cannot interfere.
 
 ## Files

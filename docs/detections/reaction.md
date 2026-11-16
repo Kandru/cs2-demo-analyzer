@@ -58,7 +58,7 @@ The floor requires the median/pre-FOV context documented there.
 - Implementation: `src/internal/anticheat/stats/detect_reaction.go`
 - Collector: `src/internal/anticheat/stats/collect_reaction.go`
 - Tests: `src/internal/anticheat/stats/detect_reaction_test.go`
-- Report row: registry metadata in `battlelog.go`
+- Report row: registry metadata in `report.go`
 
 ## Tuning checklist
 

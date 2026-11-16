@@ -64,7 +64,7 @@ append the moment at the measurement site.
 - Moment type/caps: `src/internal/anticheat/stats/types.go`
 - Tests: `src/internal/anticheat/stats/evidence_test.go`,
   `registry_test.go`
-- Report mapping: `src/internal/anticheat/stats/battlelog.go`,
+- Report mapping: `src/internal/anticheat/stats/report.go`,
   `src/internal/report/html/view.go`
 
 ## Tuning checklist

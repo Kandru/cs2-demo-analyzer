@@ -51,7 +51,7 @@ The difference is the fight-vs-idle signal.
 - Implementation: `src/internal/anticheat/stats/detect_attention.go`
 - Collector: `src/internal/anticheat/stats/collect_behavioral_attention.go`
 - Tests: `src/internal/anticheat/stats/detect_attention_test.go`
-- Report row: registry metadata in `battlelog.go`
+- Report row: registry metadata in `report.go`
 
 ## Tuning checklist
 

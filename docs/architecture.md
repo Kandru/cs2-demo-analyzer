@@ -19,11 +19,11 @@ internal/app.Processor
    └─ internal/report/jsondata (optional) ──► JSON sidecar
    │
    ▼
-internal/store  atomic writes + .cs2battlelog/manifest.json cache
+internal/store  atomic writes + .cs2-demo-analyzer/manifest.json cache
 internal/app    optional index.html + demo download links per report directory
 ```
 
-This is deliberately **two parse passes**: the battlelog parser owns the event
+This is deliberately **two parse passes**: the match parser owns the event
 timeline in one pass, and the vendored anti-cheat analyzer runs separately so
 its event handlers and global state cannot interfere with the report. A 65 MB
 demo takes roughly 9–11 s on a modern CPU (both passes included).
@@ -118,8 +118,8 @@ file, never in the pipeline. `internal/aim` follows the same pattern with
 
 - `parse` returns a partial `Match` plus a warning when useful data was already
   read; a nil match is only returned when nothing could be parsed.
-- Anti-cheat failure never blocks the battlelog; it becomes an “unavailable”
-  card with the error and keeps metrics collected by the battlelog parser.
+- Anti-cheat failure never blocks the match; it becomes an “unavailable”
+  card with the error and keeps metrics collected by the match parser.
 - Watch errors are cached per file (size+mtime) so a permanently corrupt demo
   does not spin; `--force` or a file change retries.
 - A single bad demo never terminates `watch`; `analyze` continues but exits 1 if

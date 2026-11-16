@@ -24,9 +24,9 @@ This project vendors one Go package and depends on several modules.
 | `stats/types.go` | Added `EvidenceMoment` storage with caps (metadata only, never scored) |
 | `stats/collect_evidence.go` | **New file**: wallbang/smoke/no-scope review cues |
 | `analyzer/analyzer.go` | Added `AnalyzeReader` so compressed demos can be analyzed without a temp file |
-| Upstream `term_*.go`, `html_reporter.go`, `reporters.go`, `report.tmpl.html` | Removed unused terminal/HTML reporters so the battlelog owns rendering and the binary stays slim |
+| Upstream `term_*.go`, `html_reporter.go`, `reporters.go`, `report.tmpl.html` | Removed unused terminal/HTML reporters so the analyzer owns rendering and the binary stays slim |
 | `stats/collector.go` | Trimmed upstream `collectors.go` to the interface and `BaseCollector`; removed the unused per-frame weapon-usage collector |
-| `stats/battlelog.go` | **New file**: exposes detector metrics for the report |
+| `stats/report.go` | **New file**: exposes detector metrics for the report |
 | `stats/detect_*.go`, `stats/mod_*.go`, `stats/registry.go`, `stats/run.go`, `stats/combine.go`, `stats/publish.go`, `stats/narrative.go`, `stats/evidence.go` | **New first-party structure**: one file per detection/modifier with an ordered registry. Formulas, weights and thresholds are unchanged from the upstream-equivalent pipeline; this is a structural split, not a retune. |
 | `internal/anticheat/anticheat.go` | **New file**: adapter to `model.CheatReport` |
 
@@ -47,5 +47,5 @@ available from the respective module caches/repositories.
 
 ## Design
 
-The Battlelog-inspired look is an original CSS implementation. No EA logos,
+The dark UI is an original CSS implementation. No EA logos,
 fonts, map screenshots, or other assets are included.

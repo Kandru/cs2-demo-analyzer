@@ -30,10 +30,10 @@ var modCompetitive = &Modifier{
 			Description: "Player has more than 39 kills in regulation time (20% boost applied)",
 		})
 	},
-	Adjustments: func(ps *PlayerStats) []BattlelogAdjustment {
+	Adjustments: func(ps *PlayerStats) []ReportAdjustment {
 		if !yesMetric(ps, Key("competitive_boost")) {
 			return nil
 		}
-		return []BattlelogAdjustment{{Label: "Competitive score boost", Detail: ">39 kills in regulation time"}}
+		return []ReportAdjustment{{Label: "Competitive score boost", Detail: ">39 kills in regulation time"}}
 	},
 }

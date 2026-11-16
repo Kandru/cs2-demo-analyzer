@@ -50,11 +50,11 @@ var modWingman = &Modifier{
 			Description: "Reason the Wingman boost fired",
 		})
 	},
-	Adjustments: func(ps *PlayerStats) []BattlelogAdjustment {
+	Adjustments: func(ps *PlayerStats) []ReportAdjustment {
 		if !yesMetric(ps, Key("wingman_boost")) {
 			return nil
 		}
 		detail, _ := yesStringMetric(ps, Key("wingman_kpr_boost_reason"))
-		return []BattlelogAdjustment{{Label: "Wingman score boost", Detail: detail}}
+		return []ReportAdjustment{{Label: "Wingman score boost", Detail: detail}}
 	},
 }

@@ -53,7 +53,7 @@ normalisation cannot weaken the gate.
 - Collector: `src/internal/anticheat/stats/collect_reaction.go`
 - Tests: `src/internal/anticheat/stats/detect_ttd_sub100_test.go`,
   `calibration_test.go`
-- Report row: registry metadata in `battlelog.go`
+- Report row: registry metadata in `report.go`
 
 ## Tuning checklist
 

@@ -1,16 +1,16 @@
-# CS2 Battlelog — all Go work runs through Docker so no local toolchain is needed.
+# CS2 Demo Analyzer — all Go work runs through Docker so no local toolchain is needed.
 SHELL := /bin/sh
 .DEFAULT_GOAL := help
 
-BINARY          := cs2-battlelog
+BINARY          := cs2-demo-analyzer
 MODULE          := github.com/Kandru/cs2-demo-analyzer
 VERSION         := $(shell cat VERSION 2>/dev/null || echo dev)
 COMMIT          := $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 BUILD_DATE      := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 GO_VERSION      := 1.27
 DOCKER_GO_IMAGE ?= golang:$(GO_VERSION)
-GO_MOD_CACHE    ?= cs2-battlelog-go-mod
-GO_BUILD_CACHE  ?= cs2-battlelog-go-build
+GO_MOD_CACHE    ?= cs2-demo-analyzer-go-mod
+GO_BUILD_CACHE  ?= cs2-demo-analyzer-go-build
 DIST            := dist
 GOFLAGS         := -trimpath -buildvcs=false
 LDFLAGS         := -s -w \
@@ -34,7 +34,7 @@ RELEASE_TARGETS := linux/amd64 linux/arm64 linux/386 windows/amd64 windows/arm64
 .PHONY: help build build-local test test-cover fmt vet tidy release docker-build run analyze watch version version-bump clean check-docker
 
 help: ## Show this help (default)
-	@printf '\nCS2 Battlelog — make targets\n\n'
+	@printf '\nCS2 Demo Analyzer — make targets\n\n'
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage:\n  make \033[36m<target>\033[0m\n\nTargets:\n"} /^[a-zA-Z0-9_-]+:.*##/ {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@printf '\nExamples:\n'
 	@printf '  make build                         # linux/amd64 binary in dist/\n'

@@ -6,7 +6,7 @@ import (
 )
 
 // This file is NOT part of the upstream demo-anticheat project. It records
-// timestamped review cues for the battlelog report. The thresholds match the
+// timestamped review cues for the match report. The thresholds match the
 // starting point of the corresponding cheat-score channel ramps, so a cue is
 // "where the detector started caring" — never proof of cheating.
 //

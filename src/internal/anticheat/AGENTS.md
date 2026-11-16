@@ -7,11 +7,11 @@ Adapter + vendored `demo-anticheat` detector.
 - `anticheat.go` — runs the analyzer as a second parse pass, maps results.
 - `analyzer/` — vendored orchestration (collector order lives here).
 - `stats/` — collectors + detection scoring. See `stats/AGENTS.md`.
-- `stats/battlelog.go` — **ours**: presentation-neutral metric snapshot.
+- `stats/report.go` — **ours**: presentation-neutral metric snapshot.
 
 ## Invariants
 
-- The detector runs **after** the battlelog parse, in its own parser instance.
+- The detector runs **after** the match parse, in its own parser instance.
 - Never let detector errors fail the report; attach an unavailable `CheatReport`.
 - Upstream scoring is frozen except for documented, tested integration patches.
   See `docs/anticheat.md` and `docs/THIRD_PARTY.md`.

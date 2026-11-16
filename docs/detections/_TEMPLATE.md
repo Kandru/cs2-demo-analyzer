@@ -42,7 +42,7 @@ Which modifiers or other channels consume this signal, and in what direction.
 
 - Implementation: `src/internal/anticheat/stats/<file>.go`
 - Tests: `src/internal/anticheat/stats/<file>_test.go`
-- Report row: registry metadata in `battlelog.go`
+- Report row: registry metadata in `report.go`
 
 ## Tuning checklist
 

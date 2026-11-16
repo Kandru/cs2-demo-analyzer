@@ -199,7 +199,7 @@ func (sac *SnapAngleCollector) processKill(e events.Kill, demoStats *DemoStats) 
 		// Increment kill count for this player
 		playerStats.IncrementIntMetric(Category("aiming"), Key("snapped_kills"))
 
-		// Battlelog integration: record a timestamped review cue when the snap
+		// Report integration: record a timestamped review cue when the snap
 		// is at or beyond the channel's ramp start. Scoring is unchanged.
 		if velocity >= detSnap.Evidence.Threshold {
 			tick := endSnapshot.Tick

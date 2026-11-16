@@ -1,13 +1,13 @@
 package stats_test
 
 // demo_golden_test.go is an opt-in regression harness for the detector's
-// published metrics. It is skipped unless CS2BATTLELOG_GOLDEN_DEMO points at a
+// published metrics. It is skipped unless CS2_DEMO_ANALYZER_GOLDEN_DEMO points at a
 // real demo, so the default test run needs no demo files and no network.
 //
 // Usage:
 //
-//	CS2BATTLELOG_GOLDEN_DEMO=stuff/match.dem \
-//	CS2BATTLELOG_GOLDEN_OUT=/tmp/before.txt go test ./internal/anticheat/stats -run TestGoldenDemoMetrics
+//	CS2_DEMO_ANALYZER_GOLDEN_DEMO=stuff/match.dem \
+//	CS2_DEMO_ANALYZER_GOLDEN_OUT=/tmp/before.txt go test ./internal/anticheat/stats -run TestGoldenDemoMetrics
 //
 // Re-run with a different output file after a refactor and diff the two files.
 // Only metric category, key, type and value are written; player names are
@@ -25,13 +25,13 @@ import (
 )
 
 func TestGoldenDemoMetrics(t *testing.T) {
-	demoPath := os.Getenv("CS2BATTLELOG_GOLDEN_DEMO")
+	demoPath := os.Getenv("CS2_DEMO_ANALYZER_GOLDEN_DEMO")
 	if demoPath == "" {
-		t.Skip("set CS2BATTLELOG_GOLDEN_DEMO to a demo path")
+		t.Skip("set CS2_DEMO_ANALYZER_GOLDEN_DEMO to a demo path")
 	}
-	outPath := os.Getenv("CS2BATTLELOG_GOLDEN_OUT")
+	outPath := os.Getenv("CS2_DEMO_ANALYZER_GOLDEN_OUT")
 	if outPath == "" {
-		t.Fatal("set CS2BATTLELOG_GOLDEN_OUT to the dump path")
+		t.Fatal("set CS2_DEMO_ANALYZER_GOLDEN_OUT to the dump path")
 	}
 
 	f, err := os.Open(demoPath)

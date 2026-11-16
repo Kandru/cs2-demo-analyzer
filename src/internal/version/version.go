@@ -29,5 +29,5 @@ func Short() string { return Version }
 
 // Info returns a multi-line version block.
 func Info() string {
-	return fmt.Sprintf("cs2-battlelog %s\ncommit: %s\ndate:   %s", Version, Commit, Date)
+	return fmt.Sprintf("cs2-demo-analyzer %s\ncommit: %s\ndate:   %s", Version, Commit, Date)
 }

@@ -1,9 +1,10 @@
-# Battlelog UI
+# Report UI
 
 The report is one self-contained HTML file (inline CSS/JS/SVG, no network
-requests, no external fonts). It recreates the BF3/BF4 Battlelog feel without
-copying EA assets: flat dark-navy surfaces, 1 px steel borders, hard corners,
-orange accents, condensed uppercase labels, and dense numeric tables.
+requests, no external fonts). The visual language is inspired by the BF3/BF4
+Battlelog, without copying EA assets: flat dark-navy surfaces, 1 px steel
+borders, hard corners, orange accents, condensed uppercase labels, and dense
+numeric tables.
 
 ## Page structure
 

@@ -18,7 +18,7 @@ type Options struct {
 
 // Apply merges anti-cheat verdicts into the match and refreshes the summary.
 // Anti-cheat failures are recorded on every player report and never abort the
-// battlelog report.
+// match report.
 func Apply(m *model.Match, opts Options) {
 	if m == nil {
 		return
@@ -50,7 +50,7 @@ func Apply(m *model.Match, opts Options) {
 	RefreshSummary(m)
 }
 
-// annotateCheatMoments maps detector ticks onto battlelog rounds and clock
+// annotateCheatMoments maps detector ticks onto match rounds and clock
 // seconds. The detector runs in a separate parser pass, so ticks are the only
 // shared coordinate. Moments outside an official round (warmup/pregame) keep
 // Round 0 and are labelled by the report.

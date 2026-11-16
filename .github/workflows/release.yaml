@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  BINARY: cs2-battlelog
+  BINARY: cs2-demo-analyzer
 
 jobs:
   release:

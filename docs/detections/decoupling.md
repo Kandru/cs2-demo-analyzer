@@ -50,7 +50,7 @@ It does not feed any modifier.
 
 - Implementation: `src/internal/anticheat/stats/detect_decoupling.go`
 - Tests: `src/internal/anticheat/stats/detect_decoupling_test.go`
-- Report row: registry metadata in `battlelog.go`
+- Report row: registry metadata in `report.go`
 
 ## Tuning checklist
 

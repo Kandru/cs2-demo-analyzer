@@ -67,7 +67,7 @@ Adjustments: `label`, `detail`.
 `label`, `rank` and `valueText` are additive presentation metadata supplied by
 the detector's evidence spec; reporters can render a cue without a per-kind
 switch. These are review cues, not scoring inputs. `round`/`seconds` are
-filled by `internal/analysis` from the battlelog round model.
+filled by `internal/analysis` from the match round model.
 
 ## `Round`
 

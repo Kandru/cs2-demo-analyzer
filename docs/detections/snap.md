@@ -58,7 +58,7 @@ aid, never a verdict.
 - Collector: `src/internal/anticheat/stats/collect_snap.go`
 - Tests: `src/internal/anticheat/stats/detect_snap_test.go`,
   `calibration_test.go`
-- Report row: registry metadata in `battlelog.go`
+- Report row: registry metadata in `report.go`
 
 ## Tuning checklist
 

@@ -165,8 +165,8 @@ func (r *Runner) scan(ctx context.Context) {
 			}
 			if d.IsDir() {
 				name := d.Name()
-				if path != in && (!r.cfg.Recursive || strings.HasPrefix(name, ".") || name == ".cs2battlelog") {
-					if strings.HasPrefix(name, ".") || name == ".cs2battlelog" {
+				if path != in && (!r.cfg.Recursive || strings.HasPrefix(name, ".") || name == ".cs2-demo-analyzer") {
+					if strings.HasPrefix(name, ".") || name == ".cs2-demo-analyzer" {
 						return filepath.SkipDir
 					}
 					if !r.cfg.Recursive {
@@ -270,7 +270,7 @@ func addRecursive(w *fsnotify.Watcher, root string) error {
 		if !d.IsDir() {
 			return nil
 		}
-		if path != root && (strings.HasPrefix(d.Name(), ".") || d.Name() == ".cs2battlelog") {
+		if path != root && (strings.HasPrefix(d.Name(), ".") || d.Name() == ".cs2-demo-analyzer") {
 			return filepath.SkipDir
 		}
 		if err := w.Add(path); err != nil {

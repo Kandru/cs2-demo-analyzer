@@ -290,7 +290,7 @@ type CheatReport struct {
 }
 
 // CheatMoment is one timestamped review cue from the detector. Round and
-// Seconds are filled by the analysis merge from the battlelog round model.
+// Seconds are filled by the analysis merge from the match round model.
 // Label, Rank and ValueText are detector-supplied presentation metadata so
 // reporters do not need a per-kind switch.
 type CheatMoment struct {

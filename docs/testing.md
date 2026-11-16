@@ -39,11 +39,11 @@ Two opt-in harnesses make structural refactors auditable:
 
 ```sh
 # Full report + JSON baseline
-./dist/cs2-battlelog analyze --json --output /tmp/before stuff/
+./dist/cs2-demo-analyzer analyze --json --output /tmp/before stuff/
 
 # Internal detector metrics baseline
-CS2BATTLELOG_GOLDEN_DEMO=stuff/match.dem \
-CS2BATTLELOG_GOLDEN_OUT=/tmp/before.metrics \
+CS2_DEMO_ANALYZER_GOLDEN_DEMO=stuff/match.dem \
+CS2_DEMO_ANALYZER_GOLDEN_OUT=/tmp/before.metrics \
 go test ./internal/anticheat/stats -run TestGoldenDemoMetrics
 ```
 
@@ -55,8 +55,8 @@ calibration or schema change.
 ## Demo-backed checks (manual/opt-in)
 
 1. Put demos in `stuff/` (git-ignored).
-2. `make build` (or `go run ./cmd/cs2-battlelog`).
-3. `./dist/cs2-battlelog analyze --json stuff/`.
+2. `make build` (or `go run ./cmd/cs2-demo-analyzer`).
+3. `./dist/cs2-demo-analyzer analyze --json stuff/`.
 4. Verify:
    - round count/score equals the in-game scoreboard,
    - warmup appears before round 1,

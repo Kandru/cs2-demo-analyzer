@@ -1,11 +1,11 @@
 services:
-  cs2-battlelog:
+  cs2-demo-analyzer:
     build:
       context: .
       args:
         VERSION: local
-    image: cs2-battlelog:latest
-    container_name: cs2-battlelog
+    image: cs2-demo-analyzer:latest
+    container_name: cs2-demo-analyzer
     restart: unless-stopped
     volumes:
       # Change the left-hand paths to your demo and report directories.

@@ -28,7 +28,7 @@ Start here, then follow the doc for the area you are changing.
 | Doc | Contents |
 |---|---|
 | [watching.md](watching.md) | Watch lifecycle, manifest, Docker mounts |
-| [battlelog-ui.md](battlelog-ui.md) | Sections, design tokens, accessibility |
+| [report-ui.md](report-ui.md) | Sections, design tokens, accessibility |
 | [testing.md](testing.md) | Test layers, docs-sync checks, demo harness |
 | [releasing.md](releasing.md) | Version scheme and release workflow |
 | [THIRD_PARTY.md](THIRD_PARTY.md) | Vendored code, licenses and patch table |
@@ -44,5 +44,5 @@ extension procedure for that package.
 | Cheat modifier | [detections/README.md](detections/README.md) |
 | Aim metric | [aim/README.md](aim/README.md) |
 | New event/stat | [architecture.md](architecture.md) extension points |
-| New report section | [battlelog-ui.md](battlelog-ui.md) and `src/internal/report/html/AGENTS.md` |
+| New report section | [report-ui.md](report-ui.md) and `src/internal/report/html/AGENTS.md` |
 | New watcher source | [watching.md](watching.md) |

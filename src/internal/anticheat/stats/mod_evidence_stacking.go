@@ -39,11 +39,11 @@ var modEvidenceStacking = &Modifier{
 			Description: "×1.4 boost — ≥3 channels with score×confidence ≥0.30",
 		})
 	},
-	Adjustments: func(ps *PlayerStats) []BattlelogAdjustment {
+	Adjustments: func(ps *PlayerStats) []ReportAdjustment {
 		detail, ok := yesStringMetric(ps, Key("evidence_stacking_boost"))
 		if !ok {
 			return nil
 		}
-		return []BattlelogAdjustment{{Label: "Evidence stacking boost", Detail: detail}}
+		return []ReportAdjustment{{Label: "Evidence stacking boost", Detail: detail}}
 	},
 }

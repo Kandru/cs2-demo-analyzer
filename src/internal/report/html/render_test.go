@@ -92,7 +92,7 @@ func TestRenderContainsCoreSectionsAndEscapesNames(t *testing.T) {
 		t.Fatal(err)
 	}
 	page := buf.String()
-	for _, want := range []string{"BATTLELOG", "Scoreboard", "Rounds", "Players", "Aim", "Cheat analysis", "Warmup", "de_mirage", "26.11.1", "Cheat watch", "When to look", "demo_gototick 120", "tick 120", "Round history", "Download demo", "match.dem", "12.0 MiB"} {
+	for _, want := range []string{"DEMO ANALYZER", "Scoreboard", "Rounds", "Players", "Aim", "Cheat analysis", "Warmup", "de_mirage", "26.11.1", "Cheat watch", "When to look", "demo_gototick 120", "tick 120", "Round history", "Download demo", "match.dem", "12.0 MiB"} {
 		if !strings.Contains(page, want) {
 			t.Errorf("missing %q in rendered report", want)
 		}

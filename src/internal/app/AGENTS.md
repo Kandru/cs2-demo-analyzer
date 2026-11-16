@@ -20,7 +20,7 @@ CLI parsing, discovery, and per-demo pipeline.
 
 ## Flags
 
-Keep `printUsage` and `docs/cli.md` in sync. Env defaults: `CS2BATTLELOG_*`.
+Keep `printUsage` and `docs/cli.md` in sync. Env defaults: `CS2_DEMO_ANALYZER_*`.
 README examples should stay runnable.
 
 ## Tests

@@ -25,13 +25,10 @@ src/.cache/
 # Local test demos and scratch space
 stuff/
 
-# Playwright scratch (not part of the project)
-.pw/
-**/.cs2battlelog/
+# Local caches
+**/.cs2-demo-analyzer/
 
-# Generated reports
-*.battlelog.html
-*.battlelog.json
+# Playwright scratch (not part of the project)
 .pw/
 
 # Release workflow scratch

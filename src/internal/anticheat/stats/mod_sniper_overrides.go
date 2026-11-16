@@ -36,11 +36,11 @@ var modSniper = &Modifier{
 			})
 		}
 	},
-	Adjustments: func(ps *PlayerStats) []BattlelogAdjustment {
-		var out []BattlelogAdjustment
+	Adjustments: func(ps *PlayerStats) []ReportAdjustment {
+		var out []ReportAdjustment
 		for _, key := range []Key{"sniper_wallbang_override", "scout_precision_override"} {
 			if yesMetric(ps, key) {
-				out = append(out, BattlelogAdjustment{Label: "Sniper anomaly override", Detail: string(key)})
+				out = append(out, ReportAdjustment{Label: "Sniper anomaly override", Detail: string(key)})
 			}
 		}
 		return out

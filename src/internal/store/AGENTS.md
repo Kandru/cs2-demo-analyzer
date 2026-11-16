@@ -4,7 +4,7 @@ Manifest cache, output naming, atomic writes.
 
 ## Invariants
 
-- Manifest lives at `<dir>/.cs2battlelog/manifest.json`; never write reports
+- Manifest lives at `<dir>/.cs2-demo-analyzer/manifest.json`; never write reports
   into that directory.
 - Writes are `.tmp` + fsync + rename; readers must never see partial reports.
 - Skip only when `ok` + same size/mtime + same tool/schema version + same report

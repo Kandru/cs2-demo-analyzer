@@ -61,10 +61,10 @@ var modFloor = &Modifier{
 			Description: "Score floored at 55% — sub-100ms TTD rate ≥25% on ≥20 samples with ≥5 sub-100ms events",
 		})
 	},
-	Adjustments: func(ps *PlayerStats) []BattlelogAdjustment {
+	Adjustments: func(ps *PlayerStats) []ReportAdjustment {
 		if !yesMetric(ps, Key("ttd_sub100_high_floor")) {
 			return nil
 		}
-		return []BattlelogAdjustment{{Label: "Sub-100ms floor", Detail: "verdict floored at 55%"}}
+		return []ReportAdjustment{{Label: "Sub-100ms floor", Detail: "verdict floored at 55%"}}
 	},
 }

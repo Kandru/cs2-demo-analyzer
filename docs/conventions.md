@@ -63,7 +63,7 @@ These rules apply to the whole repository.
 - Conventional-ish subjects: `feat:`, `fix:`, `docs:`, `chore:`, `test:`.
 - Bump `VERSION` in its own commit (`chore(release): 26.11.2`) so the release
   workflow only fires on that change.
-- Do not commit demos, generated reports, or `.cs2battlelog/`.
+- Do not commit demos, generated reports, or `.cs2-demo-analyzer/`.
 
 ## UI
 

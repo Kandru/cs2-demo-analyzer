@@ -1,6 +1,6 @@
 # Aim metrics
 
-The aim profile is computed by `internal/aim` during the battlelog parse. It is
+The aim profile is computed by `internal/aim` during the match parse. It is
 **descriptive**, not part of the cheat score. The vendored detector has its own
 timing/pre-aim channels, so numbers can differ slightly; that is expected and
 noted in the player card.

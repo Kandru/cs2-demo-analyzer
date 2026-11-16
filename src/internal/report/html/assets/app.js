@@ -1,4 +1,4 @@
-/* CS2 Battlelog — progressive enhancement. The report is fully readable
+/* CS2 Demo Analyzer — progressive enhancement. The report is fully readable
    without JavaScript; this only adds navigation, filtering, folding, and
    copying demo tick commands. */
 (function () {

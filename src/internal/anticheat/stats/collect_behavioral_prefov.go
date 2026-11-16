@@ -74,7 +74,7 @@ func (bc *BehavioralCollector) recordPreFOV(e events.Kill, demoStats *DemoStats)
 	preFOVAngle := angleBetweenViewAndTarget(viewVec, ks.posX, ks.posY, ks.posZ, vs.posX, vs.posY, vs.posZ)
 	bc.preFOVAngles[killerID] = append(bc.preFOVAngles[killerID], preFOVAngle)
 
-	// Battlelog integration: record the pre-aim sample as a timestamped cue.
+	// Report integration: record the pre-aim sample as a timestamped cue.
 	// The tick is when the victim entered the killer's FOV, so the reviewer can
 	// watch the approach rather than only the shot. Scoring is unchanged.
 	if preFOVAngle <= detPreFOV.Evidence.Threshold {

@@ -148,7 +148,7 @@ func (rtc *ReactionTimeCollector) processDamage(e events.PlayerHurt, demoStats *
 	rtc.ttds[attackerID] = append(rtc.ttds[attackerID], deltaT)
 	eng.damaged = true
 
-	// Battlelog integration: record the sighting as a timestamped review cue
+	// Report integration: record the sighting as a timestamped review cue
 	// when the time-to-damage is suspicious. Only metadata; scoring unchanged.
 	if deltaT <= detReaction.Evidence.Threshold {
 		if ps := demoStats.GetOrCreatePlayerStats(e.Attacker); ps != nil {
