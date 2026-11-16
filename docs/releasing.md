@@ -27,13 +27,15 @@ git push origin main
 ## Local build
 
 ```sh
-make build      # linux/amd64, dist/cs2-demo-analyzer
-make release    # linux/windows/darwin archives + dist/SHA256SUMS
-make test       # go test ./... in Docker
+make build          # linux/amd64, dist/cs2-demo-analyzer
+make release        # linux/windows/darwin archives + dist/SHA256SUMS (Docker)
+make release-local  # same archives, using the local Go toolchain
+make test           # go test ./... in Docker
 ```
 
-All targets use `golang:1.27` in Docker; no local Go installation is needed.
-`make build-local` is available for contributors who do have Go.
+`make build`, `make release`, and `make test` use `golang:1.27` in Docker; no
+local Go installation is needed. `make build-local` and `make release-local`
+are available for contributors and CI runners that already have Go.
 
 Release artifacts are `.tar.gz` (including the Windows `.exe` inside) plus
 `SHA256SUMS`, `README.md`, and `VERSION` in each archive.
@@ -62,7 +64,8 @@ releases because the updater only reads `/releases/latest`.
 - Triggers on pushes to `main` that touch `VERSION`, and on manual dispatch.
 - Validates the `YY.MM.N` format and that the month is the current UTC month.
 - Skips if the tag already exists.
-- Runs `make release` (Docker cross-compilation).
+- Sets up Go from `src/go.mod` and runs `make release-local` (native
+  cross-compilation; no Docker inside the runner).
 - Creates a GitHub release with commit notes since the previous tag and uploads
   all archives plus `SHA256SUMS`.
 - Deletes older releases, keeping the newest five.

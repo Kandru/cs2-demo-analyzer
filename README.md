@@ -386,7 +386,8 @@ docker run --rm \
 | `make test` | Run all Go tests in Docker. |
 | `make fmt` / `make vet` | Format or vet Go code in Docker. |
 | `make check-install` | Validate `install.sh` shell syntax. |
-| `make release` | Cross-compile all release archives into `dist/`. |
+| `make release` | Cross-compile all release archives into `dist/` in Docker. |
+| `make release-local` | Cross-compile all release archives with a local Go toolchain. |
 | `make docker-build` | Build the runtime Docker image. |
 | `make analyze` | Analyze everything in `./stuff` into `./reports`. |
 | `make watch` | Watch `./stuff` and write reports into `./reports`. |

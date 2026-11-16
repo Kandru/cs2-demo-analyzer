@@ -22,7 +22,8 @@ aim stats and a vendored anti-cheat analysis.
 - Match parser and anti-cheat detector are separate passes. Do not merge
   their event handlers into one parser state.
 - Build/test with Docker (`make test`, `make build`). `go` is not assumed on the
-  host, though `make build-local` exists.
+  host, though `make build-local` and `make release-local` exist for CI and
+  contributors with Go.
 - Update `docs/` and the relevant `AGENTS.md` when changing behavior, contracts,
   or extension points.
 
@@ -55,7 +56,7 @@ src/internal/version/     ldflags version
 | Build | `make build` |
 | Test | `make test` |
 | Format/vet | `make fmt && make vet` |
-| Release archives | `make release` |
+| Release archives | `make release` (Docker) or `make release-local` (Go) |
 | Run local binary | `go run ./cmd/cs2-demo-analyzer analyze stuff/demo.dem` (from `src/`) |
 
 ## Definition of done
