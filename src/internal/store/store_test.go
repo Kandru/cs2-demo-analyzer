@@ -86,6 +86,40 @@ func TestSkipCachesFailures(t *testing.T) {
 	}
 }
 
+func TestReportMetaPersists(t *testing.T) {
+	dir := t.TempDir()
+	s, err := Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	demo := filepath.Join(dir, "m.dem")
+	report := filepath.Join(dir, "m.html")
+	played := time.Date(2026, 11, 16, 12, 11, 0, 0, time.UTC)
+	s.MarkOK(demo, 1, played, "h", "", report, "", "1.0", ReportMeta{
+		Map: "de_mirage", ServerName: "Test Server", Score: [2]int{13, 7}, HasScore: true, PlayedAt: played,
+	})
+	if err := s.Save(); err != nil {
+		t.Fatal(err)
+	}
+	reopened, err := Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	entry, ok := reopened.Entry(demo)
+	if !ok || entry.Meta == nil {
+		t.Fatalf("metadata missing after reopen: %+v", entry)
+	}
+	if entry.Meta.Map != "de_mirage" || entry.Meta.ServerName != "Test Server" {
+		t.Fatalf("metadata = %+v", entry.Meta)
+	}
+	if entry.Meta.Score != [2]int{13, 7} || !entry.Meta.HasScore {
+		t.Fatalf("score = %+v", entry.Meta)
+	}
+	if !entry.Meta.PlayedAt.Equal(played) {
+		t.Fatalf("played = %v, want %v", entry.Meta.PlayedAt, played)
+	}
+}
+
 func TestWriteAtomic(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "nested", "out.html")
