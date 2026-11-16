@@ -300,8 +300,8 @@ func newView(doc *report.Document, opts Options) *View {
 	if m.Summary != nil {
 		v.TeamStats = m.Summary.TeamStats
 	}
-	v.Teams = buildTeams(m, v.TeamStats)
 	v.Players = buildPlayers(m)
+	v.Teams = buildTeams(m, v.TeamStats, v.Players)
 	v.RoundStrip = buildRoundStrip(m)
 	v.Cheaters = buildCheaters(v.Players)
 	v.Timeline = buildTimeline(m)
@@ -348,7 +348,7 @@ func brandLabel(indexHref string) string {
 	return "CS2 Demo Analyzer home"
 }
 
-func buildTeams(m *model.Match, stats []model.TeamStats) []*TeamView {
+func buildTeams(m *model.Match, stats []model.TeamStats, players []*PlayerView) []*TeamView {
 	byID := map[int]model.TeamStats{}
 	for _, s := range stats {
 		byID[s.TeamID] = s
@@ -360,12 +360,10 @@ func buildTeams(m *model.Match, stats []model.TeamStats) []*TeamView {
 	out := make([]*TeamView, 0, len(m.Teams))
 	for _, t := range m.Teams {
 		tv := &TeamView{Team: t, Stats: byID[t.ID], Win: t.ID == winner, Side: string(t.StartSide)}
-		for _, p := range m.Players {
-			if p.TeamID != t.ID {
-				continue
+		for _, pv := range players {
+			if pv.Player.TeamID == t.ID {
+				tv.Players = append(tv.Players, pv)
 			}
-			pv := buildPlayer(m, p)
-			tv.Players = append(tv.Players, pv)
 		}
 		sort.SliceStable(tv.Players, func(i, j int) bool {
 			if tv.Players[i].Player.Stats.Kills != tv.Players[j].Player.Stats.Kills {
