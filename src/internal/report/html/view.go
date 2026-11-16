@@ -6,9 +6,9 @@ import (
 	"html/template"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/Kandru/cs2-demo-analyzer/internal/model"
+	"github.com/Kandru/cs2-demo-analyzer/internal/report"
 )
 
 // View is the template model for one report.
@@ -254,13 +254,16 @@ type EventPart struct {
 	Bold bool
 }
 
-// NewView builds the template model from a match.
-func NewView(m *model.Match, version string) *View {
+// newView builds the template model from the canonical document.
+func newView(doc *report.Document, opts Options) *View {
+	m := doc.Match
 	v := &View{
-		Version:     version,
-		GeneratedAt: time.Now().Format("2006-01-02 15:04 MST"),
-		Match:       m,
-		Summary:     m.Summary,
+		Version:      doc.Header.ToolVersion,
+		GeneratedAt:  doc.Header.GeneratedAt.Local().Format("2006-01-02 15:04 MST"),
+		Match:        m,
+		Summary:      m.Summary,
+		DemoDownload: opts.DemoDownload,
+		IndexHref:    opts.IndexHref,
 	}
 	title := m.Map
 	if title == "" {

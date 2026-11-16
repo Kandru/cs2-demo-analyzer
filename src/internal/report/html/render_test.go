@@ -7,7 +7,25 @@ import (
 	"time"
 
 	"github.com/Kandru/cs2-demo-analyzer/internal/model"
+	"github.com/Kandru/cs2-demo-analyzer/internal/report"
 )
+
+func testDocument(m *model.Match, version string) *report.Document {
+	if m == nil {
+		m = testMatch()
+	}
+	return report.New(m, report.Header{
+		Format:          report.HeaderFormat,
+		ToolVersion:     version,
+		SchemaVersion:   model.SchemaVersion,
+		Options:         report.Options{Cheat: true, Aim: true}.String(),
+		DemoKey:         report.DemoKey("/demos/match.dem"),
+		DemoName:        "match.dem",
+		DemoSize:        1024,
+		DemoModUnixNano: time.Date(2026, 11, 13, 20, 0, 0, 0, time.UTC).UnixNano(),
+		GeneratedAt:     time.Date(2026, 11, 16, 12, 0, 0, 0, time.UTC),
+	})
+}
 
 func testMatch() *model.Match {
 	m := &model.Match{
@@ -63,7 +81,7 @@ func TestCheatMomentsMergeByTickAndFeedWatchList(t *testing.T) {
 		model.CheatMoment{Kind: "ttd_sub100", Label: "Sub-100 ms", Rank: 3, ValueText: "90 ms", Tick: 120, Value: 90, Unit: "ms", Opponent: "victim", Weapon: "AK-47"},
 		model.CheatMoment{Kind: "preaim", Label: "Pre-aim", Rank: 3, ValueText: "3.2°", Tick: 300, Value: 3.2, Unit: "°", Opponent: "other", Weapon: "AK-47"},
 	)
-	v := NewView(m, "test")
+	v := newView(testDocument(m, "test"), Options{})
 	if len(v.Cheaters) != 1 {
 		t.Fatalf("got %d watch-list players, want 1", len(v.Cheaters))
 	}
@@ -82,11 +100,31 @@ func TestCheatMomentsMergeByTickAndFeedWatchList(t *testing.T) {
 	}
 }
 
-func TestRenderHeaderLinksToIndexWhenPresent(t *testing.T) {
-	v := NewView(testMatch(), "test")
-	v.IndexHref = IndexFileName
+func TestRenderWritesSelfDescribingHeader(t *testing.T) {
+	doc := testDocument(nil, "26.11.1")
 	var buf bytes.Buffer
-	if err := Render(&buf, v); err != nil {
+	if err := Render(&buf, doc, Options{}); err != nil {
+		t.Fatal(err)
+	}
+	page := buf.String()
+	if !strings.HasPrefix(page, "<!doctype html>\n"+report.HeaderPrefix) {
+		t.Fatalf("report does not start with the metadata comment: %q", page[:120])
+	}
+	h, err := report.ReadHeaderFrom(strings.NewReader(page))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !h.Matches(doc.Header) {
+		t.Fatalf("rendered header mismatch: %+v", h)
+	}
+	if !strings.Contains(page, "generated") || !strings.Contains(page, "26.11.1") {
+		t.Fatal("report footer lost generation metadata")
+	}
+}
+
+func TestRenderHeaderLinksToIndexWhenPresent(t *testing.T) {
+	var buf bytes.Buffer
+	if err := Render(&buf, testDocument(nil, "test"), Options{IndexHref: IndexFileName}); err != nil {
 		t.Fatal(err)
 	}
 	page := buf.String()
@@ -103,9 +141,8 @@ func TestRenderHeaderLinksToIndexWhenPresent(t *testing.T) {
 }
 
 func TestRenderHeaderWithoutIndexUsesOverview(t *testing.T) {
-	v := NewView(testMatch(), "test")
 	var buf bytes.Buffer
-	if err := Render(&buf, v); err != nil {
+	if err := Render(&buf, testDocument(nil, "test"), Options{}); err != nil {
 		t.Fatal(err)
 	}
 	page := buf.String()
@@ -120,10 +157,9 @@ func TestRenderHeaderWithoutIndexUsesOverview(t *testing.T) {
 func TestRenderContainsCoreSectionsAndEscapesNames(t *testing.T) {
 	m := testMatch()
 	m.Players[0].Name = `<script>alert(1)</script>`
-	v := NewView(m, "26.11.1")
-	v.DemoDownload = &DemoLink{Href: "match.dem", Name: `match"demo.dem`, Size: "12.0 MiB"}
+	doc := testDocument(m, "26.11.1")
 	var buf bytes.Buffer
-	if err := Render(&buf, v); err != nil {
+	if err := Render(&buf, doc, Options{DemoDownload: &DemoLink{Href: "match.dem", Name: `match"demo.dem`, Size: "12.0 MiB"}}); err != nil {
 		t.Fatal(err)
 	}
 	page := buf.String()

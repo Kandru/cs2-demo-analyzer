@@ -11,13 +11,12 @@ import (
 	"time"
 
 	"github.com/Kandru/cs2-demo-analyzer/internal/demofile"
+	"github.com/Kandru/cs2-demo-analyzer/internal/report"
 	"github.com/Kandru/cs2-demo-analyzer/internal/report/html"
 	"github.com/Kandru/cs2-demo-analyzer/internal/store"
 	"github.com/Kandru/cs2-demo-analyzer/internal/units"
 	"github.com/Kandru/cs2-demo-analyzer/internal/version"
 )
-
-const reportOptionDemoDownload = "demo-download"
 
 // RefreshIndexes rewrites index.html for cached reports whose output directory
 // needs one. It runs on watch startup before new demos are processed.
@@ -29,6 +28,31 @@ func (p *Processor) RefreshIndexes() {
 		}
 		dirs[filepath.Dir(e.HTMLPath)] = struct{}{}
 	}
+	p.writeIndexDirs(dirs)
+}
+
+// RefreshPlannedIndexes rewrites index.html for every planned demo directory.
+// Analyze uses it after a run so directories containing only skipped reports
+// still get a fresh index.
+func (p *Processor) RefreshPlannedIndexes() {
+	p.planMu.Lock()
+	plans := make(map[string]outputPlan, len(p.plans))
+	for demoPath, plan := range p.plans {
+		plans[demoPath] = plan
+	}
+	p.planMu.Unlock()
+
+	dirs := map[string]struct{}{}
+	for demoPath, plan := range plans {
+		if plan.HTMLPath == "" || !p.indexEnabled(plan.HTMLPath, demoPath) {
+			continue
+		}
+		dirs[filepath.Dir(plan.HTMLPath)] = struct{}{}
+	}
+	p.writeIndexDirs(dirs)
+}
+
+func (p *Processor) writeIndexDirs(dirs map[string]struct{}) {
 	ordered := make([]string, 0, len(dirs))
 	for dir := range dirs {
 		ordered = append(ordered, dir)
@@ -42,12 +66,13 @@ func (p *Processor) RefreshIndexes() {
 }
 
 // reportOptions identifies rendered report features outside the data schema.
-// The watch cache uses it to regenerate reports when flags change.
-func (p *Processor) reportOptions(htmlPath, demoPath string) string {
-	if p.demoLinkEnabled(htmlPath, demoPath) {
-		return reportOptionDemoDownload
+// Artifact headers use it to regenerate reports when flags change.
+func (p *Processor) reportOptions(htmlPath, demoPath string) report.Options {
+	return report.Options{
+		Cheat:        p.cfg.Cheat,
+		Aim:          p.cfg.Aim,
+		DemoDownload: p.demoLinkEnabled(htmlPath, demoPath),
 	}
-	return ""
 }
 
 // indexEnabled reports whether a directory should receive an index page. It is
@@ -128,7 +153,15 @@ func (p *Processor) indexEntries(dir string) ([]html.IndexEntry, error) {
 			demoPath = demofile.FindSibling(full)
 		}
 		meta := store.ReportMeta{}
-		if demoPath != "" {
+		if h, err := report.ReadHeader(full); err == nil {
+			meta = store.ReportMeta{
+				Map:        h.Map,
+				ServerName: h.ServerName,
+				Score:      h.Score,
+				HasScore:   h.HasScore,
+				PlayedAt:   h.PlayedAt,
+			}
+		} else if demoPath != "" {
 			if cached, ok := p.store.Entry(demoPath); ok {
 				meta = cached.Meta
 			}

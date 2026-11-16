@@ -80,17 +80,27 @@ func runAnalyze(ctx context.Context, args []string) int {
 	}
 	st := store.NewMemory()
 	proc := NewProcessor(cfg, st, logger)
+	for _, d := range demos {
+		proc.Plan(d)
+	}
 	logger.Info("starting analysis", "demos", len(demos), "workers", cfg.Workers)
 
 	jobs := make(chan string)
 	var wg sync.WaitGroup
 	var mu sync.Mutex
-	var failed, done int
+	var failed, done, skipped int
 	for i := 0; i < cfg.Workers; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			for path := range jobs {
+				info, err := os.Stat(path)
+				if err == nil && proc.Skip(path, info.Size(), info.ModTime(), cfg.Force) {
+					mu.Lock()
+					skipped++
+					mu.Unlock()
+					continue
+				}
 				if err := proc.Process(ctx, path); err != nil {
 					mu.Lock()
 					failed++
@@ -113,9 +123,10 @@ loop:
 	}
 	close(jobs)
 	wg.Wait()
+	proc.RefreshPlannedIndexes()
 	_ = proc.Save()
 
-	fmt.Fprintf(os.Stdout, "analyzed %d demo(s), %d failed\n", done, failed)
+	fmt.Fprintf(os.Stdout, "analyzed %d demo(s), %d skipped, %d failed\n", done, skipped, failed)
 	if failed > 0 || ctx.Err() != nil {
 		return 1
 	}

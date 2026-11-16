@@ -1,7 +1,6 @@
 package app
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -17,11 +16,17 @@ import (
 	"github.com/Kandru/cs2-demo-analyzer/internal/config"
 	"github.com/Kandru/cs2-demo-analyzer/internal/model"
 	"github.com/Kandru/cs2-demo-analyzer/internal/parser"
+	"github.com/Kandru/cs2-demo-analyzer/internal/report"
 	"github.com/Kandru/cs2-demo-analyzer/internal/report/html"
-	"github.com/Kandru/cs2-demo-analyzer/internal/report/jsondata"
 	"github.com/Kandru/cs2-demo-analyzer/internal/store"
 	"github.com/Kandru/cs2-demo-analyzer/internal/version"
 )
+
+// outputPlan is the reserved output layout for one demo.
+type outputPlan struct {
+	HTMLPath string
+	JSONPath string
+}
 
 // Processor runs the full analysis pipeline for one demo.
 type Processor struct {
@@ -29,22 +34,65 @@ type Processor struct {
 	store   *store.Store
 	log     *slog.Logger
 	indexMu sync.Mutex
+
+	planMu sync.Mutex
+	plans  map[string]outputPlan
 }
 
 // NewProcessor creates a processor writing through st.
 func NewProcessor(cfg config.Config, st *store.Store, log *slog.Logger) *Processor {
-	return &Processor{cfg: cfg, store: st, log: log}
+	return &Processor{cfg: cfg, store: st, log: log, plans: map[string]outputPlan{}}
 }
 
-// Skip reports whether path was already analyzed successfully (or failed) with
-// the same file signature.
+// Plan reserves report output paths for a demo. Analyze calls it for every
+// discovered demo before workers start so shared-output basename collisions
+// are resolved deterministically, including for demos that are then skipped.
+func (p *Processor) Plan(demoPath string) {
+	p.plan(demoPath)
+}
+
+func (p *Processor) plan(demoPath string) outputPlan {
+	p.planMu.Lock()
+	defer p.planMu.Unlock()
+	if plan, ok := p.plans[demoPath]; ok {
+		return plan
+	}
+	key := report.DemoKey(demoPath)
+	htmlPath := p.store.PlanOutput(demoPath, p.cfg.Output, ".html", func(candidate string) bool {
+		h, err := report.ReadHeader(candidate)
+		if err != nil {
+			// Missing, legacy, or unreadable reports are replaced in place.
+			return false
+		}
+		return h.DemoKey != "" && h.DemoKey != key
+	})
+	plan := outputPlan{
+		HTMLPath: htmlPath,
+		JSONPath: strings.TrimSuffix(htmlPath, ".html") + ".json",
+	}
+	p.plans[demoPath] = plan
+	return plan
+}
+
+// Skip reports whether path was already analyzed successfully with matching
+// artifacts, or is a cached failure. Artifacts carry their own version header,
+// so a missing manifest does not force a re-parse.
 func (p *Processor) Skip(path string, size int64, mod time.Time, force bool) bool {
-	return p.store.Skip(path, size, mod, version.Short(), p.reportOptions(p.outputPath(path), path), force)
-}
-
-// outputPath returns the report path for a demo.
-func (p *Processor) outputPath(demoPath string) string {
-	return p.store.OutputPath(demoPath, p.cfg.Output, ".html")
+	if force {
+		return false
+	}
+	if p.store.CachedFailure(path, size, mod) {
+		return true
+	}
+	if version.CacheKey() == "" {
+		return false
+	}
+	plan := p.plan(path)
+	want := p.headerFor(path, size, mod, plan)
+	if !report.Fresh(plan.HTMLPath, want) {
+		return false
+	}
+	return !p.cfg.JSON || report.Fresh(plan.JSONPath, want)
 }
 
 // Save flushes the manifest.
@@ -57,6 +105,7 @@ func (p *Processor) Process(ctx context.Context, path string) error {
 	if err != nil {
 		return fmt.Errorf("stat demo: %w", err)
 	}
+	plan := p.plan(path)
 	ctx, cancel := context.WithTimeout(ctx, p.cfg.Timeout)
 	defer cancel()
 
@@ -86,24 +135,18 @@ func (p *Processor) Process(ctx context.Context, path string) error {
 	analysis.Apply(m, analysis.Options{ToolVersion: version.Short(), Cheat: cheat})
 	analysis.Validate(m)
 
-	htmlPath := p.outputPath(path)
-	p.store.ReserveOutput(htmlPath, path)
+	header := p.headerFor(path, info.Size(), info.ModTime(), plan)
+	header.Partial = m.Partial
+	fillMatchMeta(&header, m, info.ModTime())
+	doc := report.New(m, header)
 
-	view := html.NewView(m, version.Short())
-	view.DemoDownload = p.demoLink(htmlPath, path)
-	indexed := p.indexEnabled(htmlPath, path)
+	htmlOpts := html.Options{DemoDownload: p.demoLink(plan.HTMLPath, path)}
+	indexed := p.indexEnabled(plan.HTMLPath, path)
 	if indexed {
-		view.IndexHref = html.IndexFileName
+		htmlOpts.IndexHref = html.IndexFileName
 	}
-	var buf bytes.Buffer
-	if err := html.Render(&buf, view); err != nil {
-		p.recordError(path, info, err)
-		return err
-	}
-
-	if err := store.WriteAtomic(htmlPath, func(w io.Writer) error {
-		_, err := w.Write(buf.Bytes())
-		return err
+	if err := store.WriteAtomic(plan.HTMLPath, func(w io.Writer) error {
+		return html.Render(w, doc, htmlOpts)
 	}, 0o644); err != nil {
 		p.recordError(path, info, err)
 		return fmt.Errorf("write report: %w", err)
@@ -111,18 +154,19 @@ func (p *Processor) Process(ctx context.Context, path string) error {
 
 	jsonPath := ""
 	if p.cfg.JSON {
-		jsonPath = strings.TrimSuffix(htmlPath, ".html") + ".json"
+		jsonPath = plan.JSONPath
 		if err := store.WriteAtomic(jsonPath, func(w io.Writer) error {
-			return jsondata.Write(w, m)
+			return report.WriteJSON(w, doc)
 		}, 0o644); err != nil {
 			p.recordError(path, info, err)
 			return fmt.Errorf("write json: %w", err)
 		}
 	}
 
-	p.store.MarkOK(path, info.Size(), info.ModTime(), hash, p.reportOptions(htmlPath, path), htmlPath, jsonPath, version.Short(), reportMeta(m, info.ModTime()))
+	p.store.MarkOK(path, info.Size(), info.ModTime(), hash, p.reportOptions(plan.HTMLPath, path).String(),
+		plan.HTMLPath, jsonPath, version.Short(), reportMeta(m, info.ModTime()))
 	if indexed {
-		if err := p.writeIndex(filepath.Dir(htmlPath)); err != nil {
+		if err := p.writeIndex(filepath.Dir(plan.HTMLPath)); err != nil {
 			p.log.Warn("could not write index", "demo", path, "error", err)
 		}
 	}
@@ -140,13 +184,50 @@ func (p *Processor) Process(ctx context.Context, path string) error {
 		"rounds", len(m.Rounds),
 		"players", len(m.Players),
 		"flagged", flags,
-		"report", htmlPath,
+		"report", plan.HTMLPath,
 		"duration", time.Since(start).Round(time.Millisecond),
 	)
 	if m.Partial {
 		p.log.Warn("report is partial", "demo", filepath.Base(path), "error", m.ParseError)
 	}
 	return nil
+}
+
+// reportVersion is the version stamp written into artifacts. When no stable
+// cache key exists (an unversioned dev build), the display version is written
+// but Skip refuses to reuse anything.
+func reportVersion() string {
+	if key := version.CacheKey(); key != "" {
+		return key
+	}
+	return version.Short()
+}
+
+func (p *Processor) headerFor(demoPath string, size int64, mod time.Time, plan outputPlan) report.Header {
+	return report.Header{
+		Format:          report.HeaderFormat,
+		ToolVersion:     reportVersion(),
+		SchemaVersion:   model.SchemaVersion,
+		Options:         p.reportOptions(plan.HTMLPath, demoPath).String(),
+		DemoKey:         report.DemoKey(demoPath),
+		DemoName:        filepath.Base(demoPath),
+		DemoSize:        size,
+		DemoModUnixNano: mod.UnixNano(),
+		GeneratedAt:     time.Now().UTC(),
+	}
+}
+
+func fillMatchMeta(h *report.Header, m *model.Match, fallback time.Time) {
+	h.Map = m.Map
+	h.ServerName = m.ServerName
+	h.PlayedAt = m.FileTime
+	if h.PlayedAt.IsZero() {
+		h.PlayedAt = fallback
+	}
+	if m.Summary != nil {
+		h.Score = m.Summary.Score
+		h.HasScore = true
+	}
 }
 
 func reportMeta(m *model.Match, fallback time.Time) store.ReportMeta {
