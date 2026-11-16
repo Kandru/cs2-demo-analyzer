@@ -108,26 +108,30 @@ type TeamEconomy struct {
 
 // RoundStat is a player's contribution to a single round.
 type RoundStat struct {
-	Side          Side `json:"side"`
-	Kills         int  `json:"kills"`
-	Deaths        int  `json:"deaths"`
-	Assists       int  `json:"assists"`
-	Damage        int  `json:"damage"`
-	Headshots     int  `json:"headshotKills"`
-	FirstKill     bool `json:"firstKill,omitempty"`
-	FirstDeath    bool `json:"firstDeath,omitempty"`
-	TradeKill     bool `json:"tradeKill,omitempty"`
-	Traded        bool `json:"traded,omitempty"`
-	KAST          bool `json:"kast"`
-	Survived      bool `json:"survived"`
-	Clutch        int  `json:"clutch,omitempty"` // 1 = 1v1 won, 2 = 1v2, ...
-	EquipValue    int  `json:"equipValue,omitempty"`
-	Spent         int  `json:"spent,omitempty"`
-	Plants        int  `json:"plants,omitempty"`
-	Defuses       int  `json:"defuses,omitempty"`
-	UtilityDamage int  `json:"utilityDamage,omitempty"`
-	FlashAssists  int  `json:"flashAssists,omitempty"`
-	Result        Side `json:"result,omitempty"` // winning side
+	Side       Side `json:"side"`
+	Kills      int  `json:"kills"`
+	Deaths     int  `json:"deaths"`
+	Assists    int  `json:"assists"`
+	Damage     int  `json:"damage"`
+	Headshots  int  `json:"headshotKills"`
+	FirstKill  bool `json:"firstKill,omitempty"`
+	FirstDeath bool `json:"firstDeath,omitempty"`
+	TradeKill  bool `json:"tradeKill,omitempty"`
+	Traded     bool `json:"traded,omitempty"`
+	KAST       bool `json:"kast"`
+	Survived   bool `json:"survived"`
+	Clutch     int  `json:"clutch,omitempty"` // 1 = 1v1 won, 2 = 1v2, ...
+	EquipValue int  `json:"equipValue,omitempty"`
+	Spent      int  `json:"spent,omitempty"`
+	// Bought lists the freeze-time-end inventory (weapons, armour, utility)
+	// for this player. It is a presentation aid for the timeline and stays
+	// additive in schema v1.
+	Bought        []string `json:"bought,omitempty"`
+	Plants        int      `json:"plants,omitempty"`
+	Defuses       int      `json:"defuses,omitempty"`
+	UtilityDamage int      `json:"utilityDamage,omitempty"`
+	FlashAssists  int      `json:"flashAssists,omitempty"`
+	Result        Side     `json:"result,omitempty"` // winning side
 }
 
 // Player is one participant, keyed by SteamID64 when available.
@@ -224,6 +228,10 @@ type Event struct {
 	Suicide       bool    `json:"suicide,omitempty"`
 	Text          string  `json:"text,omitempty"`
 	Score         [2]int  `json:"score,omitempty"`
+	// Amount carries a type-specific number: flash duration in seconds for
+	// "flash", damage for "grenade_damage". It stays optional and additive so
+	// schema v1 reports remain readable.
+	Amount float64 `json:"amount,omitempty"`
 }
 
 // Summary contains match-level derived values used by all reporters.

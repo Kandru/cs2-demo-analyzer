@@ -220,6 +220,10 @@ type state struct {
 	pendingMVP  string
 	hadPlayers  bool
 	header      *msg.CDemoFileHeader
+
+	lastGrenadeHit  map[string]int
+	bombPlantedTick int
+	hostageCarrier  map[int]string
 }
 
 type roundBuilder struct {
@@ -254,6 +258,9 @@ func newState(ctx context.Context, m *model.Match, p dem.Parser, opts Options) *
 		teamsByID:   map[int]*model.Team{},
 		playersByID: map[string]*model.Player{},
 		playerSlugs: map[string]bool{},
+
+		lastGrenadeHit: map[string]int{},
+		hostageCarrier: map[int]string{},
 	}
 }
 
@@ -276,6 +283,12 @@ func (s *state) installHandlers() {
 	p.RegisterEventHandler(func(e events.BombDefused) { s.onBombDefused(e) })
 	p.RegisterEventHandler(func(e events.BombExplode) { s.onBombExplode(e) })
 	p.RegisterEventHandler(func(e events.GrenadeProjectileThrow) { s.onGrenade(e) })
+	p.RegisterEventHandler(func(e events.PlayerFlashed) { s.onFlashed(e) })
+	p.RegisterEventHandler(func(e events.BombPickup) { s.onBombPickup(e) })
+	p.RegisterEventHandler(func(e events.BombDropped) { s.onBombDropped(e) })
+	p.RegisterEventHandler(func(e events.HostageStateChanged) { s.onHostageStateChanged(e) })
+	p.RegisterEventHandler(func(e events.HostageRescued) { s.onHostageRescued(e) })
+	p.RegisterEventHandler(func(e events.HostageKilled) { s.onHostageKilled(e) })
 	p.RegisterEventHandler(func(e events.PlayerConnect) { s.onPlayerConnect(e.Player) })
 	p.RegisterEventHandler(func(e events.BotConnect) { s.onPlayerConnect(e.Player) })
 	p.RegisterEventHandler(func(e events.PlayerDisconnected) { s.onPlayerDisconnected(e.Player) })
@@ -388,7 +401,9 @@ func (s *state) onRoundStart(e events.RoundStart) {
 	}
 	s.current = &roundBuilder{round: r, startTick: tick, startScore: startScore}
 	s.recentKills = nil
-	s.addEvent(&model.Event{Type: "round_start", Offset: 0})
+	s.bombPlantedTick = 0
+	s.hostageCarrier = map[int]string{}
+	s.addEvent(&model.Event{Type: model.EventRoundStart, Offset: 0})
 	s.initRoundPlayers()
 	s.updateEconomy()
 }
@@ -398,8 +413,9 @@ func (s *state) onFreezeEnd(events.RoundFreezetimeEnd) {
 	if !s.live || s.current == nil {
 		return
 	}
-	s.addEvent(&model.Event{Type: "freeze_end"})
+	s.addEvent(&model.Event{Type: model.EventFreezeEnd})
 	s.updateEconomy()
+	s.recordPurchases()
 }
 
 func (s *state) onRoundEnd(e events.RoundEnd) {
@@ -658,11 +674,9 @@ func (s *state) ensureTeams() {
 		}
 		name := strings.TrimSpace(ts.ClanName())
 		if name == "" {
-			if len(s.m.Teams) == 0 {
-				name = "Team A"
-			} else {
-				name = "Team B"
-			}
+			// Use the side label instead of "Team A"/"Team B". The renderer
+			// normalises legacy cached reports with the same rule.
+			name = string(sideString(side))
 		}
 		t := &model.Team{
 			ID:        id,
@@ -1211,6 +1225,9 @@ func (s *state) onHurt(e events.PlayerHurt) {
 	if e.Weapon != nil && (e.Weapon.Type.Class() == common.EqClassGrenade ||
 		e.Weapon.Type == common.EqHE || e.Weapon.Type == common.EqMolotov || e.Weapon.Type == common.EqIncendiary) {
 		ars.UtilityDamage += dmg
+		if dmg > 0 {
+			s.onGrenadeDamage(e)
+		}
 	}
 }
 
@@ -1223,7 +1240,8 @@ func (s *state) onBombPlanted(e events.BombPlanted) {
 	if p == nil {
 		return
 	}
-	e2 := &model.Event{Type: "bomb_plant", ActorID: p.ID, ActorName: p.Name, Site: string(e.Site)}
+	s.bombPlantedTick = s.lastTick
+	e2 := &model.Event{Type: model.EventBombPlant, ActorID: p.ID, ActorName: p.Name, Site: string(e.Site)}
 	if s.live && s.current != nil {
 		if rs := s.roundStat(p.ID); rs != nil {
 			rs.Plants++
