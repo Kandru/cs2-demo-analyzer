@@ -919,7 +919,7 @@ func roundWinner(m *model.Match, r *model.Round) string {
 		// Fallback names ("CT"/"T") describe the start side, which is not the
 		// winning side after a half-time swap. Prefer the round's winner side.
 		if name == "CT" || name == "T" {
-			if r.Winner != "" && r.Winner != model.SideUnknown {
+			if r.Winner == model.SideCT || r.Winner == model.SideT {
 				return string(r.Winner)
 			}
 		}

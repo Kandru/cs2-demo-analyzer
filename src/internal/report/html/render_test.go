@@ -81,7 +81,7 @@ func TestCheatMomentsMergeByTickAndFeedWatchList(t *testing.T) {
 	)
 	v := newView(testDocument(m, "test"), Options{})
 	if len(v.Cheaters) != 1 {
-		t.Fatalf("got %d watch-list players, want 1", len(v.Cheaters))
+		t.Fatalf("got %d watchlist players, want 1", len(v.Cheaters))
 	}
 	pv := v.Players[0]
 	if pv.MomentCount != 2 || len(pv.Moments) != 2 {

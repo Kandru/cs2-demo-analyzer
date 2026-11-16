@@ -22,7 +22,10 @@ Canonical report document shared by the HTML page and the JSON sidecar.
   invalidate a report.
 - Bump `HeaderFormat` when the header encoding changes in a way that would let
   an old artifact pass the freshness check. Bump `model.SchemaVersion` for
-  incompatible match data changes.
+  incompatible match data changes. Additive timeline fields such as
+  `Event.Amount` and `RoundStat.Bought` stay in schema v1.
+- Detailed timeline events and purchases are presentation/analysis additions;
+  they must not alter round scores or aggregate stats.
 - Header probing reads a bounded prefix for HTML and only the first JSON member;
   it must never scan a whole report.
 - Do not add format-specific rendering here. HTML lives in `html`; new formats

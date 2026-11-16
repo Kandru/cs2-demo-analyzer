@@ -46,7 +46,7 @@ history or player database.
 | Aim profile | Damage speed, reaction, preaim, accuracy, head accuracy, counter-strafe, spray, and a weighted composite rating with grade |
 | Cheat analysis | Ten scored detector channels with raw value, score, confidence, zone, plus narrative and score modifiers |
 | Review cues | Timestamped suspicious moments linked to the round timeline and copyable as `demo_gototick <tick>` |
-| Match navigation | Round history strip, player links, cheat-watch cards, report search, demo download, and an optional report index |
+| Match navigation | Round history strip, player links, watchlist cards, report search, demo download, and an optional report index |
 | Outputs | Self-contained HTML, always-built report document with an optional JSON sidecar, optional `index.html`, watch cache manifest |
 
 The aim profile and the cheat detector are independent. Aim metrics describe
@@ -423,7 +423,7 @@ directly from disk or shared as an attachment.
 - **Overview** — winner, score, top fraggers, best aim, cheat flags, team
   comparison, and warnings.
 - **Scoreboard** — both teams with K/D/A, ADR, HS%, MVPs, and aim rating.
-- **Cheat watch** — flagged and review-level players with why and when.
+- **Watchlist** — flagged and review-level players with why and when.
 - **Rounds** — every round with economy, timeline, plants, defuses, utility,
   MVP, and event filters.
 - **Players** — aggregate and side-split stats, aim tiles, weapon accuracy,
