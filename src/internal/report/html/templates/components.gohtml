@@ -143,7 +143,7 @@
 <div class="adjustment-panel">
   <h4>Score adjustments</h4>
   <ul class="adjustment-list">
-    {{range .}}<li><span class="badge badge--warning">{{.Label}}</span>{{if .Detail}}<span class="adjust-detail">{{.Detail}}</span>{{end}}</li>{{end}}
+    {{range .}}<li><b>{{.Label}}</b><span>{{.Detail}}</span></li>{{end}}
   </ul>
 </div>
 {{- end}}

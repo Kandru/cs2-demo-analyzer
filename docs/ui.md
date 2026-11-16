@@ -69,7 +69,9 @@ at 4K. Do not reintroduce fixed `html` font sizes in media queries.
 - `.section-head` is sticky below `--header-h`; it owns the section title and
   optional note. Do not put interactive controls in it.
 - A filter toolbar directly under a sticky section head also sticks at
-  `calc(var(--header-h) + var(--section-head-h))`.
+  `calc(var(--header-h) + var(--section-head-h))` using `.section-tools`.
+  Use `.section-tools` for overview badges, timeline filters and player
+  shortcuts so they share the same panel, padding and sticky behaviour.
 - Every in-page anchor target uses
   `scroll-margin-top: calc(var(--header-h) + var(--space-4))`.
 - `overflow-x: clip` is used on `body` so sticky positioning keeps working.
@@ -123,12 +125,31 @@ Rules:
 - Use `.badge-row` when several badges share a line; it wraps by default.
 - Add `.badge` after the descriptive text in timeline rows.
 - Never create a new badge class with its own font size or padding.
-- `verdict`, `grade`, `zone`, `result-chip`, `team-tag`, `pill`, `aim-badge`,
+- `verdict`, `grade`, `zone`, `result-chip`, `pill`, `aim-badge`,
   `cue-tag` and adjustment chips must reuse the badge tokens.
 
-### Stat tile
+### Sticky section tools
 
 ```html
+<div class="section-tools">
+  ...badges, filters or player shortcuts...
+</div>
+```
+
+Use for the overview badge row, timeline filters and player shortcuts. It
+shares the sticky offset, panel background and padding. Do not make individual
+toolbars sticky themselves.
+
+### Button
+
+```html
+<a class="button" href="#player-x">Open full analysis</a>
+```
+
+Use `.button` for card actions. It uses the shared bevel, accent text and focus
+tokens. Do not style a bare link as a primary action.
+
+### Stat tile```html
 <div class="stat-tile">
   <span class="stat-label">Label</span>
   <span class="stat-value">Value</span>
@@ -155,12 +176,15 @@ state adds `is-alert`.
   `.tl-head-result` and `.tl-reason`.
 - Rows are `.tl-row` with `.tl-time`, `.tl-node` and `.tl-text`.
 - Badges follow the text inside `.tl-text`.
-- Do not use `overflow: hidden` on `.tl-section`; it clips result chips.
+- Do not use `overflow: hidden` on `.tl-section`; use `overflow: clip` so
+  headers cannot bleed outside the panel while result chips stay visible.
 - Use `--tl-time-w` and `--tl-node-w` for the timeline rail so rows and the
   vertical line stay aligned.
 - Round result chips use team identity colours; round alternation uses
   `--round-a` / `--round-b`.
 - Purchases render in `.tl-buys` with `.buy-team`, `.buy-list` and badges.
+- The round table uses `table-layout: fixed` with a `colgroup`; never let the
+  Round column take an equal share of the table.
 
 ### Watchlist card
 
@@ -172,26 +196,36 @@ state adds `is-alert`.
     <div><h4>Signals</h4>...<div class="adjustment-panel">...</div></div>
     <div><h4>When to look</h4>...</div>
   </div>
-  <footer class="cheater-foot"><a href="#player-x">Open full analysis</a></footer>
+  <footer class="cheater-foot"><a class="button" href="#player-x">Open full analysis</a></footer>
 </article>
 ```
 
 - The verdict block must never be clipped; keep the header grid at
   `minmax(0, 1fr) auto`.
+- Header subtitles (team, rounds, K/D/A, BOT) use badges.
 - Score adjustments are always visible when present. Never hide them in a
-  `<details>` element.
-- “Open full analysis” lives in the footer, bottom-left.
-- The statistical disclaimer stays visible.
+  `<details>` element. Each entry has a readable title and a plain-language
+  description.
+- “Open full analysis” is a `.button` in the footer, bottom-left.
+- Keep the short “Statistic calculation only. No Proof.” subtext visible.
+- “When to look” shows every cue in a three-column card grid on wide screens.
 
 ### Player card
 
 - One card per row at every viewport width. Do not add a multi-column player
   grid.
 - Header badges: team, side, Steam profile, rounds, bot, aim, verdict.
+- The card is one continuous full-width column: stats, aim, weapons, cheat
+  analysis, cues and per-round table. Do not reintroduce a side-by-side body.
+- Clan tags are sanitised: control/format characters are removed, repeated
+  runes are collapsed and long tags are truncated. Never print a raw Unicode
+  tag into the page.
 - Aim and channel samples use readable nouns (shots, hits, engagements,
   samples), never a bare `n=`.
-- Cheat analysis is a bulleted signal list, not prose. One compact disclaimer
-  line remains.
+- Channel rows flow in two columns when there is room.
+- Cheat analysis is a bulleted signal list, not prose. Use the short
+  “Statistic calculation only. No Proof.” subtext.
+- “When to look” shows every cue in a three-column card grid on wide screens.
 - Score adjustments are always visible when present.
 
 ### Search dropdown
@@ -279,6 +313,7 @@ Do not reintroduce:
 - `.search-status`, `.search-hidden`, live DOM filtering.
 - `.overview-grid`, `.team-compare`, overview cheat-watch panel.
 - Multi-column `.player-grid` or three-column player layouts.
+- `details`/`details-compact` for score adjustments or cue lists.
 - “Open report”, “Demo not linked”, “All reports” back link in the report.
 - Hardcoded badge fonts/padding, hardcoded `font-size` in components.
 - `n=` sample counters without a unit.

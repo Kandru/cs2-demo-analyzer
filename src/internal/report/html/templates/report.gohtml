@@ -39,39 +39,31 @@
         </a>
         {{end}}
       </div>
-
-      <div class="hero-verdict">
-        {{if .Summary}}{{if .Summary.WinnerName}}<span class="hero-winner">{{.Summary.WinnerName}}</span><span class="hero-winner-label">wins the match</span>{{end}}{{end}}
-        {{if .Match.Warnings}}<span class="badge badge--warning" title="{{range .Match.Warnings}}{{.}}&#10;{{end}}">{{len .Match.Warnings}} warning(s)</span>{{end}}
-      </div>
     </div>
 
     <div class="hero-meta">
-      {{with .DemoDownload}}<a class="demo-download" href="{{.Href}}" download="{{.Name}}" title="Download {{.Name}}">Download demo{{if .Size}} - {{.Size}}{{end}}</a>{{else}}<span><b>Demo</b> {{.Match.DemoName}}</span>{{end}}
-      {{if .Match.ServerName}}<span><b>Server</b> {{.Match.ServerName}}</span>{{end}}
-      <span><b>Played</b> {{.Match.FileTime.Format "Mon, 02 Jan 2006 15:04"}}</span>
-      <span><b>Players</b> {{len .Match.Players}}</span>
-      <span><b>Tickrate</b> {{zero .Match.TickRate}}</span>
-      <span><b>Report</b> v{{.Version}}</span>
+      {{with .DemoDownload}}<a class="demo-download" href="{{.Href}}" download="{{.Name}}" title="Download {{.Name}}">Download demo{{if .Size}} - {{.Size}}{{end}}</a>{{end}}
+      <span><b>Report</b> <a href="{{.Footer.RepoURL}}" target="_blank" rel="noopener noreferrer">v{{.Version}}</a></span>
     </div>
   </section>
 
   <section id="overview" class="section">
     <div class="section-head">
       <h2>Overview</h2>
-      <span class="section-note">The match at a glance</span>
     </div>
 
-    <div class="badge-row match-badges">
-      <span class="badge badge--accent">{{.Match.Map}}</span>
-      <span class="badge">{{.Match.Mode}}</span>
-      <span class="badge">{{clock .Match.Duration}}</span>
-      <span class="badge">{{if .Summary}}{{.Summary.Rounds}}{{else}}{{len .Match.Rounds}}{{end}} rounds</span>
-      <span class="badge">{{len .Match.Players}} players</span>
-      <span class="badge">{{zero .Match.TickRate}} tick</span>
-      <span class="badge">{{.Match.FileTime.Format "02 Jan 2006"}}</span>
-      {{if .Match.ServerName}}<span class="badge badge--info">{{.Match.ServerName}}</span>{{end}}
-      {{if .Match.Warnings}}<span class="badge badge--warning">{{len .Match.Warnings}} warning(s)</span>{{end}}
+    <div class="section-tools">
+      <div class="badge-row match-badges">
+        <span class="badge badge--accent">{{.Match.Map}}</span>
+        <span class="badge">{{.Match.Mode}}</span>
+        <span class="badge">{{clock .Match.Duration}}</span>
+        <span class="badge">{{if .Summary}}{{.Summary.Rounds}}{{else}}{{len .Match.Rounds}}{{end}} rounds</span>
+        <span class="badge">{{len .Match.Players}} players</span>
+        <span class="badge">{{zero .Match.TickRate}} tick</span>
+        <span class="badge">{{.Match.FileTime.Format "02 Jan 2006"}}</span>
+        {{if .Match.ServerName}}<span class="badge badge--info">{{.Match.ServerName}}</span>{{end}}
+        {{if .Match.Warnings}}<span class="badge badge--warning">{{len .Match.Warnings}} warning(s)</span>{{end}}
+      </div>
     </div>
 
     {{with .Summary}}
@@ -157,7 +149,7 @@
             <tbody>
             {{range .Players}}
               <tr class="{{if .Flagged}}flagged{{end}}">
-                <th scope="row" class="name"><a href="#{{.Anchor}}">{{.Player.Name}}</a>{{if .Player.ClanTag}} <span class="clan">[{{.Player.ClanTag}}]</span>{{end}}{{if .Flagged}} <span class="flag-dot" role="img" aria-label="flagged by anti-cheat" title="Flagged by anti-cheat">&#9873;</span>{{end}}{{if .Player.IsBot}} <span class="badge badge--neutral">BOT</span>{{end}}</th>
+                <th scope="row" class="name"><a href="#{{.Anchor}}">{{.Player.Name}}</a>{{if .ClanTag}} <span class="clan">[{{.ClanTag}}]</span>{{end}}{{if .Flagged}} <span class="flag-dot" role="img" aria-label="flagged by anti-cheat" title="Flagged by anti-cheat">&#9873;</span>{{end}}{{if .Player.IsBot}} <span class="badge badge--neutral">BOT</span>{{end}}</th>
                 <td>{{.ScoreDisplay}}</td>
                 <td>{{.Player.Stats.Kills}}</td>
                 <td>{{.Player.Stats.Deaths}}</td>
@@ -202,7 +194,6 @@
   <section id="cheaters" class="section">
     <div class="section-head">
       <h2>Watchlist</h2>
-      <span class="section-note">Flagged and review-level players - timestamps point at the demo</span>
     </div>
 
     {{if .Cheaters}}
@@ -213,11 +204,11 @@
           <div class="cheater-id">
             <span class="avatar {{lower .Player.Side}}">{{.Player.Initials}}</span>
             <div>
-              <h3><a href="#{{.Player.Anchor}}">{{.Player.Player.Name}}</a>{{if .Player.Player.ClanTag}} <span class="clan">[{{.Player.Player.ClanTag}}]</span>{{end}}</h3>
+              <h3><a href="#{{.Player.Anchor}}">{{.Player.Player.Name}}</a>{{if .Player.ClanTag}} <span class="clan">[{{.Player.ClanTag}}]</span>{{end}}</h3>
               <div class="cheater-sub">
                 {{if .Player.TeamName}}<span class="badge badge--{{if eq .Player.Side "CT"}}ct{{else if eq .Player.Side "T"}}t{{else}}neutral{{end}}">{{.Player.TeamName}}</span>{{end}}
-                <span>{{.Player.Player.RoundsPlayed}} rounds</span>
-                <span>{{.Player.Player.Stats.Kills}} / {{.Player.Player.Stats.Deaths}} / {{.Player.Player.Stats.Assists}}</span>
+                <span class="badge">{{.Player.Player.RoundsPlayed}} rounds</span>
+                <span class="badge">{{.Player.Player.Stats.Kills}} / {{.Player.Player.Stats.Deaths}} / {{.Player.Player.Stats.Assists}}</span>
                 {{if .Player.Player.IsBot}}<span class="badge badge--neutral">BOT</span>{{end}}
               </div>
             </div>
@@ -226,6 +217,7 @@
             <span class="verdict {{.Cheat.VerdictClass}}">{{.Cheat.Verdict}}</span>
             <span class="cheater-likelihood">{{.Cheat.LikelihoodPct}}</span>
             <span class="muted small">likelihood - flag at 50%</span>
+            <span class="panel-sub">Statistic calculation only. No Proof.</span>
           </div>
         </header>
         <div class="meter"><i class="{{.Cheat.VerdictClass}}" style="width:{{.Cheat.Likelihood}}%"></i></div>
@@ -244,16 +236,15 @@
           </div>
           <div>
             <h4>When to look</h4>
-            {{if .TopMoments}}
-            {{template "cue-list" .TopMoments}}
+            {{if .Moments}}
+            {{template "cue-list" .Moments}}
             {{else}}
             <p class="muted">No timestamped cue passed the recording thresholds.</p>
             {{end}}
-            <p class="disclaimer small">Cues mark detector thresholds, not confirmed cheating. Statistical signal, not proof.</p>
           </div>
         </div>
         <footer class="cheater-foot">
-          <a href="#{{.Player.Anchor}}">Open full analysis</a>
+          <a class="button" href="#{{.Player.Anchor}}">Open full analysis</a>
         </footer>
       </article>
       {{end}}
@@ -270,10 +261,9 @@
   <section id="rounds" class="section">
     <div class="section-head">
       <h2>Timeline</h2>
-      <span class="section-note">One continuous demo time scale - absolute timestamps</span>
     </div>
 
-    <div class="timeline-toolbar cs-panel">
+    <div class="section-tools timeline-toolbar">
       <div class="segmented" role="group" aria-label="Event filter">
         <button type="button" data-evt-filter="all" class="active">All</button>
         <button type="button" data-evt-filter="kill">Kills</button>
@@ -297,11 +287,12 @@
   <section id="players" class="section">
     <div class="section-head">
       <h2>Players</h2>
-      <span class="section-note">Stats, aim profile and cheat analysis</span>
     </div>
 
-    <nav class="player-pills" aria-label="Player shortcuts">
-      {{range .Players}}<a href="#{{.Anchor}}" class="pill {{if .Flagged}}flagged{{end}}" data-target="{{.Anchor}}">{{.Player.Name}}</a>{{end}}
+    <nav class="section-tools player-tools" aria-label="Player shortcuts">
+      <div class="player-pills">
+        {{range .Players}}<a href="#{{.Anchor}}" class="pill {{if .Flagged}}flagged{{end}}" data-target="{{.Anchor}}">{{.Player.Name}}</a>{{end}}
+      </div>
     </nav>
 
     <div class="player-grid">
@@ -310,11 +301,11 @@
       <header class="player-head">
         <div class="avatar {{lower .Side}}">{{.Initials}}</div>
         <div class="player-id">
-          <h3>{{.Player.Name}}{{if .Flagged}} <span class="flag-dot" role="img" aria-label="flagged by anti-cheat">&#9873;</span>{{end}}</h3>
+          <h3>{{.Player.Name}}{{if .ClanTag}} <span class="clan">[{{.ClanTag}}]</span>{{end}}{{if .Flagged}} <span class="flag-dot" role="img" aria-label="flagged by anti-cheat" title="Flagged by anti-cheat">&#9873;</span>{{end}}</h3>
           <div class="player-sub">
             {{if .TeamName}}<span class="badge badge--{{if eq .Side "CT"}}ct{{else if eq .Side "T"}}t{{else}}neutral{{end}}">{{.TeamName}}</span>{{end}}
             {{if .Player.SteamID64}}<a class="badge badge--info" href="https://steamcommunity.com/profiles/{{.Player.SteamID64}}" target="_blank" rel="noopener noreferrer">Steam profile</a>{{end}}
-            <span>{{.Player.RoundsPlayed}} rounds</span>
+            <span class="badge">{{.Player.RoundsPlayed}} rounds</span>
             {{if .Player.IsBot}}<span class="badge badge--neutral">BOT</span>{{end}}
           </div>
         </div>
@@ -389,7 +380,10 @@
           {{with .Cheat}}
           <section class="subpanel cheat-panel {{.VerdictClass}}">
             <div class="panel-head">
-              <h4>Cheat analysis</h4>
+              <div>
+                <h4>Cheat analysis</h4>
+                <span class="panel-sub">Statistic calculation only. No Proof.</span>
+              </div>
               <span class="verdict {{.VerdictClass}}">{{.Verdict}}</span>
             </div>
             {{if .Available}}
@@ -406,28 +400,19 @@
             {{end}}
             {{template "channel-list" .Channels}}
             {{if .Adjustments}}{{template "adjustments" .Adjustments}}{{end}}
-            <p class="disclaimer small">Detector: vendored demo-anticheat (10-channel Bayesian model). Statistical signal, not proof. Small samples reduce confidence.</p>
             {{else}}
             <p class="error-text">Cheat analysis unavailable: {{.Error}}</p>
             {{end}}
           </section>
           {{end}}
 
-          {{if and .ShowReview .Moments}}
+          {{if .Moments}}
           <section class="subpanel review-panel">
             <div class="panel-head">
               <h4>When to look</h4>
-              <span class="muted small">{{.MomentCount}} cue(s)</span>
+              <span class="muted small">{{len .Moments}} cue(s)</span>
             </div>
-            <p class="muted small">Copy a tick and run <code>demo_gototick &lt;tick&gt;</code> in the demo console.</p>
-            {{template "cue-list" .TopMoments}}
-            {{if gt .MomentCount (len .TopMoments)}}
-            <details class="details-compact">
-              <summary>All {{.MomentCount}} cues</summary>
-              {{template "cue-list" .Moments}}
-            </details>
-            {{end}}
-            <p class="disclaimer small">Review cues only. They mark detector thresholds, not confirmed cheating.</p>
+            {{template "cue-list" .Moments}}
           </section>
           {{end}}
         </aside>
@@ -438,6 +423,16 @@
           <div class="table-scroll">
           <table class="mini-table round-table">
             <caption class="sr-only">Per-round statistics</caption>
+            <colgroup>
+              <col class="col-round">
+              <col class="col-side">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-dmg">
+              <col class="col-equip">
+              <col class="col-result">
+            </colgroup>
             <thead><tr><th scope="col">Round</th><th scope="col">Side</th><th scope="col">K</th><th scope="col">D</th><th scope="col">A</th><th scope="col">DMG</th><th scope="col">Equip</th><th scope="col">Result</th></tr></thead>
             <tbody>
             {{range .Rounds}}<tr><td><a href="#{{.Anchor}}">{{.Number}}</a></td><td><i class="side-dot {{lower .Side}}" aria-hidden="true"></i> {{.Side}}</td><td>{{.Kills}}</td><td>{{.Deaths}}</td><td>{{.Assists}}</td><td>{{.Damage}}</td><td>{{.EquipValue}}</td><td class="{{.ResultClass}}">{{.Result}}{{if .KAST}} - KAST{{end}}</td></tr>{{end}}

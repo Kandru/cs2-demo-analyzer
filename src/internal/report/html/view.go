@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/Kandru/cs2-demo-analyzer/internal/model"
 	"github.com/Kandru/cs2-demo-analyzer/internal/report"
@@ -137,6 +138,7 @@ type PlayerView struct {
 	Player       *model.Player
 	Anchor       string
 	Initials     string
+	ClanTag      string
 	TeamName     string
 	Side         string
 	Rounds       []PlayerRoundView
@@ -145,9 +147,6 @@ type PlayerView struct {
 	Aim          []MetricView
 	Cheat        *CheatView
 	Moments      []*MomentView
-	TopMoments   []*MomentView
-	MomentCount  int
-	ShowReview   bool
 	Flagged      bool
 	KDDisplay    string
 	ADRDisplay   string
@@ -216,8 +215,14 @@ type CheatView struct {
 	OverallGrade  string
 	Grades        []model.Grade
 	Channels      []ChannelView
-	Adjustments   []model.Adjustment
+	Adjustments   []AdjustmentView
 	Error         string
+}
+
+// AdjustmentView is a detector adjustment with a plain-language explanation.
+type AdjustmentView struct {
+	Label  string
+	Detail string
 }
 
 // ChannelView is one detector channel row.
@@ -239,7 +244,7 @@ type CheaterView struct {
 	Player      *PlayerView
 	Cheat       *CheatView
 	TopChannels []ChannelView
-	TopMoments  []*MomentView
+	Moments     []*MomentView
 	Search      string
 }
 
@@ -456,6 +461,7 @@ func buildPlayer(m *model.Match, p *model.Player) *PlayerView {
 		Player:       p,
 		Anchor:       "player-" + p.Slug,
 		Initials:     initials(p.Name),
+		ClanTag:      displayClanTag(p.ClanTag),
 		Flagged:      p.Cheat != nil && p.Cheat.Flagged,
 		KDDisplay:    fmt.Sprintf("%.2f", p.Stats.KD),
 		ADRDisplay:   fmt.Sprintf("%.1f", p.Stats.ADR),
@@ -567,11 +573,6 @@ func buildPlayer(m *model.Match, p *model.Player) *PlayerView {
 	}
 	if p.Cheat != nil && len(p.Cheat.Moments) > 0 {
 		pv.Moments = buildMoments(m, p.Cheat.Moments)
-		pv.MomentCount = len(pv.Moments)
-		pv.TopMoments = topMoments(pv.Moments, 8)
-	}
-	if pv.Cheat != nil && pv.Cheat.Available && (pv.Flagged || pv.Cheat.Likelihood >= 25) {
-		pv.ShowReview = true
 	}
 	return pv
 }
@@ -621,6 +622,34 @@ func sampleCount(noun string, n int) string {
 	return fmt.Sprintf("%d %s", n, noun)
 }
 
+func adjustmentExplanation(a model.Adjustment) string {
+	detail := plainDashes(a.Detail)
+	switch strings.ToLower(a.Label) {
+	case "evidence stacking boost":
+		if strings.HasPrefix(detail, "Yes (") {
+			inner := strings.TrimSuffix(strings.TrimPrefix(detail, "Yes ("), ")")
+			if fields := strings.Fields(inner); len(fields) > 0 {
+				return fields[0] + " detector channels showed strong agreement, so the combined score was raised."
+			}
+		}
+		return "Several strong detector channels agree, so the combined score was raised."
+	case "wingman score boost":
+		if strings.HasPrefix(detail, "kills=") {
+			return "Wingman is a shorter format, so " + strings.TrimPrefix(detail, "kills=") + " kills were normalised before scoring."
+		}
+		return "Wingman is a shorter format, so kill volume is normalised before scoring."
+	case "scoreboard-position discount":
+		if detail != "" {
+			return "A strong scoreboard position lowers the result (" + detail + ") so rank alone cannot inflate the score."
+		}
+		return "A strong scoreboard position lowers the result slightly so rank alone cannot inflate the score."
+	}
+	if detail != "" {
+		return detail
+	}
+	return "The detector adjusted the final likelihood."
+}
+
 func buildCheat(cr *model.CheatReport) *CheatView {
 	if cr == nil {
 		return &CheatView{Available: false, Verdict: "Not analyzed", VerdictClass: "unavailable", Error: "anti-cheat detector was not run"}
@@ -629,10 +658,15 @@ func buildCheat(cr *model.CheatReport) *CheatView {
 		Available:     cr.Available,
 		OverallGrade:  cr.OverallGrade,
 		Grades:        cr.Grades,
-		Adjustments:   cr.Adjustments,
 		Error:         cr.Error,
 		Likelihood:    cr.Likelihood,
 		LikelihoodPct: fmt.Sprintf("%.0f%%", cr.Likelihood),
+	}
+	for _, a := range cr.Adjustments {
+		cv.Adjustments = append(cv.Adjustments, AdjustmentView{
+			Label:  plainDashes(a.Label),
+			Detail: adjustmentExplanation(a),
+		})
 	}
 	switch {
 	case !cr.Available:
@@ -705,7 +739,7 @@ func buildSearchIndex(v *View) []SearchEntry {
 			"#cheater-"+c.Player.Player.Slug, c.Search)
 	}
 	for _, p := range v.Players {
-		detail := strings.Join(compact(p.TeamName, p.Player.ClanTag), " ")
+		detail := strings.Join(compact(p.TeamName, p.ClanTag), " ")
 		add("player", p.Player.Name, detail, "#"+p.Anchor, p.Search)
 	}
 	for _, r := range v.RoundStrip {
@@ -727,7 +761,7 @@ func buildCheaters(players []*PlayerView) []*CheaterView {
 			Player:      pv,
 			Cheat:       pv.Cheat,
 			TopChannels: topChannels(pv.Cheat.Channels, 3),
-			TopMoments:  topMoments(pv.Moments, 10),
+			Moments:     pv.Moments,
 			Search:      pv.Search,
 		})
 	}
@@ -869,26 +903,6 @@ func momentClass(rank int) string {
 	default:
 		return "cue-info"
 	}
-}
-
-func topMoments(in []*MomentView, n int) []*MomentView {
-	if len(in) == 0 {
-		return nil
-	}
-	sorted := append([]*MomentView(nil), in...)
-	sort.SliceStable(sorted, func(i, j int) bool {
-		if sorted[i].rank != sorted[j].rank {
-			return sorted[i].rank > sorted[j].rank
-		}
-		return sorted[i].Tick < sorted[j].Tick
-	})
-	if len(sorted) > n {
-		sorted = sorted[:n]
-	}
-	sort.SliceStable(sorted, func(i, j int) bool {
-		return sorted[i].Tick < sorted[j].Tick
-	})
-	return sorted
 }
 
 func roundAnchor(r *model.Round) string {
@@ -1671,6 +1685,38 @@ func buyClass(buy string) string {
 	default:
 		return "eco"
 	}
+}
+
+func displayClanTag(tag string) string {
+	tag = strings.Trim(strings.TrimSpace(tag), "[]")
+	if tag == "" {
+		return ""
+	}
+	var b strings.Builder
+	var last rune
+	repeats := 0
+	count := 0
+	for _, r := range tag {
+		if !unicode.IsPrint(r) || unicode.IsMark(r) || unicode.Is(unicode.Cf, r) || unicode.Is(unicode.Co, r) {
+			continue
+		}
+		if r == last {
+			repeats++
+			if repeats > 2 {
+				continue
+			}
+		} else {
+			last = r
+			repeats = 1
+		}
+		if count == 10 {
+			b.WriteString("...")
+			break
+		}
+		b.WriteRune(r)
+		count++
+	}
+	return strings.TrimSpace(b.String())
 }
 
 func initials(name string) string {

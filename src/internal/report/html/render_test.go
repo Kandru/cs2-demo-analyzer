@@ -55,7 +55,7 @@ func testMatch() *model.Match {
 				}},
 				Cheat: &model.CheatReport{Available: true, Likelihood: 62, Flagged: true, Narrative: "Snap and pre-aim signals are elevated.",
 					Channels:    []model.CheatChannel{{ID: "hs", Label: "Headshot rate", Score: 0, Confidence: 0.9, Zone: "clean", Raw: 48, Unit: "%", Samples: 20, HasData: true}},
-					Adjustments: []model.Adjustment{{Label: "Evidence stacking boost", Detail: "two channels"}},
+					Adjustments: []model.Adjustment{{Label: "Evidence stacking boost", Detail: "Yes (3 strong channels)"}},
 					Moments:     []model.CheatMoment{{Kind: "snap", Label: "Snap", Rank: 2, ValueText: "2.40 °/ms", Tick: 120, Seconds: 1.875, Round: 1, Value: 2.4, Unit: "°/ms", Opponent: "victim", Weapon: "AK-47"}}},
 				Weapons:    map[string]*model.WeaponStats{"AK-47": {Name: "AK-47", Kills: 15, Shots: 150, Hits: 45, Accuracy: 30}},
 				RoundStats: map[int]*model.RoundStat{1: {Side: model.SideT, Kills: 2, Damage: 200, EquipValue: 4000, Survived: true}},
@@ -84,8 +84,8 @@ func TestCheatMomentsMergeByTickAndFeedWatchList(t *testing.T) {
 		t.Fatalf("got %d watchlist players, want 1", len(v.Cheaters))
 	}
 	pv := v.Players[0]
-	if pv.MomentCount != 2 || len(pv.Moments) != 2 {
-		t.Fatalf("moments not merged by tick: count=%d len=%d", pv.MomentCount, len(pv.Moments))
+	if len(pv.Moments) != 2 {
+		t.Fatalf("moments not merged by tick: len=%d", len(pv.Moments))
 	}
 	if len(pv.Moments[0].Reasons) != 2 {
 		t.Fatalf("same-tick reasons not merged: %+v", pv.Moments[0].Reasons)
@@ -364,6 +364,57 @@ func TestIndexMetadataAndSharedFooter(t *testing.T) {
 	for _, unwanted := range []string{"reports-title", "Select a card", "Open report", "Demo not linked"} {
 		if strings.Contains(page, unwanted) {
 			t.Errorf("legacy index markup %q is still rendered", unwanted)
+		}
+	}
+}
+
+func TestRenderUsesCompactCopyAndSharedStickyTools(t *testing.T) {
+	var buf bytes.Buffer
+	if err := Render(&buf, testDocument(nil, "test"), Options{}); err != nil {
+		t.Fatal(err)
+	}
+	page := buf.String()
+	for _, want := range []string{
+		`class="section-tools`,
+		`class="button" href="#player-kalle-000001">Open full analysis</a>`,
+		"Statistic calculation only. No Proof.",
+		"3 detector channels showed strong agreement",
+		`class="mini-table round-table"`,
+		`<col class="col-round">`,
+	} {
+		if !strings.Contains(page, want) {
+			t.Errorf("missing %q", want)
+		}
+	}
+	for _, unwanted := range []string{
+		"The match at a glance",
+		"Flagged and review-level players",
+		"One continuous demo time scale",
+		"Stats, aim profile and cheat analysis",
+		"Detector: vendored demo-anticheat",
+		"Cues mark detector thresholds",
+		"Review cues only",
+		`class="hero-verdict"`,
+		"details-compact",
+	} {
+		if strings.Contains(page, unwanted) {
+			t.Errorf("legacy copy %q is still rendered", unwanted)
+		}
+	}
+}
+
+func TestDisplayClanTagStripsFormattingAndNoise(t *testing.T) {
+	cases := map[string]string{
+		"":                 "",
+		"evil":             "evil",
+		"[tag]":            "tag",
+		"᠌﷽﷽﷽﷽?":           "﷽﷽?",
+		"a\nb":             "ab",
+		"abcdefghijklmnop": "abcdefghij...",
+	}
+	for in, want := range cases {
+		if got := displayClanTag(in); got != want {
+			t.Errorf("displayClanTag(%q)=%q, want %q", in, got, want)
 		}
 	}
 }

@@ -48,8 +48,8 @@ Self-contained, flat report renderer with a shared CS 1.6-inspired dark theme.
   HTML with `fmt.Sprintf` and never use `template.HTML` for demo content.
 - The page must be readable with JS disabled; JS only adds nav highlighting,
   search, filters and tick copying.
-- Every cheat card carries the "statistical signal, not proof" disclaimer.
-  Timestamped cues are review aids, not proof of cheating.
+- Every cheat surface carries the short "Statistic calculation only. No Proof."
+  subtext. Do not replace it with long detector prose.
 - Render cue labels, ranks and values from `CheatMoment.Label/Rank/ValueText`.
   Do not add a per-kind switch; unknown kinds fall back to the raw kind.
 - Preserve anchors: `#overview`, `#scoreboard`, `#cheaters`, `#rounds`,

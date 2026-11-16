@@ -37,6 +37,7 @@ Anchors: `#overview`, `#scoreboard`, `#cheaters`, `#rounds`, `#players`,
 ## Header and search
 
 - Header is a single compact row at every width: brand, section tabs, search.
+  Tabs and the search field fill the header height.
 - No map/mode tags and no back link.
 - Search is an accessible combobox. Results come from the server-rendered
   `#search-index` and appear in an absolutely positioned dropdown, so the
@@ -48,18 +49,17 @@ Anchors: `#overview`, `#scoreboard`, `#cheaters`, `#rounds`, `#players`,
 ## Hero
 
 - Map, mode, duration and round count on the left.
-- Team names around the score in the centre. If a team has no useful clan
+- Team names and the score are right-aligned. If a team has no useful clan
   name, the start side (`CT` or `T`) is shown instead of `Team A`/`Team B`.
 - The winning score is green, the losing score is red, and a draw uses the
-  neutral text colour. A draw is not announced as text in the hero.
-- Either a demo download link (when enabled) or the demo file name, never both.
-- Date, player count, tickrate and report version sit in a compact metadata
-  strip.
+  neutral text colour. There is no separate verdict block.
+- The metadata strip contains only the optional demo download and the report
+  version, linked to the project page.
 
 ## Overview
 
 - Match badges summarise map, mode, duration, rounds, players, tickrate, date,
-  server and warnings.
+  server and warnings. They sit in the shared sticky `.section-tools` bar.
 - Stat tiles cover winner, top fragger, best aim, watchlist count and rounds.
 - Round history is full width. Cells are large enough to read and show at most
   eight rounds per row on desktop (six on tablet, four/three on phones).
@@ -75,14 +75,17 @@ Anchors: `#overview`, `#scoreboard`, `#cheaters`, `#rounds`, `#players`,
 
 One card per flagged or review-level player.
 
-- Verdict, likelihood and meter in the header.
+- Verdict, likelihood and meter in the header; team, rounds and K/D/A are
+  badges.
 - Ranked signal list with label, evidence bar, raw value, confidence, samples
   and zone.
-- Score adjustments are always visible when present. There is no toggle.
-- Top review cues with round links and `demo_gototick <tick>` copy buttons.
-- “Open full analysis” is bottom-left in the card footer.
+- Score adjustments are always visible when present. Each has a readable title
+  and a plain-language explanation.
+- All review cues with round links and `demo_gototick <tick>` copy buttons,
+  laid out as cards.
+- “Open full analysis” is a `.button` in the card footer, bottom-left.
 - “Watchlist” is the only term used for this feature.
-- The statistical disclaimer stays visible.
+- The short “Statistic calculation only. No Proof.” subtext stays visible.
 
 ## Timeline
 
@@ -108,14 +111,20 @@ round panels.
 
 ## Players
 
-- One player card per row at every viewport width.
-- Header shows avatar, team/side badges, Steam link, rounds, aim grade and
-  verdict.
-- Stat strip, T/CT split, aim tiles with readable sample nouns, full ranked
-  channel list and weapon table.
+- One player card per row at every viewport width, with a sticky player filter
+  using the shared `.section-tools` design.
+- Header shows avatar, team/side badges, Steam link, rounds, sanitised clan
+  tag, aim grade and verdict.
+- The card body is one full-width column: stat strip, T/CT split, aim tiles,
+  weapons, cheat analysis, cues and per-round table.
+- Aim and channel samples use readable nouns.
+- Channel rows flow in two columns when space allows.
 - Cheat analysis is a compact verdict, likelihood meter, grade badges and a
-  bulleted signal list. Score adjustments are always visible when present.
-- Per-round table links each row to the timeline round anchor.
+  bulleted signal list. Each adjustment has a title and explanation. The short
+  “Statistic calculation only. No Proof.” subtext stays visible.
+- “When to look” shows every cue as a card in a three-column grid.
+- The per-round table uses fixed column widths; the Round column stays narrow.
+- Per-round rows link to the timeline round anchor.
 
 ## Footer
 
@@ -158,7 +167,6 @@ remain in `docs/assets/`. The embedded payload budget is enforced by a test.
 - 320-480 px: one column, three round cells, compact footer.
 - <=720 px: compact header, four round cells, wrapped filters.
 - <=1024 px: stacked scoreboards, six round cells.
-- <=1280 px: hero verdict wraps; player card body becomes one column.
 - 1920/2560/3840 px: readable fluid type, eight round cells, capped line length.
 - Print stylesheet: white background, hidden navigation/filters/search/copy
   controls, panels avoid page breaks.

@@ -48,7 +48,8 @@ the sub-100 ms floor, and sniper overrides. The ordered registry lives in
 - Boosts/discounts/overrides that shaped the final score.
 - Timestamped review cues (match clock, round, tick) that link into the round
   timeline and can be copied as `demo_gototick <tick>`.
-- An explicit “statistical signal, not proof” disclaimer.
+- The short UI subtext “Statistic calculation only. No Proof.” on every cheat
+  surface.
 
 Cues are recorded only in the suspicious direction and only when a channel
 crosses its ramp start. They are reviewer navigation aids, never a verdict.
