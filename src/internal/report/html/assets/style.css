@@ -1046,6 +1046,11 @@ table {
 
 .cheater-id h3 {
   font-size: var(--fs-lg);
+  overflow-wrap: anywhere;
+}
+
+.cheater-id > div {
+  min-width: 0;
 }
 
 .cheater-sub {
@@ -1851,9 +1856,15 @@ select {
 
 .player-id h3 {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.35rem;
   font-size: var(--fs-lg);
+  overflow-wrap: anywhere;
+}
+
+.player-id {
+  min-width: 0;
 }
 
 .player-sub {
