@@ -191,7 +191,8 @@ cannot be used inside `@media`:
 | `<= 720px` | single-column cards, compact topbar, wrapped filters |
 | `<= 1024px` | two-column overview collapses, player cards one column |
 | `<= 1280px` | dashboard and player side panels collapse |
-| `>= 1600px` | two-column player grid, wider timeline rail |
+| `>= 1600px` | two-column player grid, stacked card bodies |
+| `>= 2600px` | three-column player grid |
 | `>= 2200px` | larger root type and content width |
 | `>= 3000px` | full 4K layout, no cramped columns |
 

@@ -112,7 +112,8 @@ remain in `docs/assets/`. The embedded payload budget is enforced by a test.
 - <=720 px: compact topbar, search moves to its own row, hero stacks, round
   timeline compacts, cue rows wrap, index becomes one column.
 - <=480 px: single-column stat tiles, full-width filters, compact round badges.
-- >=1600 px: two-column player grid.
+- >=1600 px: two-column player grid with stacked card bodies.
+- >=2600 px: three-column player grid on very wide displays.
 - >=2200/3000 px: larger root scale and wider content for 4K.
 - Print stylesheet: white background, hidden navigation/filters/search/copy
   controls, panels avoid page breaks.
