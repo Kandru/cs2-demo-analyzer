@@ -9,32 +9,35 @@ import (
 	"time"
 )
 
-func TestOutputPathDefaultsNextToDemo(t *testing.T) {
+func TestPlanOutputDefaultsNextToDemo(t *testing.T) {
 	dir := t.TempDir()
 	s, err := Open(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	demo := filepath.Join(dir, "match.dem")
-	got := s.OutputPath(demo, "", ".html")
+	got := s.PlanOutput(demo, "", ".html", nil)
 	want := filepath.Join(dir, "match.html")
 	if got != want {
 		t.Fatalf("got %q want %q", got, want)
 	}
-	got = s.OutputPath(filepath.Join(dir, "match.dem.gz"), "", ".json")
-	if got != filepath.Join(dir, "match.json") {
-		t.Fatalf("compressed demo: %q", got)
+	if again := s.PlanOutput(demo, "", ".html", nil); again != want {
+		t.Fatalf("replanning changed the path: %q", again)
+	}
+	other := s.PlanOutput(filepath.Join(dir, "other.dem"), "", ".json", nil)
+	if other != filepath.Join(dir, "other.json") {
+		t.Fatalf("json plan: %q", other)
 	}
 }
 
-func TestOutputPathCollision(t *testing.T) {
+func TestPlanOutputCollision(t *testing.T) {
 	out := t.TempDir()
 	s, _ := Open(out)
 	a := filepath.Join(out, "a", "match.dem")
 	b := filepath.Join(out, "b", "match.dem")
-	pa := s.OutputPath(a, out, ".html")
+	pa := s.PlanOutput(a, out, ".html", nil)
 	s.MarkOK(a, 1, time.Unix(1, 0), "", "", pa, "", "v", ReportMeta{})
-	pb := s.OutputPath(b, out, ".html")
+	pb := s.PlanOutput(b, out, ".html", nil)
 	if pa == pb {
 		t.Fatalf("collision not disambiguated: %q", pa)
 	}
@@ -43,46 +46,35 @@ func TestOutputPathCollision(t *testing.T) {
 	}
 }
 
-func TestSkip(t *testing.T) {
-	dir := t.TempDir()
-	s, _ := Open(dir)
-	demo := filepath.Join(dir, "m.dem")
-	if err := os.WriteFile(demo, []byte("x"), 0o644); err != nil {
-		t.Fatal(err)
+func TestPlanOutputOccupiedCallback(t *testing.T) {
+	out := t.TempDir()
+	s, _ := Open(out)
+	a := filepath.Join(out, "a", "match.dem")
+	b := filepath.Join(out, "b", "match.dem")
+	pa := s.PlanOutput(a, out, ".html", nil)
+	pb := s.PlanOutput(b, out, ".html", func(path string) bool { return path == pa })
+	if pa == pb {
+		t.Fatalf("occupied candidate was reused: %q", pa)
 	}
-	html := filepath.Join(dir, "m.html")
-	if err := os.WriteFile(html, []byte("report"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	mod := time.Unix(100, 0)
-	s.MarkOK(demo, 1, mod, "h", "", html, "", "1.0", ReportMeta{})
-	if !s.Skip(demo, 1, mod, "1.0", "", false) {
-		t.Fatal("expected skip for unchanged successful demo")
-	}
-	if s.Skip(demo, 2, mod, "1.0", "", false) {
-		t.Fatal("size change must invalidate")
-	}
-	if s.Skip(demo, 1, mod, "1.0", "", true) {
-		t.Fatal("force must bypass skip")
-	}
-	if s.Skip(demo, 1, mod, "2.0", "", false) {
-		t.Fatal("tool version change must invalidate")
-	}
-	if s.Skip(demo, 1, mod, "1.0", "demo-download", false) {
-		t.Fatal("report option change must invalidate")
+	if !strings.Contains(pb, "match-") {
+		t.Fatalf("unexpected collision name: %q", pb)
 	}
 }
 
-func TestSkipCachesFailures(t *testing.T) {
+func TestCachedFailure(t *testing.T) {
 	dir := t.TempDir()
 	s, _ := Open(dir)
+	demo := filepath.Join(dir, "bad.dem")
 	mod := time.Unix(100, 0)
-	s.MarkError(filepath.Join(dir, "bad.dem"), 10, mod, os.ErrInvalid, "1.0")
-	if !s.Skip(filepath.Join(dir, "bad.dem"), 10, mod, "1.0", "", false) {
+	s.MarkError(demo, 10, mod, os.ErrInvalid, "1.0")
+	if !s.CachedFailure(demo, 10, mod) {
 		t.Fatal("unchanged failed demos should not be retried on every scan")
 	}
-	if s.Skip(filepath.Join(dir, "bad.dem"), 11, mod, "1.0", "", false) {
+	if s.CachedFailure(demo, 11, mod) {
 		t.Fatal("changed failed demos should be retried")
+	}
+	if s.CachedFailure(filepath.Join(dir, "good.dem"), 10, mod) {
+		t.Fatal("unknown demos are not cached failures")
 	}
 }
 

@@ -104,13 +104,9 @@ func Open(outputDir string) (*Store, error) {
 	return s, nil
 }
 
-// Skip reports whether a demo can be skipped because the same file was
-// analyzed successfully with the same tool version, report options, and
-// schema, and the output still exists.
-func (s *Store) Skip(path string, size int64, modTime time.Time, toolVersion, reportOptions string, force bool) bool {
-	if force {
-		return false
-	}
+// CachedFailure reports whether the same file is recorded as failed and should
+// not be retried until it changes. Callers handle --force themselves.
+func (s *Store) CachedFailure(path string, size int64, modTime time.Time) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	e := s.entries[path]
@@ -120,29 +116,12 @@ func (s *Store) Skip(path string, size int64, modTime time.Time, toolVersion, re
 	if e.Size != size || e.ModTime != modTime.UnixNano() {
 		return false
 	}
-	if e.Status == "error" {
-		// Broken/unchanged demos are not retried on every scan. --force or a
-		// file change retries them.
-		return true
-	}
-	if e.Status != "ok" {
-		return false
-	}
-	if e.ToolVersion != toolVersion || e.SchemaVersion != schemaVersion || e.ReportOptions != reportOptions {
-		return false
-	}
-	if e.HTMLPath == "" {
-		return false
-	}
-	if _, err := os.Stat(e.HTMLPath); err != nil {
-		return false
-	}
-	return true
+	return e.Status == "error"
 }
 
 // schemaVersion mirrors model.SchemaVersion without importing model (avoids a
-// store -> model dependency in callers). Keep in sync; the processor sets the
-// entry's SchemaVersion from the model.
+// store -> model dependency in callers). Keep in sync; it is recorded in the
+// manifest for audit purposes.
 const schemaVersion = 1
 
 // Entry returns a copy of the cached entry, if any.
@@ -198,30 +177,43 @@ func (s *Store) MarkError(path string, size int64, modTime time.Time, err error,
 	}
 }
 
-// OutputPath returns the report path for a demo. If outputDir is empty the
-// report is written next to the demo. Basename collisions from different demos
-// are disambiguated with a short source hash.
-func (s *Store) OutputPath(demoPath, outputDir, suffix string) string {
+// PlanOutput atomically chooses and reserves the report path for a demo. If
+// outputDir is empty the report is written next to the demo. Basename
+// collisions from different demos are disambiguated with a short source hash.
+//
+// occupied is optional and is called while the store lock is held. It lets the
+// caller mark a candidate as belonging to another demo when the in-memory
+// mapping is not available (for example a one-shot analyze run). Keep the
+// callback cheap: it typically reads a few hundred bytes of a header.
+func (s *Store) PlanOutput(demoPath, outputDir, suffix string, occupied func(string) bool) string {
 	dir := outputDir
 	if dir == "" {
 		dir = filepath.Dir(demoPath)
 	}
-	base := demofile.BaseName(demoPath)
-	name := safeName(base) + suffix
-	cand := filepath.Join(dir, name)
+	base := safeName(demofile.BaseName(demoPath))
+	cand := filepath.Join(dir, base+suffix)
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if src, ok := s.outputs[cand]; ok && src != demoPath {
-		h := sha256.Sum256([]byte(demoPath))
-		cand = filepath.Join(dir, fmt.Sprintf("%s-%x%s", safeName(base), h[:3], suffix))
+	if src, ok := s.outputs[cand]; ok && src == demoPath {
+		return cand
 	}
+	taken := func(path string) bool {
+		if src, ok := s.outputs[path]; ok && src != demoPath {
+			return true
+		}
+		return occupied != nil && occupied(path)
+	}
+	if taken(cand) {
+		h := sha256.Sum256([]byte(demoPath))
+		cand = filepath.Join(dir, fmt.Sprintf("%s-%x%s", base, h[:3], suffix))
+	}
+	s.outputs[cand] = demoPath
 	return cand
 }
 
-// ReserveOutput records that path will be produced from demoPath. It prevents
-// two concurrent workers with the same demo basename from choosing the same
-// report path. MarkOK keeps the mapping afterwards.
+// ReserveOutput records that path will be produced from demoPath. MarkOK keeps
+// the mapping afterwards.
 func (s *Store) ReserveOutput(path, demoPath string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
