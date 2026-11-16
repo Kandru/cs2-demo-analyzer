@@ -35,12 +35,20 @@ Scoring logic is otherwise unmodified. See `docs/anticheat.md` and
 
 ## Go modules
 
-| Module | License | Use |
-|---|---|---|
-| `github.com/markus-wa/demoinfocs-golang/v5` | MIT | CS2 demo parsing |
-| `github.com/fsnotify/fsnotify` | BSD-3-Clause | filesystem watching |
-| `google.golang.org/protobuf` | BSD-3-Clause | transitive (demoinfocs) |
-| `github.com/golang/snappy`, `github.com/golang/geo`, etc. | BSD-3-Clause | transitive (demoinfocs) |
+| Module | Version | License | Use |
+|---|---|---|---|
+| `github.com/markus-wa/demoinfocs-golang/v5` | v5.3.0 | MIT | CS2 demo parsing |
+| `github.com/fsnotify/fsnotify` | v1.10.1 | BSD-3-Clause | filesystem watching |
+| `github.com/oklog/ulid/v2` | v2.1.1 | Apache-2.0 | equipment/grenade identifiers |
+| `google.golang.org/protobuf` | v1.36.11 | BSD-3-Clause | transitive (demoinfocs) |
+| `github.com/golang/snappy` | v1.0.0 | BSD-3-Clause | transitive (demoinfocs) |
+| `github.com/golang/geo` | v0.0.0-20230421003525-6adc56603217 | Apache-2.0 | transitive (demoinfocs) |
+| `golang.org/x/sys` | v0.50.0 | BSD-3-Clause | transitive (fsnotify) |
+| other demoinfocs transitives | see `docs/dependencies.md` | MIT/BSD | parser internals |
+
+See [dependencies.md](dependencies.md) for the compiled-module inventory,
+reachability notes, the audit workflow, and the upstream proposals for removing
+`pkg/errors`, `golang.org/x/exp`, and optionally `quickhull-go`.
 
 Run `cd src && go list -m all` for the complete module graph. License texts are
 available from the respective module caches/repositories.

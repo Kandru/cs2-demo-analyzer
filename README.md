@@ -151,11 +151,12 @@ The normal build path uses Docker, so no local Go toolchain is required:
 
 ```sh
 make build        # dist/cs2-demo-analyzer (linux/amd64)
-make test         # go test ./... inside golang:1.27
+make test         # go test ./... inside golang:1.27.4
 make vet
+make audit        # go mod verify + govulncheck
 ```
 
-If you already have Go 1.27 or newer, use `make build-local`. You can also run
+If you already have Go 1.27.4 or newer, use `make build-local`. You can also run
 directly from `src/`:
 
 ```sh

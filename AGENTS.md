@@ -55,6 +55,7 @@ src/internal/version/     ldflags version
 | Help | `make` |
 | Build | `make build` |
 | Test | `make test` |
+| Module hygiene | `make tidy-check && make audit` |
 | Format/vet | `make fmt && make vet` |
 | Release archives | `make release` (Docker) or `make release-local` (Go) |
 | Run local binary | `go run ./cmd/cs2-demo-analyzer analyze stuff/demo.dem` (from `src/`) |

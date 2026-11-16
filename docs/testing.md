@@ -3,16 +3,19 @@
 ## Supported commands
 
 ```sh
-make test          # go test ./... inside golang:1.27
+make test          # go test ./... inside golang:1.27.4
 make test-cover    # coverage summary
 make vet
 make fmt
 make build
+make tidy-check    # fail if go.mod/go.sum need tidying
+make audit         # go mod verify + govulncheck
 make check-install # validate install.sh syntax
 ```
 
-Local Go 1.27+ can use `cd src && go test ./...`; CI/Docker is the supported
-path and the one used by the Makefile.
+Local Go 1.27.4+ can use `cd src && go test ./...`; CI/Docker is the supported
+path and the one used by the Makefile. All commands run with the digest-pinned
+toolchain described in [dependencies.md](dependencies.md).
 
 ## Test layers
 
@@ -88,6 +91,8 @@ PR rather than checking the file in.
 
 - [ ] `go test ./...` passes
 - [ ] `go vet ./...` passes
+- [ ] `go mod tidy -diff` is clean
+- [ ] `govulncheck ./...` reports no vulnerabilities
 - [ ] one clean and one suspicious demo inspected manually
 - [ ] no false-positive flags on the clean reference demo
 - [ ] `VERSION` bumped with the correct month

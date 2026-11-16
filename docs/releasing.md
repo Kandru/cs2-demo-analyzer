@@ -33,9 +33,11 @@ make release-local  # same archives, using the local Go toolchain
 make test           # go test ./... in Docker
 ```
 
-`make build`, `make release`, and `make test` use `golang:1.27` in Docker; no
-local Go installation is needed. `make build-local` and `make release-local`
-are available for contributors and CI runners that already have Go.
+`make build`, `make release`, and `make test` use the digest-pinned
+`golang:1.27.4` image in Docker; no local Go installation is needed.
+`make build-local` and `make release-local` are available for contributors and
+CI runners that already have Go 1.27.4 or newer. See
+[dependencies.md](dependencies.md) for the pinned images and the audit targets.
 
 Release artifacts are `.tar.gz` (including the Windows `.exe` inside) plus
 `SHA256SUMS`, `README.md`, and `VERSION` in each archive.
@@ -64,11 +66,14 @@ releases because the updater only reads `/releases/latest`.
 - Triggers on pushes to `main` that touch `VERSION`, and on manual dispatch.
 - Validates the `YY.MM.N` format and that the month is the current UTC month.
 - Skips if the tag already exists.
-- Sets up Go from `src/go.mod` and runs `make release-local` (native
-  cross-compilation; no Docker inside the runner).
+- Runs `make release` using the pinned Docker build image.
 - Creates a GitHub release with commit notes since the previous tag and uploads
   all archives plus `SHA256SUMS`.
 - Deletes older releases, keeping the newest five.
+
+`.github/workflows/ci.yaml` runs tests, vet, module tidiness, module
+verification, and `govulncheck` for pull requests and pushes to `main`.
+`actions/checkout` is pinned to a commit SHA in both workflows.
 
 The workflow needs the default `GITHUB_TOKEN` with `contents: write`; no extra
 secrets are required.

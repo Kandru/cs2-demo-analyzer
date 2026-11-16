@@ -32,6 +32,7 @@ Start here, then follow the doc for the area you are changing.
 | [report-ui.md](report-ui.md) | Sections, design tokens, accessibility |
 | [testing.md](testing.md) | Test layers, docs-sync checks, demo harness |
 | [releasing.md](releasing.md) | Version scheme and release workflow |
+| [dependencies.md](dependencies.md) | Compiled modules, audit workflow, upstream cleanup |
 | [THIRD_PARTY.md](THIRD_PARTY.md) | Vendored code, licenses and patch table |
 
 Every Go package also has an `AGENTS.md` with local invariants and the
