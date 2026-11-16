@@ -85,3 +85,12 @@ func mustReadTemplate(t *testing.T, name string) string {
 	}
 	return string(b)
 }
+
+func mustReadFile(t *testing.T, name string) string {
+	t.Helper()
+	b, err := os.ReadFile(name)
+	if err != nil {
+		t.Fatalf("read %s: %v", name, err)
+	}
+	return string(b)
+}
