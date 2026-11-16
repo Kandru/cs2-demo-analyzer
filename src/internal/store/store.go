@@ -20,19 +20,19 @@ const ManifestVersion = 1
 
 // Entry is the cached analysis state for one demo.
 type Entry struct {
-	Path          string      `json:"path"`
-	Size          int64       `json:"size"`
-	ModTime       int64       `json:"mtimeUnixNano"`
-	Hash          string      `json:"sha256,omitempty"`
-	HTMLPath      string      `json:"htmlPath,omitempty"`
-	JSONPath      string      `json:"jsonPath,omitempty"`
-	AnalyzedAt    time.Time   `json:"analyzedAt,omitempty"`
-	ToolVersion   string      `json:"toolVersion,omitempty"`
-	ReportOptions string      `json:"reportOptions,omitempty"`
-	SchemaVersion int         `json:"schemaVersion,omitempty"`
-	Status        string      `json:"status,omitempty"` // ok | error
-	Error         string      `json:"error,omitempty"`
-	Meta          *ReportMeta `json:"meta,omitempty"`
+	Path          string     `json:"path"`
+	Size          int64      `json:"size"`
+	ModTime       int64      `json:"mtimeUnixNano"`
+	Hash          string     `json:"sha256,omitempty"`
+	HTMLPath      string     `json:"htmlPath,omitempty"`
+	JSONPath      string     `json:"jsonPath,omitempty"`
+	AnalyzedAt    time.Time  `json:"analyzedAt,omitempty"`
+	ToolVersion   string     `json:"toolVersion,omitempty"`
+	ReportOptions string     `json:"reportOptions,omitempty"`
+	SchemaVersion int        `json:"schemaVersion,omitempty"`
+	Status        string     `json:"status,omitempty"` // ok | error
+	Error         string     `json:"error,omitempty"`
+	Meta          ReportMeta `json:"meta,omitzero"`
 }
 
 // ReportMeta is match-level metadata cached for report index pages.
@@ -172,7 +172,7 @@ func (s *Store) MarkOK(path string, size int64, modTime time.Time, hash, reportO
 		ReportOptions: reportOptions,
 		SchemaVersion: schemaVersion,
 		Status:        "ok",
-		Meta:          &meta,
+		Meta:          meta,
 	}
 	s.outputs[html] = path
 }

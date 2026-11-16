@@ -106,8 +106,8 @@ func TestReportMetaPersists(t *testing.T) {
 		t.Fatal(err)
 	}
 	entry, ok := reopened.Entry(demo)
-	if !ok || entry.Meta == nil {
-		t.Fatalf("metadata missing after reopen: %+v", entry)
+	if !ok {
+		t.Fatalf("missing entry after reopen: %+v", entry)
 	}
 	if entry.Meta.Map != "de_mirage" || entry.Meta.ServerName != "Test Server" {
 		t.Fatalf("metadata = %+v", entry.Meta)

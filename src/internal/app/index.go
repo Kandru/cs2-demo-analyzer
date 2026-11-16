@@ -129,8 +129,8 @@ func (p *Processor) indexEntries(dir string) ([]html.IndexEntry, error) {
 		}
 		meta := store.ReportMeta{}
 		if demoPath != "" {
-			if cached, ok := p.store.Entry(demoPath); ok && cached.Meta != nil {
-				meta = *cached.Meta
+			if cached, ok := p.store.Entry(demoPath); ok {
+				meta = cached.Meta
 			}
 		}
 		playedAt := meta.PlayedAt
@@ -185,29 +185,21 @@ func sortIndexEntries(entries []html.IndexEntry) {
 func groupIndexEntries(entries []html.IndexEntry) []html.IndexServerGroup {
 	groups := make([]html.IndexServerGroup, 0, 4)
 	byName := map[string]int{}
+	var unknown []html.IndexEntry
 	for _, entry := range entries {
-		key := entry.ServerName
-		if key == "" {
-			key = "Unknown server"
+		if entry.ServerName == "" {
+			unknown = append(unknown, entry)
+			continue
 		}
-		if i, ok := byName[key]; ok {
+		if i, ok := byName[entry.ServerName]; ok {
 			groups[i].Entries = append(groups[i].Entries, entry)
 			continue
 		}
-		byName[key] = len(groups)
-		groups = append(groups, html.IndexServerGroup{Name: key, Entries: []html.IndexEntry{entry}})
+		byName[entry.ServerName] = len(groups)
+		groups = append(groups, html.IndexServerGroup{Name: entry.ServerName, Entries: []html.IndexEntry{entry}})
 	}
-	unknown := -1
-	for i := range groups {
-		if groups[i].Name == "Unknown server" {
-			unknown = i
-			break
-		}
-	}
-	if unknown >= 0 && unknown != len(groups)-1 {
-		g := groups[unknown]
-		groups = append(groups[:unknown], groups[unknown+1:]...)
-		groups = append(groups, g)
+	if len(unknown) > 0 {
+		groups = append(groups, html.IndexServerGroup{Name: "Unknown server", Entries: unknown})
 	}
 	return groups
 }
