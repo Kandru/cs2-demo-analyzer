@@ -64,9 +64,9 @@ dense but never below 12 px in tables.
   map/round text and detector narrative/channel labels. It reports live result
   counts, opens matching round panels, clears with Escape, and focuses with `/`.
   Without JavaScript the field is hidden and all content stays visible.
-- **Anchors** account for the sticky top bar via `scroll-padding-top` and
-  `scroll-margin-top`, so section and player links land on the heading instead
-  of the previous section.
+- **Anchors** account for the sticky top bar with a single `scroll-padding-top`
+  on the document, so section and player links land on the heading instead of
+  the previous section.
 - **Tiles**: label/value/sub with a linked cheat-flags tile.
 - **Round history**: flat one-cell-per-round strip, coloured by winning side,
   with a buy-type underline and a flag marker for rounds with flagged activity.
@@ -99,6 +99,8 @@ dense but never below 12 px in tables.
 ## Accessibility
 
 - Skip link, semantic `main/section/article`, heading order.
+- The optional report search is labelled, announces result counts through
+  `role="status"`/`aria-live`, and never hides content without JavaScript.
 - Details/summary is keyboard operable; filters are real buttons/selects.
 - Tick copy buttons have an accessible label; the tick number stays visible
   and selectable without JavaScript.

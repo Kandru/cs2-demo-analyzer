@@ -242,7 +242,8 @@ index. Demo download links point at the original `.dem` path; move or delete
 demos accordingly.
 
 Reports are reused while the embedded header matches the current tool version,
-data schema, report options (`--cheat`, `--aim`, `--demo-download`) and demo
+data schema, report options (`--cheat`, `--aim`, `--demo-download`, `--index`)
+and demo
 file (size, mtime, path fingerprint). Upgrade the tool or pass `--force` to
 rebuild. Deleting a requested artifact also triggers a rebuild.
 
@@ -399,7 +400,7 @@ docker run --rm --user "$(id -u):$(id -g)" \
 | `make release` | Cross-compile all release archives into `dist/` in Docker. |
 | `make release-local` | Cross-compile all release archives with a local Go toolchain. |
 | `make docker-build` | Build the runtime Docker image. |
-| `make analyze` | Analyze everything in `./stuff` into `./reports`. Pass flags with `ARGS`, e.g. `make analyze ARGS="--json --index"`. |
+| `make analyze` | Analyze everything in `./stuff` into `./reports`. Pass flags with `ARGS`, e.g. `make analyze ARGS="--json --index"`. After code changes without a `VERSION` bump add `ARGS="--force"`. |
 | `make watch` | Watch `./stuff` and write reports into `./reports`. Pass flags with `ARGS`. |
 | `make version` | Print `VERSION`. |
 | `make version-bump` | Increment the `YY.MM.BuildNr` version. |

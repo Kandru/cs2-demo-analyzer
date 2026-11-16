@@ -77,11 +77,12 @@ type Options struct {
 	Cheat        bool
 	Aim          bool
 	DemoDownload bool
+	Index        bool
 }
 
 // String returns the canonical header value for these options.
 func (o Options) String() string {
-	return fmt.Sprintf("cheat=%t;aim=%t;demo-download=%t", o.Cheat, o.Aim, o.DemoDownload)
+	return fmt.Sprintf("cheat=%t;aim=%t;demo-download=%t;index=%t", o.Cheat, o.Aim, o.DemoDownload, o.Index)
 }
 
 // Document is the canonical report. The embedded match keeps the JSON sidecar

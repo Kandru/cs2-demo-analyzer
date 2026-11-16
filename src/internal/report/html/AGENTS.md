@@ -34,7 +34,7 @@ Self-contained, flat report renderer.
   Do not add a per-kind switch; unknown kinds fall back to the raw kind.
 - Preserve anchors: `#overview`, `#scoreboard`, `#cheaters`, `#rounds`,
   `#players`, `#player-<slug>`, `#cheater-<slug>`, `#round-<tick>`, `#warmup`.
-  Keep `scroll-padding-top`/`scroll-margin-top` so the sticky top bar never
+  Keep `scroll-padding-top` on the document so the sticky top bar never
   covers a linked heading.
 - Keep the dark palette tokens; no light mode.
 - Keep the visual language flat (1 px borders, hard corners, no decorative

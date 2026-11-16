@@ -122,6 +122,17 @@ func TestGroupIndexEntriesKeepsUnknownServerLast(t *testing.T) {
 	}
 }
 
+func TestWriteIndexSkipsEmptyDirectory(t *testing.T) {
+	dir := t.TempDir()
+	p := testProcessor()
+	if err := p.writeIndex(dir); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, html.IndexFileName)); !os.IsNotExist(err) {
+		t.Fatalf("empty directory should not get an index: %v", err)
+	}
+}
+
 func TestWriteIndex(t *testing.T) {
 	dir := t.TempDir()
 	p := testProcessor()

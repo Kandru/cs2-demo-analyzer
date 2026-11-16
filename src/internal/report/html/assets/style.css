@@ -32,7 +32,10 @@
 html {
   font-size: clamp(15px, 0.35vw + 10px, 19px);
   scroll-behavior: smooth;
-  scroll-padding-top: 5rem;
+  scroll-padding-top: 4.75rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 }
 body {
   margin: 0;
@@ -463,7 +466,7 @@ details.round.warmup .round-summary { box-shadow: inset 3px 0 0 var(--accent); }
 .pill { font-size: .76rem; color: var(--muted); border: 1px solid var(--line); background: var(--bg-2); padding: 2px 8px; border-radius: 10px; }
 .pill:hover { color: var(--text); text-decoration: none; border-color: var(--line-hi); }
 .pill.flagged { border-color: rgba(239,75,85,.5); color: #ffb3b7; }
-.player-card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); margin-bottom: 10px; overflow: hidden; scroll-margin-top: 4rem; }
+.player-card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); margin-bottom: 10px; overflow: hidden; }
 .player-head { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-2); border-bottom: 1px solid var(--line); }
 .avatar { width: 2.8rem; height: 2.8rem; border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 800; color: #111; background: var(--blue); flex: 0 0 auto; }
 .avatar.T { background: var(--t); }
@@ -567,7 +570,6 @@ details.round.warmup .round-summary { box-shadow: inset 3px 0 0 var(--accent); }
 .topsearch input:focus { outline: none; border-color: var(--accent); }
 .search-status { color: var(--muted); font-size: .68rem; white-space: nowrap; }
 .search-hidden { display: none !important; }
-.section, .player-card, .cheater-card, details.round, #warmup { scroll-margin-top: 5.5rem; }
 
 /* ---------- responsive ---------- */
 @media (max-width: 1200px) {

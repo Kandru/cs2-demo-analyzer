@@ -72,6 +72,7 @@ func (p *Processor) reportOptions(htmlPath, demoPath string) report.Options {
 		Cheat:        p.cfg.Cheat,
 		Aim:          p.cfg.Aim,
 		DemoDownload: p.demoLinkEnabled(htmlPath, demoPath),
+		Index:        p.indexEnabled(htmlPath, demoPath),
 	}
 }
 
@@ -114,6 +115,13 @@ func (p *Processor) writeIndex(dir string) error {
 	entries, err := p.indexEntries(dir)
 	if err != nil {
 		return err
+	}
+	if len(entries) == 0 {
+		// Do not create an empty index for a directory where analysis failed
+		// before writing any report. Refresh an existing index in place.
+		if _, statErr := os.Stat(filepath.Join(dir, html.IndexFileName)); os.IsNotExist(statErr) {
+			return nil
+		}
 	}
 	view := &html.IndexView{
 		Title:       "Match reports",

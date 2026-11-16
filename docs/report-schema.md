@@ -22,7 +22,7 @@ kilobytes. See “Artifact header” below.
 | `format` | int | Header format (`report.HeaderFormat`, currently `1`) |
 | `toolVersion` | string | `version.CacheKey()`; `dev+<commit>` for dev builds |
 | `schemaVersion` | int | Mirrors `model.SchemaVersion` |
-| `options` | string | `cheat=…;aim=…;demo-download=…` |
+| `options` | string | `cheat=…;aim=…;demo-download=…;index=…` |
 | `demoKey` | string | Short fingerprint of the absolute demo path |
 | `demoName` | string | Source file name (escaped; informational) |
 | `demoSize` | int64 | Source file size |

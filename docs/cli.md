@@ -78,7 +78,7 @@ the later one gets a short source-hash suffix: `match-a1b2c3.html`.
 - Scans every discovered demo but reuses up-to-date reports. A report is current
   when its HTML (and JSON when `--json` is enabled) carries a matching header.
 - `--force` reprocesses everything; changing the tool version, schema, or
-  `--cheat`/`--aim`/`--demo-download` also invalidates.
+  `--cheat`/`--aim`/`--demo-download`/`--index` also invalidates.
 - Continues after individual failures and prints
   `analyzed N demo(s), S skipped, M failed`.
 - Exit `1` if anything failed or the context was cancelled.

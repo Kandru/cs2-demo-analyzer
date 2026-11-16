@@ -335,8 +335,8 @@
 
     <div class="round-toolbar">
       <div class="chips" id="round-chips">
-        {{if .Warmup}}<a class="chip warmup" href="#warmup">Warmup</a>{{end}}
-        {{range .Rounds}}<a class="chip {{.ChipClass}} {{if .HasFlag}}has-flag{{end}}" href="#{{.Anchor}}">{{.Label}}{{if .HasFlag}}<span class="chip-flag">⚑</span>{{end}}</a>{{end}}
+        {{if .Warmup}}<a class="chip warmup" href="#warmup" data-target="warmup">Warmup</a>{{end}}
+        {{range .Rounds}}<a class="chip {{.ChipClass}} {{if .HasFlag}}has-flag{{end}}" href="#{{.Anchor}}" data-target="{{.Anchor}}">{{.Label}}{{if .HasFlag}}<span class="chip-flag">⚑</span>{{end}}</a>{{end}}
       </div>
       <div class="filters">
         <div class="segmented" role="group" aria-label="Event filter">

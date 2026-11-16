@@ -128,6 +128,7 @@
     const cheaterCards = Array.from(document.querySelectorAll(".cheater-card[data-search]"));
     const roundPanels = Array.from(document.querySelectorAll("details.round[data-search]"));
     const pills = Array.from(document.querySelectorAll(".player-pills .pill[data-target]"));
+    const roundChips = Array.from(document.querySelectorAll("#round-chips .chip[data-target]"));
 
     const searchMatches = (el, query) => !query || (el.dataset.search || "").indexOf(query) !== -1;
 
@@ -160,6 +161,12 @@
           rounds++;
           panel.open = true;
         }
+      });
+
+      roundChips.forEach((chip) => {
+        const panel = document.getElementById(chip.dataset.target || "");
+        const ok = !active || (panel && !panel.classList.contains("search-hidden"));
+        chip.classList.toggle("search-hidden", !ok);
       });
 
       if (!active) {

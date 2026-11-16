@@ -72,6 +72,16 @@ func TestWriteJSONHeaderFirstAndRoundTrip(t *testing.T) {
 	if !doc.Header.Matches(testHeader()) {
 		t.Fatalf("round-trip lost header data: %+v", doc.Header)
 	}
+
+	// Existing consumers unmarshalling into model.Match ignore the additive
+	// header member.
+	var legacy model.Match
+	if err := json.Unmarshal([]byte(section), &legacy); err != nil {
+		t.Fatal(err)
+	}
+	if legacy.Map != "de_mirage" || len(legacy.Players) != 1 {
+		t.Fatalf("legacy match decode failed: %+v", legacy)
+	}
 }
 
 func TestReadHeaderLegacyJSONIsStale(t *testing.T) {
@@ -181,8 +191,8 @@ func TestDemoKeyIsStableAndDistinct(t *testing.T) {
 }
 
 func TestOptionsString(t *testing.T) {
-	got := Options{Cheat: true, Aim: false, DemoDownload: true}.String()
-	want := "cheat=true;aim=false;demo-download=true"
+	got := Options{Cheat: true, Aim: false, DemoDownload: true, Index: true}.String()
+	want := "cheat=true;aim=false;demo-download=true;index=true"
 	if got != want {
 		t.Fatalf("got %q want %q", got, want)
 	}
