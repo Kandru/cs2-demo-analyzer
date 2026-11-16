@@ -62,8 +62,8 @@ func TestWriteJSONHeaderFirstAndRoundTrip(t *testing.T) {
 		t.Fatalf("header mismatch: %+v", h)
 	}
 
-	doc, err := Decode(strings.NewReader(section))
-	if err != nil {
+	var doc Document
+	if err := json.Unmarshal([]byte(section), &doc); err != nil {
 		t.Fatal(err)
 	}
 	if doc.Match == nil || doc.Map != "de_mirage" || len(doc.Players) != 1 {

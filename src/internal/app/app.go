@@ -123,7 +123,7 @@ loop:
 	}
 	close(jobs)
 	wg.Wait()
-	proc.RefreshPlannedIndexes()
+	proc.RefreshIndexes()
 	_ = proc.Save()
 
 	fmt.Fprintf(os.Stdout, "analyzed %d demo(s), %d skipped, %d failed\n", done, skipped, failed)

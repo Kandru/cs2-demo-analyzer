@@ -108,19 +108,6 @@ func WriteJSON(w io.Writer, d *Document) error {
 	return enc.Encode(d)
 }
 
-// Decode reads a complete JSON document produced by WriteJSON.
-func Decode(r io.Reader) (*Document, error) {
-	var d Document
-	dec := json.NewDecoder(r)
-	if err := dec.Decode(&d); err != nil {
-		return nil, fmt.Errorf("decode report document: %w", err)
-	}
-	if d.Match == nil {
-		return nil, fmt.Errorf("decode report document: missing match")
-	}
-	return &d, nil
-}
-
 // HeaderComment renders the metadata line written at the top of HTML reports.
 // The JSON encoding HTML-escapes '<', '>' and '&', so the result cannot close
 // the comment early; the explicit check protects future encoder changes.

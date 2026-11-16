@@ -164,7 +164,7 @@ func (p *Processor) Process(ctx context.Context, path string) error {
 	}
 
 	p.store.MarkOK(path, info.Size(), info.ModTime(), hash, p.reportOptions(plan.HTMLPath, path).String(),
-		plan.HTMLPath, jsonPath, version.Short(), reportMeta(m, info.ModTime()))
+		plan.HTMLPath, jsonPath, reportVersion(), reportMeta(m, info.ModTime()))
 	if indexed {
 		if err := p.writeIndex(filepath.Dir(plan.HTMLPath)); err != nil {
 			p.log.Warn("could not write index", "demo", path, "error", err)
@@ -248,7 +248,7 @@ func reportMeta(m *model.Match, fallback time.Time) store.ReportMeta {
 
 func (p *Processor) recordError(path string, info os.FileInfo, err error) {
 	if info != nil {
-		p.store.MarkError(path, info.Size(), info.ModTime(), err, version.Short())
+		p.store.MarkError(path, info.Size(), info.ModTime(), err, reportVersion())
 		if serr := p.store.Save(); serr != nil {
 			p.log.Warn("could not save manifest", "error", serr)
 		}

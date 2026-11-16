@@ -213,14 +213,6 @@ func (s *Store) PlanOutput(demoPath, outputDir, suffix string, occupied func(str
 	return cand
 }
 
-// ReserveOutput records that path will be produced from demoPath. MarkOK keeps
-// the mapping afterwards.
-func (s *Store) ReserveOutput(path, demoPath string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.outputs[path] = demoPath
-}
-
 // DemoForReport returns the demo path that produced reportPath, if known.
 func (s *Store) DemoForReport(reportPath string) (string, bool) {
 	s.mu.Lock()

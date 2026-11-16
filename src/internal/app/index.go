@@ -18,8 +18,9 @@ import (
 	"github.com/Kandru/cs2-demo-analyzer/internal/version"
 )
 
-// RefreshIndexes rewrites index.html for cached reports whose output directory
-// needs one. It runs on watch startup before new demos are processed.
+// RefreshIndexes rewrites index.html for cached or planned report directories.
+// Watch calls it on startup; analyze calls it after its workers finish so
+// directories containing only skipped reports still get a current index.
 func (p *Processor) RefreshIndexes() {
 	dirs := map[string]struct{}{}
 	for _, e := range p.store.Entries() {
@@ -28,27 +29,16 @@ func (p *Processor) RefreshIndexes() {
 		}
 		dirs[filepath.Dir(e.HTMLPath)] = struct{}{}
 	}
-	p.writeIndexDirs(dirs)
-}
 
-// RefreshPlannedIndexes rewrites index.html for every planned demo directory.
-// Analyze uses it after a run so directories containing only skipped reports
-// still get a fresh index.
-func (p *Processor) RefreshPlannedIndexes() {
 	p.planMu.Lock()
-	plans := make(map[string]outputPlan, len(p.plans))
 	for demoPath, plan := range p.plans {
-		plans[demoPath] = plan
-	}
-	p.planMu.Unlock()
-
-	dirs := map[string]struct{}{}
-	for demoPath, plan := range plans {
 		if plan.HTMLPath == "" || !p.indexEnabled(plan.HTMLPath, demoPath) {
 			continue
 		}
 		dirs[filepath.Dir(plan.HTMLPath)] = struct{}{}
 	}
+	p.planMu.Unlock()
+
 	p.writeIndexDirs(dirs)
 }
 

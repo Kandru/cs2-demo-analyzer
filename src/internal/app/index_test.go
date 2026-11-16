@@ -44,10 +44,10 @@ func TestCollectIndexEntriesUsesMetadataAndSortsNewestFirst(t *testing.T) {
 	dir := t.TempDir()
 	p := testProcessor()
 
-	addReport := func(name, demoName string, mod time.Time, meta *store.ReportMeta) {
+	addReport := func(demoName string, mod time.Time, meta *store.ReportMeta) {
 		t.Helper()
 		demo := filepath.Join(dir, demoName)
-		report := filepath.Join(dir, name+".html")
+		report := p.store.PlanOutput(demo, "", ".html", nil)
 		if err := os.WriteFile(demo, []byte("demo"), 0o644); err != nil {
 			t.Fatal(err)
 		}
@@ -57,23 +57,22 @@ func TestCollectIndexEntriesUsesMetadataAndSortsNewestFirst(t *testing.T) {
 		if err := os.Chtimes(report, mod, mod); err != nil {
 			t.Fatal(err)
 		}
-		p.store.ReserveOutput(report, demo)
 		if meta != nil {
 			p.store.MarkOK(demo, 1, mod, "", "", report, "", "v", *meta)
 		}
 	}
 
-	addReport("alpha", "alpha.dem", time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC), &store.ReportMeta{
+	addReport("alpha.dem", time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC), &store.ReportMeta{
 		Map: "de_mirage", ServerName: "Alpha Server", Score: [2]int{13, 7}, HasScore: true,
 		PlayedAt: time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC),
 	})
-	addReport("bravo", "bravo.dem", time.Date(2026, 11, 16, 9, 0, 0, 0, time.UTC), &store.ReportMeta{
+	addReport("bravo.dem", time.Date(2026, 11, 16, 9, 0, 0, 0, time.UTC), &store.ReportMeta{
 		Map: "de_nuke", ServerName: "Bravo Server", Score: [2]int{10, 13}, HasScore: true,
 		PlayedAt: time.Date(2026, 11, 16, 9, 0, 0, 0, time.UTC),
 	})
 	// Newest file mtime but no metadata: it still sorts by fallback time and is
 	// grouped as unknown.
-	addReport("unknown", "unknown.dem", time.Date(2026, 11, 17, 8, 0, 0, 0, time.UTC), nil)
+	addReport("unknown.dem", time.Date(2026, 11, 17, 8, 0, 0, 0, time.UTC), nil)
 
 	entries, err := p.indexEntries(dir)
 	if err != nil {
@@ -144,7 +143,6 @@ func TestWriteIndex(t *testing.T) {
 	if err := os.WriteFile(report, []byte("report"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	p.store.ReserveOutput(report, demo)
 	p.store.MarkOK(demo, 1, time.Now(), "", "", report, "", "v", store.ReportMeta{
 		Map: "de_mirage", ServerName: "Test Server", Score: [2]int{13, 7}, HasScore: true,
 		PlayedAt: time.Date(2026, 11, 16, 12, 11, 0, 0, time.UTC),
