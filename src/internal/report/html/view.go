@@ -337,7 +337,7 @@ func newView(doc *report.Document, opts Options) *View {
 		title = "CS2"
 	}
 	if len(m.Teams) >= 2 {
-		title += " — " + m.Teams[0].Name + " vs " + m.Teams[1].Name
+		title += " - " + m.Teams[0].Name + " vs " + m.Teams[1].Name
 	}
 	v.Title = title
 	if m.Summary != nil {
@@ -537,12 +537,12 @@ func buildPlayer(m *model.Match, p *model.Player) *PlayerView {
 		if ws.Shots > 0 {
 			wv.Accuracy = fmt.Sprintf("%.1f%%", ws.Accuracy)
 		} else {
-			wv.Accuracy = "—"
+			wv.Accuracy = "-"
 		}
 		if ws.Kills > 0 {
 			wv.HSRate = fmt.Sprintf("%.0f%%", float64(ws.Headshots)/float64(ws.Kills)*100)
 		} else {
-			wv.HSRate = "—"
+			wv.HSRate = "-"
 		}
 		pv.Weapons = append(pv.Weapons, wv)
 	}
@@ -647,7 +647,7 @@ func buildCheat(cr *model.CheatReport) *CheatView {
 		if ch.HasData {
 			cvm.Raw = rawMetric(ch)
 		} else {
-			cvm.Raw = "—"
+			cvm.Raw = "-"
 		}
 		cv.Channels = append(cv.Channels, cvm)
 	}
@@ -861,7 +861,7 @@ func buildRoundStrip(m *model.Match) []RoundStripView {
 		if t := m.TeamByID(r.WinnerTeamID); t != nil {
 			winner = t.Name
 		}
-		rv.Title = fmt.Sprintf("Round %d · %s %d:%d · %s", r.Number, winner, r.EndScore[0], r.EndScore[1], r.Reason)
+		rv.Title = fmt.Sprintf("Round %d - %s %d:%d - %s", r.Number, winner, r.EndScore[0], r.EndScore[1], r.Reason)
 		out = append(out, rv)
 	}
 	return out
