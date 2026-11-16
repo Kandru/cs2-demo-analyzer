@@ -2,8 +2,10 @@ module github.com/Kandru/cs2-demo-analyzer
 
 go 1.27.0
 
+toolchain go1.27.4
+
 require (
-	github.com/fsnotify/fsnotify v1.9.0
+	github.com/fsnotify/fsnotify v1.10.1
 	github.com/markus-wa/demoinfocs-golang/v5 v5.3.0
 	github.com/oklog/ulid/v2 v2.1.1
 )
@@ -18,6 +20,6 @@ require (
 	github.com/markus-wa/quickhull-go/v2 v2.2.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63 // indirect
-	golang.org/x/sys v0.36.0 // indirect
+	golang.org/x/sys v0.50.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 )
