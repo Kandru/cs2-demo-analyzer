@@ -7,13 +7,16 @@ package stats
 //  3. Lobby-relative normalize each detection.
 //  4. Per player: combine via Bayesian log-odds, then apply modifiers in
 //     registry order, clamp, and publish.
-func cheatscoreEvaluate(demoStats *DemoStats) {
+func evaluateScores(demoStats *DemoStats) {
 	if demoStats == nil || len(demoStats.Players) == 0 {
 		return
 	}
 
 	perPlayer := make(map[uint64][]Channel, len(demoStats.Players))
 	for sid, ps := range demoStats.Players {
+		if ps == nil {
+			continue
+		}
 		perPlayer[sid] = evaluateChannelsForPlayer(ps)
 	}
 
@@ -23,20 +26,26 @@ func cheatscoreEvaluate(demoStats *DemoStats) {
 			continue
 		}
 		for sid, ps := range demoStats.Players {
+			if ps == nil {
+				continue
+			}
 			perPlayer[sid] = append(perPlayer[sid], det.LobbyEvaluate(ctx, ps, sid))
 		}
 	}
 
-	cheatscoreNormalizeLobby(perPlayer)
+	normalizeLobby(perPlayer)
 
 	for sid, ps := range demoStats.Players {
+		if ps == nil {
+			continue
+		}
 		channels := perPlayer[sid]
 		if channels == nil {
 			channels = []Channel{}
 		}
 
 		st := &scoreState{
-			combined:        cheatscoreBayesianCombine(channels),
+			combined:        bayesianCombine(channels),
 			ps:              ps,
 			channels:        channels,
 			lobbyAsymmetric: ctx.IsAsymmetric(sid),
@@ -51,6 +60,6 @@ func cheatscoreEvaluate(demoStats *DemoStats) {
 			st.score = 100.0
 		}
 
-		cheatscorePublish(st, applied)
+		publishScores(st, applied)
 	}
 }

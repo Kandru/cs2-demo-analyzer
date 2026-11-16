@@ -245,17 +245,13 @@ func (ds *DemoStats) GetOrCreatePlayerStats(player *common.Player) *PlayerStats 
 	return ds.Players[player.SteamID64]
 }
 
-// GetOrCreatePlayerStatsBySteamID gets existing player stats or creates new ones by SteamID
+// GetOrCreatePlayerStatsBySteamID gets existing player stats or creates them
+// by SteamID. Used for the demo-wide SteamID 0 placeholder.
 func (ds *DemoStats) GetOrCreatePlayerStatsBySteamID(steamID uint64) *PlayerStats {
-	if _, exists := ds.Players[steamID]; !exists {
-		// Create a placeholder player
-		ds.Players[steamID] = &PlayerStats{
-			Player: PlayerIdentifier{
-				SteamID64: steamID,
-				Name:      "Unknown",
-			},
-			Categories: make(map[Category]map[Key]Metric),
-		}
+	if ps, exists := ds.Players[steamID]; exists {
+		return ps
 	}
-	return ds.Players[steamID]
+	ps := NewPlayerStats(&common.Player{SteamID64: steamID, Name: "Unknown"})
+	ds.Players[steamID] = ps
+	return ps
 }

@@ -9,10 +9,10 @@ import (
 // lobby-relative normalisation shared by every detection.
 
 const (
-	// cheatscorePrior is the base-rate cheater probability before any evidence
+	// scorePrior is the base-rate cheater probability before any evidence
 	// is seen. 10% means a complete absence of signal pulls the combined
 	// likelihood toward ~10%, not 50%.
-	cheatscorePrior = 0.10
+	scorePrior = 0.10
 
 	// logitEpsilon clamps scores away from 0/1 before logit() so contributions
 	// are bounded and cannot dominate the sum.
@@ -26,7 +26,7 @@ const (
 	lobbyNormMinConf = 0.25
 )
 
-func cheatscoreLogit(p float64) float64 {
+func logit(p float64) float64 {
 	if p < logitEpsilon {
 		p = logitEpsilon
 	}
@@ -36,28 +36,28 @@ func cheatscoreLogit(p float64) float64 {
 	return math.Log(p / (1.0 - p))
 }
 
-func cheatscoreSigmoid(x float64) float64 {
+func sigmoid(x float64) float64 {
 	return 1.0 / (1.0 + math.Exp(-x))
 }
 
-// cheatscoreBayesianCombine returns the combined cheat likelihood [0, 100]
+// bayesianCombine returns the combined cheat likelihood [0, 100]
 // for one player from a slice of channels.
-func cheatscoreBayesianCombine(channels []Channel) float64 {
-	logOdds := cheatscoreLogit(cheatscorePrior)
+func bayesianCombine(channels []Channel) float64 {
+	logOdds := logit(scorePrior)
 	for _, ch := range channels {
 		if !ch.HasData || ch.Confidence <= 0 || ch.Weight <= 0 {
 			continue
 		}
-		contrib := ch.Weight * ch.Confidence * cheatscoreLogit(ch.Score)
+		contrib := ch.Weight * ch.Confidence * logit(ch.Score)
 		if ch.Mode == ModePositiveOnly && contrib < 0 {
 			contrib = 0
 		}
 		logOdds += contrib
 	}
-	return cheatscoreSigmoid(logOdds) * 100.0
+	return sigmoid(logOdds) * 100.0
 }
 
-// cheatscoreNormalizeLobby applies the lobby-relative trimmed-mean shrinkage
+// normalizeLobby applies the lobby-relative trimmed-mean shrinkage
 // across all players for every channel with ≥2 confident contributors.
 //
 // For each registered detection:
@@ -67,7 +67,7 @@ func cheatscoreBayesianCombine(channels []Channel) float64 {
 //
 // The trim prevents a lone cheater dragging the baseline up and depressing
 // their own outlier signal.
-func cheatscoreNormalizeLobby(perPlayer map[uint64][]Channel) {
+func normalizeLobby(perPlayer map[uint64][]Channel) {
 	if len(perPlayer) == 0 {
 		return
 	}
@@ -110,15 +110,14 @@ func cheatscoreNormalizeLobby(perPlayer map[uint64][]Channel) {
 // Used by the pre_fov_presence detection and the TTD-sub100 floor.
 func buildLobbyContext(demoStats *DemoStats) *LobbyContext {
 	ctx := &LobbyContext{
-		DemoStats:       demoStats,
 		SamplesBySID:    map[uint64]int64{},
 		AsymmetricBySID: map[uint64]bool{},
 	}
 	for sid, ps := range demoStats.Players {
-		if sid == 0 {
+		if sid == 0 || ps == nil {
 			continue
 		}
-		n, _ := psGetInt(ps, channelCategoryBehavioral, Key("pre_fov_aim_samples"))
+		n, _ := psGetInt(ps, behavioralCategory, Key("pre_fov_aim_samples"))
 		ctx.SamplesBySID[sid] = n
 	}
 	for sid := range ctx.SamplesBySID {

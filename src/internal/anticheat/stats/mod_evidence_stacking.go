@@ -33,7 +33,7 @@ var modEvidenceStacking = &Modifier{
 		if !a.Fired {
 			return
 		}
-		ps.AddMetric(cheatscoreCategoryAntiCheat, Key("evidence_stacking_boost"), Metric{
+		ps.AddMetric(antiCheatCategory, Key("evidence_stacking_boost"), Metric{
 			Type:        MetricString,
 			StringValue: fmt.Sprintf("Yes (%d strong channels)", a.Count),
 			Description: "×1.4 boost — ≥3 channels with score×confidence ≥0.30",

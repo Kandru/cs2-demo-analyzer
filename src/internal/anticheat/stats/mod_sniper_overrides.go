@@ -29,7 +29,7 @@ var modSniper = &Modifier{
 	Apply: applySniperOverrides,
 	Publish: func(ps *PlayerStats, a Applied) {
 		for _, name := range a.Names {
-			ps.AddMetric(cheatscoreCategoryAntiCheat, Key(name), Metric{
+			ps.AddMetric(antiCheatCategory, Key(name), Metric{
 				Type:        MetricString,
 				StringValue: "Yes",
 				Description: "Sniper-anomaly override — pinned to 100%",

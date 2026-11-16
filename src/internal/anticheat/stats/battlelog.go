@@ -83,12 +83,12 @@ func BattlelogReports(ds *DemoStats) map[uint64]*BattlelogPlayerReport {
 		rep := &BattlelogPlayerReport{
 			SteamID64:     sid,
 			Name:          ps.Player.Name,
-			FlagThreshold: cheatscoreFlagThreshold,
+			FlagThreshold: flagThreshold,
 		}
-		if m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key("cheat_likelihood")); ok {
+		if m, ok := ps.GetMetric(antiCheatCategory, Key("cheat_likelihood")); ok {
 			rep.Likelihood = m.FloatValue
 		}
-		if m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key("cheater")); ok {
+		if m, ok := ps.GetMetric(antiCheatCategory, Key("cheater")); ok {
 			rep.Flagged = m.StringValue == "Yes"
 		}
 		if m, ok := ps.GetMetric(Category("rating"), Key("overall")); ok {
@@ -156,18 +156,19 @@ func battlelogChannels(ps *PlayerStats) []BattlelogChannel {
 			Label:       det.Label,
 			Unit:        det.Unit,
 			Description: det.Description,
+			Weight:      det.Weight,
 		}
 		if det.Raw != nil {
 			ch.Raw, ch.Samples, _ = det.Raw(ps)
 		}
-		if m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key(det.ID+"_score")); ok {
+		if m, ok := ps.GetMetric(antiCheatCategory, Key(det.ID+"_score")); ok {
 			ch.Score = m.FloatValue
 			ch.HasData = true
 		}
-		if m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key(det.ID+"_confidence")); ok {
+		if m, ok := ps.GetMetric(antiCheatCategory, Key(det.ID+"_confidence")); ok {
 			ch.Confidence = m.FloatValue
 		}
-		if m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key(det.ID+"_zone")); ok {
+		if m, ok := ps.GetMetric(antiCheatCategory, Key(det.ID+"_zone")); ok {
 			ch.Zone = m.StringValue
 		}
 		if !ch.HasData {
@@ -181,7 +182,7 @@ func battlelogChannels(ps *PlayerStats) []BattlelogChannel {
 }
 
 func battlelogAdjustments(ps *PlayerStats) []BattlelogAdjustment {
-	out := make([]BattlelogAdjustment, 0, 6)
+	out := make([]BattlelogAdjustment, 0, len(modifiers))
 	for _, m := range modifiers {
 		if m.Adjustments != nil {
 			out = append(out, m.Adjustments(ps)...)

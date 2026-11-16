@@ -9,12 +9,12 @@ import "fmt"
 const wingmanKPRThreshold = 0.7
 
 func applyWingmanBoost(st *scoreState) Applied {
-	gameMode, _ := psGetString(st.ps, cheatscoreCategoryGameInfo, Key("game_mode"))
+	gameMode, _ := psGetString(st.ps, gameInfoCategory, Key("game_mode"))
 	if gameMode != "Wingman" {
 		return Applied{}
 	}
-	totalKills, _ := psGetInt(st.ps, channelCategoryKills, Key("total_kills"))
-	roundCount, _ := psGetInt(st.ps, cheatscoreCategoryGameInfo, Key("round_count"))
+	totalKills, _ := psGetInt(st.ps, killsCategory, Key("total_kills"))
+	roundCount, _ := psGetInt(st.ps, gameInfoCategory, Key("round_count"))
 
 	var kpr float64
 	if roundCount > 0 {
@@ -39,12 +39,12 @@ var modWingman = &Modifier{
 		if !a.Fired {
 			return
 		}
-		ps.AddMetric(cheatscoreCategoryAntiCheat, Key("wingman_boost"), Metric{
+		ps.AddMetric(antiCheatCategory, Key("wingman_boost"), Metric{
 			Type:        MetricString,
 			StringValue: "Yes",
 			Description: "Wingman boost applied (" + a.Detail + ")",
 		})
-		ps.AddMetric(cheatscoreCategoryAntiCheat, Key("wingman_kpr_boost_reason"), Metric{
+		ps.AddMetric(antiCheatCategory, Key("wingman_kpr_boost_reason"), Metric{
 			Type:        MetricString,
 			StringValue: a.Detail,
 			Description: "Reason the Wingman boost fired",

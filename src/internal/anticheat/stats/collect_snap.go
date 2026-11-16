@@ -167,38 +167,22 @@ func (sac *SnapAngleCollector) processKill(e events.Kill, demoStats *DemoStats) 
 		startSnapshot = recentAngles[len(recentAngles)-1]
 	}
 
-	// Calculate deltas
+	// Calculate deltas.
 	tickDelta := float64(endSnapshot.Tick - startSnapshot.Tick)
 	if tickDelta <= 0 {
-		tickDelta = 1.0 // Minimum tick difference to avoid division by zero
+		tickDelta = 1.0 // avoid division by zero
 	}
 
-	// Exactly as per user's formula:
-	// deltaRad := angleDiff(prevYaw, currYaw)           // already radians
-	// deltaDeg := deltaRad * 57.29577951308232          // rad → deg
-	// deltaMs  := float64(tickCount) * (1000.0 / tickRate)
-	// snapVel  := deltaDeg / deltaMs                    // °/ms
-
-	// Calculate angle difference
-	deltaRad := math.Sqrt(
+	// angleDiff already returns degrees. A second rad→deg conversion here
+	// inflated snap velocity ~57× upstream; that bug is fixed during vendoring.
+	deltaDeg := math.Sqrt(
 		math.Pow(float64(angleDiff(startSnapshot.Yaw, endSnapshot.Yaw)), 2) +
 			math.Pow(float64(angleDiff(startSnapshot.Pitch, endSnapshot.Pitch)), 2),
 	)
 
-	// angleDiff already returns degrees. The upstream code multiplied by
-	// RadToDeg here, inflating snap velocity by ~57x. Fixed during vendoring.
-	deltaDeg := deltaRad
-
-	// Calculate time delta in milliseconds
+	// Time delta in milliseconds and velocity in degrees per millisecond.
 	deltaMs := tickDelta * (1000.0 / math.Max(1.0, sac.tickRate))
-
-	// Calculate velocity in degrees per millisecond
-	var velocity float64
-	if deltaMs > 0 {
-		velocity = deltaDeg / deltaMs
-	} else {
-		velocity = 0
-	}
+	velocity := deltaDeg / deltaMs
 
 	// Only store non-zero, valid velocities
 	if velocity > 0 && !math.IsNaN(velocity) && !math.IsInf(velocity, 0) {

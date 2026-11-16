@@ -5,16 +5,16 @@ package stats
 // sites; keeping them close to the measurement code makes each detection file
 // readable in isolation.
 const (
-	channelCategoryKills      = Category("kills")
-	channelCategoryAiming     = Category("aiming")
-	channelCategoryReaction   = Category("reaction")
-	channelCategoryRecoil     = Category("recoil")
-	channelCategoryBehavioral = Category("behavioral")
+	killsCategory      = Category("kills")
+	aimingCategory     = Category("aiming")
+	reactionCategory   = Category("reaction")
+	recoilCategory     = Category("recoil")
+	behavioralCategory = Category("behavioral")
 
 	scoreboardCategory = Category("scoreboard")
 	sniperCategory     = Category("sniper")
 	grenadeCategory    = Category("utility")
 
-	cheatscoreCategoryGameInfo  = Category("game_info")
-	cheatscoreCategoryAntiCheat = Category("anti_cheat")
+	gameInfoCategory  = Category("game_info")
+	antiCheatCategory = Category("anti_cheat")
 )

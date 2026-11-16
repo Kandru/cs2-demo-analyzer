@@ -11,11 +11,11 @@ const (
 // evaluateBackKilled scores back-kill avoidance. Ramp 25%→3% (clean→blatant —
 // descending; a low back-killed rate is suspicious). n_full=8 deaths.
 func evaluateBackKilled(ps *PlayerStats) Channel {
-	n, hasN := psGetInt(ps, channelCategoryBehavioral, Key("back_killed_total_deaths"))
+	n, hasN := psGetInt(ps, behavioralCategory, Key("back_killed_total_deaths"))
 	if !hasN || n <= 0 {
 		return Channel{ID: backKilledID, Weight: backKilledWeight, Mode: backKilledMode}
 	}
-	rate, _ := psGetFloat(ps, channelCategoryBehavioral, Key("back_killed_pct"))
+	rate, _ := psGetFloat(ps, behavioralCategory, Key("back_killed_pct"))
 	score := linearScore(rate, 25.0, 3.0)
 	return Channel{
 		ID:         backKilledID,
@@ -31,8 +31,8 @@ func evaluateBackKilled(ps *PlayerStats) Channel {
 }
 
 func rawBackKilled(ps *PlayerStats) (float64, int, bool) {
-	value, ok := psGetFloat(ps, channelCategoryBehavioral, Key("back_killed_pct"))
-	n, _ := psGetInt(ps, channelCategoryBehavioral, Key("back_killed_total_deaths"))
+	value, ok := psGetFloat(ps, behavioralCategory, Key("back_killed_pct"))
+	n, _ := psGetInt(ps, behavioralCategory, Key("back_killed_total_deaths"))
 	return value, int(n), ok
 }
 

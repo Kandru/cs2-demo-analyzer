@@ -18,23 +18,23 @@ const (
 )
 
 func applyTTDSub100Floor(st *scoreState) Applied {
-	n, hasN := psGetInt(st.ps, channelCategoryReaction, Key("ttd_samples"))
+	n, hasN := psGetInt(st.ps, reactionCategory, Key("ttd_samples"))
 	if !hasN || n < ttdSub100FloorSamples {
 		return Applied{}
 	}
-	rate, hasRate := psGetFloat(st.ps, channelCategoryReaction, Key("sub_100ms_ttd"))
+	rate, hasRate := psGetFloat(st.ps, reactionCategory, Key("sub_100ms_ttd"))
 	if !hasRate || rate < ttdSub100FloorRate {
 		return Applied{}
 	}
-	count, hasCount := psGetInt(st.ps, channelCategoryReaction, Key("sub_100ms_count"))
+	count, hasCount := psGetInt(st.ps, reactionCategory, Key("sub_100ms_count"))
 	if !hasCount || count < ttdSub100FloorCount {
 		return Applied{}
 	}
-	preFOVN, hasFOVN := psGetInt(st.ps, channelCategoryBehavioral, Key("pre_fov_aim_samples"))
+	preFOVN, hasFOVN := psGetInt(st.ps, behavioralCategory, Key("pre_fov_aim_samples"))
 	if !hasFOVN || preFOVN < ttdSub100FloorPreFOVSamples {
 		return Applied{}
 	}
-	preFOVMed, hasFOVMed := psGetFloat(st.ps, channelCategoryBehavioral, Key("pre_fov_aim_median_deg"))
+	preFOVMed, hasFOVMed := psGetFloat(st.ps, behavioralCategory, Key("pre_fov_aim_median_deg"))
 	if !hasFOVMed || preFOVMed <= 0 || preFOVMed > 9.0 {
 		return Applied{}
 	}
@@ -55,7 +55,7 @@ var modFloor = &Modifier{
 		if !a.Fired {
 			return
 		}
-		ps.AddMetric(cheatscoreCategoryAntiCheat, Key("ttd_sub100_high_floor"), Metric{
+		ps.AddMetric(antiCheatCategory, Key("ttd_sub100_high_floor"), Metric{
 			Type:        MetricString,
 			StringValue: "Yes",
 			Description: "Score floored at 55% — sub-100ms TTD rate ≥25% on ≥20 samples with ≥5 sub-100ms events",

@@ -46,12 +46,6 @@ func TestDetectionRegistryContract(t *testing.T) {
 			t.Fatalf("detection %q has no raw extractor", d.ID)
 		}
 	}
-	if got := detectionByID("snap"); got != detSnap {
-		t.Fatalf("detectionByID(snap) = %v", got)
-	}
-	if got := detectionByID("missing"); got != nil {
-		t.Fatalf("detectionByID(missing) = %v", got)
-	}
 }
 
 func TestModifierRegistryContract(t *testing.T) {

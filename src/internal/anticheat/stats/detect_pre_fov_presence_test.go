@@ -11,7 +11,7 @@ func TestEvaluatePreFOVPresence(t *testing.T) {
 	if ch := evaluatePreFOVPresence(ctx, ps, 1); ch.HasData {
 		t.Fatal("missing median should have no data")
 	}
-	metricFloat(t, ps, channelCategoryBehavioral, Key("pre_fov_aim_median_deg"), 5)
+	metricFloat(t, ps, behavioralCategory, Key("pre_fov_aim_median_deg"), 5)
 	ch := evaluatePreFOVPresence(ctx, ps, 1)
 	if !ch.HasData || ch.Score != 1 || ch.Confidence != 1 {
 		t.Fatalf("unexpected channel: %+v", ch)

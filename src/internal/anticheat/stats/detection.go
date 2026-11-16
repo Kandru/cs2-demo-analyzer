@@ -93,7 +93,6 @@ type Detection struct {
 
 // LobbyContext is the shared lobby data used by lobby-relative detections.
 type LobbyContext struct {
-	DemoStats       *DemoStats
 	SamplesBySID    map[uint64]int64
 	AsymmetricBySID map[uint64]bool
 }

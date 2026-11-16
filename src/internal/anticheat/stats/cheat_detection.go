@@ -21,9 +21,9 @@ func (cd *CheatDetector) Setup(parser demoinfocs.Parser, demoStats *DemoStats) {
 
 func (cd *CheatDetector) CollectFrame(parser demoinfocs.Parser, demoStats *DemoStats) {}
 
-// CollectFinalStats delegates to cheatscoreEvaluate, which writes all
+// CollectFinalStats delegates to evaluateScores, which writes all
 // anti_cheat metrics (cheat_likelihood, per-channel scores, boost flags,
 // cheater Yes/No) into each player's PlayerStats.
 func (cd *CheatDetector) CollectFinalStats(demoStats *DemoStats) {
-	cheatscoreEvaluate(demoStats)
+	evaluateScores(demoStats)
 }

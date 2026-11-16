@@ -27,11 +27,11 @@ func applyWallhackCoOccurrenceBoost(st *scoreState) Applied {
 	if preFOVProd < coOccurrencePreFOVProduct {
 		return Applied{}
 	}
-	pct, hasPct := psGetFloat(st.ps, channelCategoryBehavioral, Key("back_kill_given_pct"))
+	pct, hasPct := psGetFloat(st.ps, behavioralCategory, Key("back_kill_given_pct"))
 	if !hasPct || pct < coOccurrenceBackKillPct {
 		return Applied{}
 	}
-	kills, hasKills := psGetInt(st.ps, channelCategoryBehavioral, Key("back_kill_given_total_kills"))
+	kills, hasKills := psGetInt(st.ps, behavioralCategory, Key("back_kill_given_total_kills"))
 	if !hasKills || kills < coOccurrenceBackKillMin {
 		return Applied{}
 	}
@@ -47,7 +47,7 @@ var modCooccurrence = &Modifier{
 		if !a.Fired {
 			return
 		}
-		ps.AddMetric(cheatscoreCategoryAntiCheat, Key("wallhack_co_occurrence_boost"), Metric{
+		ps.AddMetric(antiCheatCategory, Key("wallhack_co_occurrence_boost"), Metric{
 			Type:        MetricString,
 			StringValue: "Yes",
 			Description: "×1.2 boost — pre-FOV pre-aim AND back-kill-given both elevated",

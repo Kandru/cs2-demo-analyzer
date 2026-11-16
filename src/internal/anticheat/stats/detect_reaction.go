@@ -17,11 +17,11 @@ const (
 // indicating cheat behavior. The median only registers a consistent pattern
 // of fast reactions.
 func evaluateReactionMedianTTD(ps *PlayerStats) Channel {
-	n, hasN := psGetInt(ps, channelCategoryReaction, Key("ttd_samples"))
+	n, hasN := psGetInt(ps, reactionCategory, Key("ttd_samples"))
 	if !hasN || n <= 0 {
 		return Channel{ID: reactionID, Weight: reactionWeight, Mode: reactionMode}
 	}
-	median, _ := psGetFloat(ps, channelCategoryReaction, Key("median_ttd"))
+	median, _ := psGetFloat(ps, reactionCategory, Key("median_ttd"))
 	score := linearScore(median, 500.0, 150.0) // descending: low ms → high score
 	return Channel{
 		ID:         reactionID,
@@ -37,8 +37,8 @@ func evaluateReactionMedianTTD(ps *PlayerStats) Channel {
 }
 
 func rawReaction(ps *PlayerStats) (float64, int, bool) {
-	value, ok := psGetFloat(ps, channelCategoryReaction, Key("median_ttd"))
-	n, _ := psGetInt(ps, channelCategoryReaction, Key("ttd_samples"))
+	value, ok := psGetFloat(ps, reactionCategory, Key("median_ttd"))
+	n, _ := psGetInt(ps, reactionCategory, Key("ttd_samples"))
 	return value, int(n), ok
 }
 

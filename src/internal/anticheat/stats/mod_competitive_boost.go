@@ -3,12 +3,12 @@ package stats
 // mod_competitive_boost.go: ×1.2 in Competitive when totalKills > 39 in
 // ≤30 rounds. The round cap prevents overtime stat-padding from triggering it.
 func applyCompetitiveBoost(st *scoreState) Applied {
-	gameMode, _ := psGetString(st.ps, cheatscoreCategoryGameInfo, Key("game_mode"))
+	gameMode, _ := psGetString(st.ps, gameInfoCategory, Key("game_mode"))
 	if gameMode != "Competitive" {
 		return Applied{}
 	}
-	totalKills, _ := psGetInt(st.ps, channelCategoryKills, Key("total_kills"))
-	roundCount, _ := psGetInt(st.ps, cheatscoreCategoryGameInfo, Key("round_count"))
+	totalKills, _ := psGetInt(st.ps, killsCategory, Key("total_kills"))
+	roundCount, _ := psGetInt(st.ps, gameInfoCategory, Key("round_count"))
 	if totalKills <= 39 || roundCount > 30 {
 		return Applied{}
 	}
@@ -24,7 +24,7 @@ var modCompetitive = &Modifier{
 		if !a.Fired {
 			return
 		}
-		ps.AddMetric(cheatscoreCategoryAntiCheat, Key("competitive_boost"), Metric{
+		ps.AddMetric(antiCheatCategory, Key("competitive_boost"), Metric{
 			Type:        MetricString,
 			StringValue: "Yes",
 			Description: "Player has more than 39 kills in regulation time (20% boost applied)",

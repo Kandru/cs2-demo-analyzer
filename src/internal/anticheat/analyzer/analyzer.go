@@ -16,11 +16,6 @@ type Analyzer struct {
 	collectors []stats.Collector
 }
 
-// Results represents the analysis results.
-type Results struct {
-	DemoStats *stats.DemoStats
-}
-
 // NewAnalyzer creates a new analyzer for the given demo file.
 //
 // Collector order is significant:
@@ -28,34 +23,28 @@ type Results struct {
 //  2. the cheat detector scores those metrics,
 //  3. the grading collector reads the final values.
 func NewAnalyzer(demoPath string) *Analyzer {
-	analyzer := &Analyzer{
+	return &Analyzer{
 		demoPath: demoPath,
+		collectors: []stats.Collector{
+			stats.NewHeadshotCollector(),
+			stats.NewSnapAngleCollector(),
+			stats.NewReactionTimeCollector(),
+			stats.NewRecoilControlCollector(),
+			stats.NewGameModeCollector(),
+			stats.NewScoreboardCollector(),
+			stats.NewGrenadeCollector(),
+			stats.NewSniperCollector(),     // must run before CheatDetector
+			stats.NewBehavioralCollector(), // wallhack-targeted signals
+			stats.NewEvidenceCollector(),   // timestamped review cues
+			stats.NewCheatDetector(),       // uses the measurements above
+			stats.NewGradingCollector(),    // runs last
+		},
 	}
-
-	analyzer.RegisterCollector(stats.NewHeadshotCollector())
-	analyzer.RegisterCollector(stats.NewSnapAngleCollector())
-	analyzer.RegisterCollector(stats.NewReactionTimeCollector())
-	analyzer.RegisterCollector(stats.NewRecoilControlCollector())
-	analyzer.RegisterCollector(stats.NewGameModeCollector())
-	analyzer.RegisterCollector(stats.NewScoreboardCollector())
-	analyzer.RegisterCollector(stats.NewGrenadeCollector())
-	analyzer.RegisterCollector(stats.NewSniperCollector())     // must run before CheatDetector
-	analyzer.RegisterCollector(stats.NewBehavioralCollector()) // wallhack-targeted signals
-	analyzer.RegisterCollector(stats.NewEvidenceCollector())   // timestamped review cues
-	analyzer.RegisterCollector(stats.NewCheatDetector())       // uses the measurements above
-	analyzer.RegisterCollector(stats.NewGradingCollector())    // runs last
-
-	return analyzer
-}
-
-// RegisterCollector adds a statistics collector to the analyzer.
-func (a *Analyzer) RegisterCollector(collector stats.Collector) {
-	a.collectors = append(a.collectors, collector)
 }
 
 // AnalyzeReader performs the analysis from an arbitrary reader. It exists so
 // compressed demos can be analyzed without a temporary file.
-func (a *Analyzer) AnalyzeReader(rd io.Reader) (Results, error) {
+func (a *Analyzer) AnalyzeReader(rd io.Reader) (*stats.DemoStats, error) {
 	parser := dem.NewParser(rd)
 	defer parser.Close()
 
@@ -75,7 +64,7 @@ func (a *Analyzer) AnalyzeReader(rd io.Reader) (Results, error) {
 	for {
 		ok, err := parser.ParseNextFrame()
 		if err != nil {
-			return Results{}, fmt.Errorf("error parsing frame: %w", err)
+			return nil, fmt.Errorf("parse demo frame: %w", err)
 		}
 		if !ok {
 			break
@@ -92,6 +81,5 @@ func (a *Analyzer) AnalyzeReader(rd io.Reader) (Results, error) {
 	for _, collector := range a.collectors {
 		collector.CollectFinalStats(demoStats)
 	}
-
-	return Results{DemoStats: demoStats}, nil
+	return demoStats, nil
 }

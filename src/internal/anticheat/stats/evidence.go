@@ -24,12 +24,11 @@ type EvidenceSpec struct {
 // channel. They are recorded by EvidenceCollector.
 var extraEvidence = []*EvidenceSpec{
 	{
-		Kind:      "wallbang",
-		Label:     "Wallbang",
-		Rank:      3,
-		Unit:      "penetrations",
-		Threshold: 1,
-		Severity:  func(v float64) float64 { return 20 + v },
+		Kind:     "wallbang",
+		Label:    "Wallbang",
+		Rank:     3,
+		Unit:     "penetrations",
+		Severity: func(v float64) float64 { return 20 + v },
 		ValueText: func(v float64) string {
 			if v > 1 {
 				return fmt.Sprintf("%.0f layers", v)

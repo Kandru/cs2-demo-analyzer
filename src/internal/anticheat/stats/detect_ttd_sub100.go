@@ -13,11 +13,11 @@ const (
 // sub-100 ms damage events in one match is the surprising signal, not the
 // rate. Positive-only.
 func evaluateTTDSub100(ps *PlayerStats) Channel {
-	n, hasN := psGetInt(ps, channelCategoryReaction, Key("ttd_samples"))
+	n, hasN := psGetInt(ps, reactionCategory, Key("ttd_samples"))
 	if !hasN || n <= 0 {
 		return Channel{ID: ttdSub100ID, Weight: ttdSub100Weight, Mode: ttdSub100Mode}
 	}
-	rate, _ := psGetFloat(ps, channelCategoryReaction, Key("sub_100ms_ttd"))
+	rate, _ := psGetFloat(ps, reactionCategory, Key("sub_100ms_ttd"))
 	score := linearScore(rate, 2.0, 30.0)
 	conf := sqrtConfidence(n, 30)
 	countSub100 := int64(rate / 100.0 * float64(n))
@@ -38,8 +38,8 @@ func evaluateTTDSub100(ps *PlayerStats) Channel {
 }
 
 func rawTTDSub100(ps *PlayerStats) (float64, int, bool) {
-	value, ok := psGetFloat(ps, channelCategoryReaction, Key("sub_100ms_ttd"))
-	n, _ := psGetInt(ps, channelCategoryReaction, Key("ttd_samples"))
+	value, ok := psGetFloat(ps, reactionCategory, Key("sub_100ms_ttd"))
+	n, _ := psGetInt(ps, reactionCategory, Key("ttd_samples"))
 	return value, int(n), ok
 }
 

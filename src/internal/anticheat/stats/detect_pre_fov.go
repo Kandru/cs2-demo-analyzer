@@ -19,11 +19,11 @@ const (
 // only channel that reliably distinguishes a wallhack-only cheater from a
 // legit player.
 func evaluatePreFOV(ps *PlayerStats) Channel {
-	n, hasN := psGetInt(ps, channelCategoryBehavioral, Key("pre_fov_aim_samples"))
+	n, hasN := psGetInt(ps, behavioralCategory, Key("pre_fov_aim_samples"))
 	if !hasN || n <= 0 {
 		return Channel{ID: preFOVID, Weight: preFOVWeight, Mode: preFOVMode}
 	}
-	med, _ := psGetFloat(ps, channelCategoryBehavioral, Key("pre_fov_aim_median_deg"))
+	med, _ := psGetFloat(ps, behavioralCategory, Key("pre_fov_aim_median_deg"))
 	score := linearScore(med, 12.0, 4.0)
 	return Channel{
 		ID:         preFOVID,
@@ -39,8 +39,8 @@ func evaluatePreFOV(ps *PlayerStats) Channel {
 }
 
 func rawPreFOV(ps *PlayerStats) (float64, int, bool) {
-	value, ok := psGetFloat(ps, channelCategoryBehavioral, Key("pre_fov_aim_median_deg"))
-	n, _ := psGetInt(ps, channelCategoryBehavioral, Key("pre_fov_aim_samples"))
+	value, ok := psGetFloat(ps, behavioralCategory, Key("pre_fov_aim_median_deg"))
+	n, _ := psGetInt(ps, behavioralCategory, Key("pre_fov_aim_samples"))
 	return value, int(n), ok
 }
 

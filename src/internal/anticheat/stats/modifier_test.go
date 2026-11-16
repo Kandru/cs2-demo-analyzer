@@ -4,13 +4,13 @@ import "testing"
 
 func TestWingmanBoost(t *testing.T) {
 	ps := newTestPlayerStats()
-	ps.AddMetric(cheatscoreCategoryGameInfo, Key("game_mode"), Metric{Type: MetricString, StringValue: "Wingman"})
-	metricInt(t, ps, channelCategoryKills, Key("total_kills"), 12)
+	ps.AddMetric(gameInfoCategory, Key("game_mode"), Metric{Type: MetricString, StringValue: "Wingman"})
+	metricInt(t, ps, killsCategory, Key("total_kills"), 12)
 	st := &scoreState{score: 10, ps: ps}
 	if a := applyWingmanBoost(st); !a.Fired || st.score != 18 || a.Detail != "kills=12" {
 		t.Fatalf("unexpected wingman result: score=%v applied=%+v", st.score, a)
 	}
-	ps.AddMetric(cheatscoreCategoryGameInfo, Key("game_mode"), Metric{Type: MetricString, StringValue: "Competitive"})
+	ps.AddMetric(gameInfoCategory, Key("game_mode"), Metric{Type: MetricString, StringValue: "Competitive"})
 	st = &scoreState{score: 10, ps: ps}
 	if a := applyWingmanBoost(st); a.Fired || st.score != 10 {
 		t.Fatalf("non-wingman should not boost: %+v", a)
@@ -19,14 +19,14 @@ func TestWingmanBoost(t *testing.T) {
 
 func TestCompetitiveBoost(t *testing.T) {
 	ps := newTestPlayerStats()
-	ps.AddMetric(cheatscoreCategoryGameInfo, Key("game_mode"), Metric{Type: MetricString, StringValue: "Competitive"})
-	metricInt(t, ps, channelCategoryKills, Key("total_kills"), 45)
-	metricInt(t, ps, cheatscoreCategoryGameInfo, Key("round_count"), 25)
+	ps.AddMetric(gameInfoCategory, Key("game_mode"), Metric{Type: MetricString, StringValue: "Competitive"})
+	metricInt(t, ps, killsCategory, Key("total_kills"), 45)
+	metricInt(t, ps, gameInfoCategory, Key("round_count"), 25)
 	st := &scoreState{score: 10, ps: ps}
 	if a := applyCompetitiveBoost(st); !a.Fired || st.score != 12 {
 		t.Fatalf("unexpected competitive result: score=%v applied=%+v", st.score, a)
 	}
-	metricInt(t, ps, cheatscoreCategoryGameInfo, Key("round_count"), 31)
+	metricInt(t, ps, gameInfoCategory, Key("round_count"), 31)
 	st = &scoreState{score: 10, ps: ps}
 	if a := applyCompetitiveBoost(st); a.Fired {
 		t.Fatal("overtime round count should not boost")
@@ -63,8 +63,8 @@ func TestEvidenceStacking(t *testing.T) {
 
 func TestWallhackCooccurrence(t *testing.T) {
 	ps := newTestPlayerStats()
-	metricFloat(t, ps, channelCategoryBehavioral, Key("back_kill_given_pct"), 10)
-	metricInt(t, ps, channelCategoryBehavioral, Key("back_kill_given_total_kills"), 5)
+	metricFloat(t, ps, behavioralCategory, Key("back_kill_given_pct"), 10)
+	metricInt(t, ps, behavioralCategory, Key("back_kill_given_total_kills"), 5)
 	st := &scoreState{
 		score:    10,
 		ps:       ps,
@@ -74,7 +74,7 @@ func TestWallhackCooccurrence(t *testing.T) {
 		t.Fatalf("unexpected cooccurrence result: score=%v applied=%+v", st.score, a)
 	}
 	// A strong pre-FOV reading without back-kills must not fire.
-	delete(ps.Categories[channelCategoryBehavioral], Key("back_kill_given_pct"))
+	delete(ps.Categories[behavioralCategory], Key("back_kill_given_pct"))
 	st = &scoreState{score: 10, ps: ps, channels: []Channel{{ID: detPreFOV.ID, HasData: true, Score: 0.8, Confidence: 0.8}}}
 	if a := applyWallhackCoOccurrenceBoost(st); a.Fired {
 		t.Fatal("pre-FOV alone should not fire")

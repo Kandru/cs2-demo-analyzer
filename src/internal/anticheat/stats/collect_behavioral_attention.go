@@ -40,12 +40,12 @@ func (bc *BehavioralCollector) collectAttention(playing []*common.Player) {
 func (bc *BehavioralCollector) publishAttention(ps *PlayerStats, sid uint64) {
 	if angles := bc.attentionMin[sid]; len(angles) >= minAttentionSamples {
 		med := median(angles)
-		ps.AddMetric(channelCategoryBehavioral, Key("nearest_enemy_angle_median_deg"), Metric{
+		ps.AddMetric(behavioralCategory, Key("nearest_enemy_angle_median_deg"), Metric{
 			Type:        MetricFloat,
 			FloatValue:  med,
 			Description: "Median per-frame angle (deg) from view direction to nearest enemy when not in FOV (low = suspicious)",
 		})
-		ps.AddMetric(channelCategoryBehavioral, Key("nearest_enemy_angle_samples"), Metric{
+		ps.AddMetric(behavioralCategory, Key("nearest_enemy_angle_samples"), Metric{
 			Type:        MetricInteger,
 			IntValue:    int64(len(angles)),
 			Description: "Number of frames contributing to nearest-enemy attention metric",

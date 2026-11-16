@@ -40,16 +40,6 @@ var metricSpecs = []*MetricSpec{
 	metricSpray,
 }
 
-// metricByID returns the registered metric, or nil.
-func metricByID(id string) *MetricSpec {
-	for _, m := range metricSpecs {
-		if m.ID == id {
-			return m
-		}
-	}
-	return nil
-}
-
 func formatMs(v float64) string  { return strconv.FormatFloat(v, 'f', 0, 64) + " ms" }
 func formatDeg(v float64) string { return strconv.FormatFloat(v, 'f', 1, 64) + "°" }
 func formatPct(v float64) string { return strconv.FormatFloat(v, 'f', 1, 64) + "%" }

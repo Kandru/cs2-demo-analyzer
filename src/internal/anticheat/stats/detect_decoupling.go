@@ -12,13 +12,13 @@ const (
 // are consistent. Ramp 8°→22°, positive-only. Silent if either half is
 // missing.
 func evaluateDecoupling(ps *PlayerStats) Channel {
-	preFOVN, hasFOVN := psGetInt(ps, channelCategoryBehavioral, Key("pre_fov_aim_samples"))
-	attN, hasAttN := psGetInt(ps, channelCategoryBehavioral, Key("nearest_enemy_angle_samples"))
+	preFOVN, hasFOVN := psGetInt(ps, behavioralCategory, Key("pre_fov_aim_samples"))
+	attN, hasAttN := psGetInt(ps, behavioralCategory, Key("nearest_enemy_angle_samples"))
 	if !hasFOVN || preFOVN <= 0 || !hasAttN || attN <= 0 {
 		return Channel{ID: decouplingID, Weight: decouplingWeight, Mode: decouplingMode}
 	}
-	preFOVMed, _ := psGetFloat(ps, channelCategoryBehavioral, Key("pre_fov_aim_median_deg"))
-	attMed, _ := psGetFloat(ps, channelCategoryBehavioral, Key("nearest_enemy_angle_median_deg"))
+	preFOVMed, _ := psGetFloat(ps, behavioralCategory, Key("pre_fov_aim_median_deg"))
+	attMed, _ := psGetFloat(ps, behavioralCategory, Key("nearest_enemy_angle_median_deg"))
 	delta := attMed - preFOVMed
 	score := linearScore(delta, 8.0, 22.0)
 
@@ -43,9 +43,9 @@ func evaluateDecoupling(ps *PlayerStats) Channel {
 }
 
 func rawDecoupling(ps *PlayerStats) (float64, int, bool) {
-	preFOV, preFOVOK := psGetFloat(ps, channelCategoryBehavioral, Key("pre_fov_aim_median_deg"))
-	att, attOK := psGetFloat(ps, channelCategoryBehavioral, Key("nearest_enemy_angle_median_deg"))
-	n, _ := psGetInt(ps, channelCategoryBehavioral, Key("pre_fov_aim_samples"))
+	preFOV, preFOVOK := psGetFloat(ps, behavioralCategory, Key("pre_fov_aim_median_deg"))
+	att, attOK := psGetFloat(ps, behavioralCategory, Key("nearest_enemy_angle_median_deg"))
+	n, _ := psGetInt(ps, behavioralCategory, Key("pre_fov_aim_samples"))
 	return att - preFOV, int(n), preFOVOK && attOK
 }
 

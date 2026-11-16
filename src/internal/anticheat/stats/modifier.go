@@ -37,12 +37,12 @@ type Modifier struct {
 }
 
 func yesMetric(ps *PlayerStats, key Key) bool {
-	m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, key)
+	m, ok := ps.GetMetric(antiCheatCategory, key)
 	return ok && m.StringValue == "Yes"
 }
 
 func yesStringMetric(ps *PlayerStats, key Key) (string, bool) {
-	m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, key)
+	m, ok := ps.GetMetric(antiCheatCategory, key)
 	if !ok || m.StringValue == "" {
 		return "", false
 	}

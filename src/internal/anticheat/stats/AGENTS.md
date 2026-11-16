@@ -8,13 +8,13 @@ Measurement collectors plus the first-party detection registry.
 |---|---|
 | Contract | `detection.go`, `modifier.go`, `keys.go` |
 | Registry | `registry.go` |
-| Scoring | `run.go`, `combine.go`, `publish.go`, `narrative.go` |
+| Scoring | `run.go`, `combine.go`, `publish.go`, `narrative.go`, `cheat_detection.go` |
 | Detections | `detect_<id>.go` (one per channel) |
 | Modifiers | `mod_<id>.go` (one per adjustment) |
-| Collectors | `collect_*.go` / `*_collector(s).go` |
+| Collectors | `collect_*.go` |
 | Evidence | `evidence.go`, `types.go` |
 | Report snapshot | `battlelog.go` |
-| Tests | `detect_<id>_test.go`, `registry_test.go`, `calibration_test.go`, `docs_sync_test.go` |
+| Tests | `detect_<id>_test.go`, `modifier_test.go`, `battlelog_test.go`, `registry_test.go`, `calibration_test.go`, `docs_sync_test.go` |
 
 ## Adding a detection
 

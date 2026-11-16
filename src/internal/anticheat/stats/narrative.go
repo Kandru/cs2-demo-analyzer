@@ -76,11 +76,11 @@ func narrativeTier(raw, mild, strong, blatant float64, ascendingSuspicion bool) 
 // evaluate returns the narrative tier for one detection, if it has data.
 func (spec *NarrativeSpec) evaluate(ps *PlayerStats, det *Detection) (float64, int64, int) {
 	if spec.ScoreBased {
-		score, ok := psGetFloat(ps, cheatscoreCategoryAntiCheat, Key(det.ID+"_score"))
+		score, ok := psGetFloat(ps, antiCheatCategory, Key(det.ID+"_score"))
 		if !ok {
 			return 0, 0, 0
 		}
-		conf, _ := psGetFloat(ps, cheatscoreCategoryAntiCheat, Key(det.ID+"_confidence"))
+		conf, _ := psGetFloat(ps, antiCheatCategory, Key(det.ID+"_confidence"))
 		raw := score * conf
 		n := int64(0)
 		if det.Raw != nil {
@@ -90,17 +90,19 @@ func (spec *NarrativeSpec) evaluate(ps *PlayerStats, det *Detection) (float64, i
 		return raw, n, narrativeTier(raw, spec.Mild, spec.Strong, spec.Blatant, spec.Ascending)
 	}
 
-	rawFn := spec.Raw
-	if rawFn == nil && det.Raw != nil {
-		rawFn = func(ps *PlayerStats) (float64, int64, bool) {
-			value, samples, ok := det.Raw(ps)
-			return value, int64(samples), ok
-		}
-	}
-	if rawFn == nil {
+	var raw float64
+	var n int64
+	var ok bool
+	switch {
+	case spec.Raw != nil:
+		raw, n, ok = spec.Raw(ps)
+	case det.Raw != nil:
+		var samples int
+		raw, samples, ok = det.Raw(ps)
+		n = int64(samples)
+	default:
 		return 0, 0, 0
 	}
-	raw, n, ok := rawFn(ps)
 	if !ok || n < spec.MinSamples {
 		return 0, 0, 0
 	}
@@ -171,6 +173,6 @@ func buildCheatscoreNarrative(ps *PlayerStats) string {
 }
 
 func psHasYes(ps *PlayerStats, k Key) bool {
-	m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, k)
+	m, ok := ps.GetMetric(antiCheatCategory, k)
 	return ok && m.StringValue == "Yes"
 }

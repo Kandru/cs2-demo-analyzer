@@ -4,6 +4,12 @@ import (
 	"github.com/markus-wa/demoinfocs-golang/v5/pkg/demoinfocs/common"
 )
 
+// intMetric returns an integer metric value, or 0 when absent.
+func intMetric(ps *PlayerStats, cat Category, k Key) int64 {
+	m, _ := ps.GetMetric(cat, k)
+	return m.IntValue
+}
+
 // addIntMetric adds n to an integer metric, creating it when absent.
 func addIntMetric(ps *PlayerStats, cat Category, k Key, n int64) {
 	if m, ok := ps.GetMetric(cat, k); ok {

@@ -23,14 +23,14 @@ var modPosition = &Modifier{
 		if !a.Fired {
 			return
 		}
-		ps.AddMetric(cheatscoreCategoryAntiCheat, Key("position_discount"), Metric{
+		ps.AddMetric(antiCheatCategory, Key("position_discount"), Metric{
 			Type:        MetricPercentage,
 			FloatValue:  a.Value * 100,
 			Description: "Reduction applied for low scoreboard position vs. teammates",
 		})
 	},
 	Adjustments: func(ps *PlayerStats) []BattlelogAdjustment {
-		m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key("position_discount"))
+		m, ok := ps.GetMetric(antiCheatCategory, Key("position_discount"))
 		if !ok || m.FloatValue <= 0 {
 			return nil
 		}

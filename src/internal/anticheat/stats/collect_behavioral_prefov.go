@@ -96,12 +96,12 @@ func (bc *BehavioralCollector) recordPreFOV(e events.Kill, demoStats *DemoStats)
 func (bc *BehavioralCollector) publishPreFOV(ps *PlayerStats, sid uint64) {
 	if angles := bc.preFOVAngles[sid]; len(angles) >= minPreFOVSamples {
 		med := median(angles)
-		ps.AddMetric(channelCategoryBehavioral, Key("pre_fov_aim_median_deg"), Metric{
+		ps.AddMetric(behavioralCategory, Key("pre_fov_aim_median_deg"), Metric{
 			Type:        MetricFloat,
 			FloatValue:  med,
 			Description: "Median angle (deg) between killer view and victim position 200 ms before FOV entry (low = suspicious)",
 		})
-		ps.AddMetric(channelCategoryBehavioral, Key("pre_fov_aim_samples"), Metric{
+		ps.AddMetric(behavioralCategory, Key("pre_fov_aim_samples"), Metric{
 			Type:        MetricInteger,
 			IntValue:    int64(len(angles)),
 			Description: "Number of kills contributing to pre-FOV pre-aim metric",

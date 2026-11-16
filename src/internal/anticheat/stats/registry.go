@@ -33,16 +33,6 @@ var modifiers = []*Modifier{
 	modSniper,
 }
 
-// detectionByID returns the registered detection, or nil.
-func detectionByID(id string) *Detection {
-	for _, d := range detections {
-		if d.ID == id {
-			return d
-		}
-	}
-	return nil
-}
-
 // evaluateChannelsForPlayer runs every lobby-independent detection.
 func evaluateChannelsForPlayer(ps *PlayerStats) []Channel {
 	out := make([]Channel, 0, len(detections))

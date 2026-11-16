@@ -40,20 +40,20 @@ func TestGoldenDemoMetrics(t *testing.T) {
 	}
 	defer f.Close()
 
-	results, err := analyzer.NewAnalyzer(demoPath).AnalyzeReader(f)
+	demoStats, err := analyzer.NewAnalyzer(demoPath).AnalyzeReader(f)
 	if err != nil {
 		t.Fatalf("analyze demo: %v", err)
 	}
 
 	var out []string
-	sids := make([]uint64, 0, len(results.DemoStats.Players))
-	for sid := range results.DemoStats.Players {
+	sids := make([]uint64, 0, len(demoStats.Players))
+	for sid := range demoStats.Players {
 		sids = append(sids, sid)
 	}
 	sort.Slice(sids, func(i, j int) bool { return sids[i] < sids[j] })
 
 	for _, sid := range sids {
-		ps := results.DemoStats.Players[sid]
+		ps := demoStats.Players[sid]
 		cats := make([]string, 0, len(ps.Categories))
 		for cat := range ps.Categories {
 			cats = append(cats, string(cat))

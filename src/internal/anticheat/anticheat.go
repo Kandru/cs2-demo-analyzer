@@ -55,7 +55,7 @@ func Analyze(path string, logger *slog.Logger) (rep Report) {
 	if closeFn != nil {
 		defer closeFn()
 	}
-	results, err := an.AnalyzeReader(rd)
+	demoStats, err := an.AnalyzeReader(rd)
 	if err != nil {
 		rep.Err = fmt.Errorf("anti-cheat analysis failed: %w", err)
 		if logger != nil {
@@ -64,7 +64,7 @@ func Analyze(path string, logger *slog.Logger) (rep Report) {
 		return rep
 	}
 
-	vendored := stats.BattlelogReports(results.DemoStats)
+	vendored := stats.BattlelogReports(demoStats)
 	for sid, vr := range vendored {
 		cr := &model.CheatReport{
 			Available:     true,

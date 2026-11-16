@@ -5,9 +5,9 @@ import (
 	"sort"
 )
 
-// geometry.go holds the shared vector/angle math used by the behavioral
-// collector and the aim tracker equivalents. Keeping it in one place avoids
-// two slightly different implementations drifting apart.
+// geometry.go holds the vector/angle math used by the behavioral collector.
+// The aim tracker has its own copy because it must not import the vendored
+// detector package; keep both definitions in sync if the projection changes.
 
 // viewDirectionToVector converts CS2 yaw/pitch (deg) to a unit direction
 // vector.

@@ -12,8 +12,8 @@ const (
 // suspicious). Confidence ramps over 20 counted bullets. Positive-only — a
 // clean recoil reading only means no suspicious sprays were seen.
 func evaluateRecoil(ps *PlayerStats) Channel {
-	raw, ok := psGetFloat(ps, channelCategoryRecoil, Key("recoil_score"))
-	bullets, _ := psGetInt(ps, channelCategoryRecoil, Key("total_counted_bullets"))
+	raw, ok := psGetFloat(ps, recoilCategory, Key("recoil_score"))
+	bullets, _ := psGetInt(ps, recoilCategory, Key("total_counted_bullets"))
 	if !ok || bullets <= 0 {
 		return Channel{ID: recoilID, Weight: recoilWeight, Mode: recoilMode}
 	}
@@ -32,16 +32,16 @@ func evaluateRecoil(ps *PlayerStats) Channel {
 }
 
 func rawRecoil(ps *PlayerStats) (float64, int, bool) {
-	value, ok := psGetFloat(ps, channelCategoryRecoil, Key("mean_angular_error"))
-	bullets, _ := psGetInt(ps, channelCategoryRecoil, Key("total_counted_bullets"))
+	value, ok := psGetFloat(ps, recoilCategory, Key("mean_angular_error"))
+	bullets, _ := psGetInt(ps, recoilCategory, Key("total_counted_bullets"))
 	return value, int(bullets), ok
 }
 
 // rawRecoilScore is the narrative/anchor input. The report table shows the
 // physical mean angular error, but the prose describes the normalised score.
 func rawRecoilScore(ps *PlayerStats) (float64, int64, bool) {
-	value, ok := psGetFloat(ps, channelCategoryRecoil, Key("recoil_score"))
-	bullets, _ := psGetInt(ps, channelCategoryRecoil, Key("total_counted_bullets"))
+	value, ok := psGetFloat(ps, recoilCategory, Key("recoil_score"))
+	bullets, _ := psGetInt(ps, recoilCategory, Key("total_counted_bullets"))
 	return value, bullets, ok
 }
 

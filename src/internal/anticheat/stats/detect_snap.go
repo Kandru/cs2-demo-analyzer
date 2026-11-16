@@ -15,11 +15,11 @@ const (
 // 2°/ms; pre-FOV/decoupling/back-killed carry the wallhack signature more
 // reliably.
 func evaluateSnap(ps *PlayerStats) Channel {
-	snapCount, hasN := psGetInt(ps, channelCategoryAiming, Key("snap_count"))
+	snapCount, hasN := psGetInt(ps, aimingCategory, Key("snap_count"))
 	if !hasN || snapCount <= 0 {
 		return Channel{ID: snapID, Weight: snapWeight, Mode: snapMode}
 	}
-	p95, _ := psGetFloat(ps, channelCategoryAiming, Key("p95_snap_velocity"))
+	p95, _ := psGetFloat(ps, aimingCategory, Key("p95_snap_velocity"))
 	score := linearScore(p95, 2.0, 3.5)
 	return Channel{
 		ID:         snapID,
@@ -35,8 +35,8 @@ func evaluateSnap(ps *PlayerStats) Channel {
 }
 
 func rawSnap(ps *PlayerStats) (float64, int, bool) {
-	value, ok := psGetFloat(ps, channelCategoryAiming, Key("p95_snap_velocity"))
-	n, _ := psGetInt(ps, channelCategoryAiming, Key("snap_count"))
+	value, ok := psGetFloat(ps, aimingCategory, Key("p95_snap_velocity"))
+	n, _ := psGetInt(ps, aimingCategory, Key("snap_count"))
 	return value, int(n), ok
 }
 

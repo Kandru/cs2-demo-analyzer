@@ -13,11 +13,11 @@ const (
 // Positive-only — a high attention angle only means the crosshair isn't
 // tight, which is not exoneration.
 func evaluateAttention(ps *PlayerStats) Channel {
-	n, hasN := psGetInt(ps, channelCategoryBehavioral, Key("nearest_enemy_angle_samples"))
+	n, hasN := psGetInt(ps, behavioralCategory, Key("nearest_enemy_angle_samples"))
 	if !hasN || n <= 0 {
 		return Channel{ID: attentionID, Weight: attentionWeight, Mode: attentionMode}
 	}
-	med, _ := psGetFloat(ps, channelCategoryBehavioral, Key("nearest_enemy_angle_median_deg"))
+	med, _ := psGetFloat(ps, behavioralCategory, Key("nearest_enemy_angle_median_deg"))
 	score := linearScore(med, 33.0, 18.0)
 	return Channel{
 		ID:         attentionID,
@@ -33,8 +33,8 @@ func evaluateAttention(ps *PlayerStats) Channel {
 }
 
 func rawAttention(ps *PlayerStats) (float64, int, bool) {
-	value, ok := psGetFloat(ps, channelCategoryBehavioral, Key("nearest_enemy_angle_median_deg"))
-	n, _ := psGetInt(ps, channelCategoryBehavioral, Key("nearest_enemy_angle_samples"))
+	value, ok := psGetFloat(ps, behavioralCategory, Key("nearest_enemy_angle_median_deg"))
+	n, _ := psGetInt(ps, behavioralCategory, Key("nearest_enemy_angle_samples"))
 	return value, int(n), ok
 }
 

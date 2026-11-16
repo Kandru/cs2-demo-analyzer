@@ -30,7 +30,7 @@ func evaluatePreFOVPresence(ctx *LobbyContext, ps *PlayerStats, sid uint64) Chan
 		return ch
 	}
 	n := ctx.SamplesBySID[sid]
-	med, _ := psGetFloat(ps, channelCategoryBehavioral, Key("pre_fov_aim_median_deg"))
+	med, _ := psGetFloat(ps, behavioralCategory, Key("pre_fov_aim_median_deg"))
 	if n < 4 || med <= 0 || med > 10.0 || !ctx.IsAsymmetric(sid) {
 		return ch
 	}
@@ -45,7 +45,7 @@ func evaluatePreFOVPresence(ctx *LobbyContext, ps *PlayerStats, sid uint64) Chan
 }
 
 func rawPreFOVPresence(ps *PlayerStats) (float64, int, bool) {
-	n, ok := psGetInt(ps, channelCategoryBehavioral, Key("pre_fov_aim_samples"))
+	n, ok := psGetInt(ps, behavioralCategory, Key("pre_fov_aim_samples"))
 	return float64(n), int(n), ok
 }
 

@@ -17,11 +17,11 @@ const (
 // mode would drown out legitimate wallhack signals from pre_fov/decoupling/
 // back_killed.
 func evaluateHS(ps *PlayerStats) Channel {
-	totalKills, hasKills := psGetInt(ps, channelCategoryKills, Key("total_kills"))
+	totalKills, hasKills := psGetInt(ps, killsCategory, Key("total_kills"))
 	if !hasKills || totalKills <= 0 {
 		return Channel{ID: hsID, Weight: hsWeight, Mode: hsMode}
 	}
-	hsPct, _ := psGetFloat(ps, channelCategoryKills, Key("headshot_percentage"))
+	hsPct, _ := psGetFloat(ps, killsCategory, Key("headshot_percentage"))
 	score := linearScore(hsPct, 55.0, 75.0)
 	return Channel{
 		ID:         hsID,
@@ -37,8 +37,8 @@ func evaluateHS(ps *PlayerStats) Channel {
 }
 
 func rawHS(ps *PlayerStats) (float64, int, bool) {
-	value, ok := psGetFloat(ps, channelCategoryKills, Key("headshot_percentage"))
-	n, _ := psGetInt(ps, channelCategoryKills, Key("total_kills"))
+	value, ok := psGetFloat(ps, killsCategory, Key("headshot_percentage"))
+	n, _ := psGetInt(ps, killsCategory, Key("total_kills"))
 	return value, int(n), ok
 }
 

@@ -47,8 +47,8 @@ and the detector runs separately so its handlers cannot interfere.
 | [`competitive_boost`](competitive_boost.md) | `mod_competitive_boost.go` | modifier |
 | [`position_discount`](position_discount.md) | `mod_position_discount.go` | modifier |
 | [`evidence_stacking`](evidence_stacking.md) | `mod_evidence_stacking.go` | modifier |
-| [`wallhack_cooccurrence`](wallhack_co_occurrence_boost.md) | `mod_wallhack_cooccurrence.go` | modifier |
-| [`ttd_sub100_floor`](ttd_sub100_high_floor.md) | `mod_ttd_sub100_floor.go` | modifier |
+| [`wallhack_co_occurrence_boost`](wallhack_co_occurrence_boost.md) | `mod_wallhack_cooccurrence.go` | modifier |
+| [`ttd_sub100_high_floor`](ttd_sub100_high_floor.md) | `mod_ttd_sub100_floor.go` | modifier |
 | [`sniper_overrides`](sniper_overrides.md) | `mod_sniper_overrides.go` | modifier |
 | [`evidence`](evidence.md) | `evidence.go` | review cues |
 
