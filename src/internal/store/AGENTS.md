@@ -12,7 +12,8 @@ Manifest cache, output naming, atomic writes.
 - Output names are chosen and reserved atomically with `PlanOutput`; the
   optional `occupied` callback lets the caller reject a candidate owned by a
   different demo even when no manifest mapping exists.
-- Default is `<demo-base>.html` next to the demo.
+- Default is `<demo-base>.html` next to the demo. A demo whose base would
+  produce `index.html` is disambiguated so it cannot overwrite the report index.
 - Shared-output basename collisions get a short source hash.
 - Successful entries cache `ReportMeta` (map, server, end score, played time)
   for index pages. Metadata is additive; older manifests remain readable.

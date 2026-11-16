@@ -30,6 +30,19 @@ func TestPlanOutputDefaultsNextToDemo(t *testing.T) {
 	}
 }
 
+func TestPlanOutputNeverClaimsIndexName(t *testing.T) {
+	dir := t.TempDir()
+	s, _ := Open(dir)
+	demo := filepath.Join(dir, "index.dem")
+	got := s.PlanOutput(demo, "", ".html", nil)
+	if strings.EqualFold(filepath.Base(got), "index.html") {
+		t.Fatalf("report must not overwrite the index: %q", got)
+	}
+	if !strings.Contains(filepath.Base(got), "index-") {
+		t.Fatalf("unexpected fallback name: %q", got)
+	}
+}
+
 func TestPlanOutputCollision(t *testing.T) {
 	out := t.TempDir()
 	s, _ := Open(out)

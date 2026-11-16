@@ -204,7 +204,8 @@ func (s *Store) PlanOutput(demoPath, outputDir, suffix string, occupied func(str
 		}
 		return occupied != nil && occupied(path)
 	}
-	if taken(cand) {
+	// Never let a demo report collide with the generated directory index.
+	if strings.EqualFold(filepath.Base(cand), "index.html") || taken(cand) {
 		h := sha256.Sum256([]byte(demoPath))
 		cand = filepath.Join(dir, fmt.Sprintf("%s-%x%s", base, h[:3], suffix))
 	}
