@@ -217,9 +217,11 @@
   });
 
   if (location.hash) {
-    const target = document.querySelector(location.hash);
-    if (target) {
-      target.scrollIntoView({ block: "start" });
+    try {
+      const target = document.querySelector(location.hash);
+      if (target) target.scrollIntoView({ block: "start" });
+    } catch (_) {
+      // Ignore malformed user-entered fragments.
     }
   }
 })();
