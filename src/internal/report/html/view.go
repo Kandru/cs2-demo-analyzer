@@ -704,9 +704,7 @@ func buildSearchIndex(v *View) []SearchEntry {
 	add("section", "Overview", "Match at a glance", "#overview")
 	add("section", "Timeline", "Rounds and events", "#rounds")
 	add("section", "Players", "Stats and cheat analysis", "#players")
-	if len(v.Cheaters) > 0 {
-		add("section", "Watchlist", fmt.Sprintf("%d player(s)", len(v.Cheaters)), "#cheaters")
-	}
+	add("section", "Watchlist", fmt.Sprintf("%d player(s)", len(v.Cheaters)), "#cheaters")
 	for _, c := range v.Cheaters {
 		add("watchlist", c.Player.Player.Name, c.Cheat.Verdict+" - "+c.Cheat.LikelihoodPct,
 			"#cheater-"+c.Player.Player.Slug, c.Search)

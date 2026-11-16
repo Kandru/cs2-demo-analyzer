@@ -180,7 +180,7 @@
         if (active >= 0) {
           e.preventDefault();
           go(results[active]);
-        } else if (results.length === 1) {
+        } else if (results.length > 0) {
           e.preventDefault();
           go(results[0]);
         }
