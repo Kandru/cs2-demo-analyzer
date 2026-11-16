@@ -199,6 +199,12 @@
       go(results[index]);
     });
 
+    searchWrap.addEventListener("focusout", () => {
+      window.setTimeout(() => {
+        if (!searchWrap.contains(document.activeElement)) close();
+      }, 0);
+    });
+
     document.addEventListener("mousedown", (e) => {
       if (searchWrap.contains(e.target)) return;
       close();

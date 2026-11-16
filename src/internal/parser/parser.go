@@ -431,7 +431,7 @@ func (s *state) onRoundEnd(e events.RoundEnd) {
 	if t := s.teamState(e.Winner); t != nil {
 		opts.WinnerTeamID = s.teamIDForState(t)
 	}
-	s.addEvent(&model.Event{Type: "round_end", Text: opts.Reason, Score: s.endScore(opts)})
+	s.addEvent(&model.Event{Type: model.EventRoundEnd, Text: opts.Reason, Score: s.endScore(opts)})
 	s.finalizeRound(opts)
 }
 
@@ -850,14 +850,14 @@ func (s *state) onPlayerConnect(p *common.Player) {
 	if p == nil || p.IsUnknown {
 		return
 	}
-	s.addGlobalEvent(&model.Event{Type: "player_connect", ActorID: playerID(p), ActorName: playerName(p)})
+	s.addGlobalEvent(&model.Event{Type: model.EventPlayerConnect, ActorID: playerID(p), ActorName: playerName(p)})
 }
 
 func (s *state) onPlayerDisconnected(p *common.Player) {
 	if p == nil || p.IsUnknown {
 		return
 	}
-	s.addGlobalEvent(&model.Event{Type: "player_disconnect", ActorID: playerID(p), ActorName: playerName(p)})
+	s.addGlobalEvent(&model.Event{Type: model.EventPlayerDisconnect, ActorID: playerID(p), ActorName: playerName(p)})
 }
 
 func (s *state) onPlayerTeamChange(e events.PlayerTeamChange) {
@@ -877,7 +877,7 @@ func (s *state) onPlayerTeamChange(e events.PlayerTeamChange) {
 		return
 	}
 	s.addGlobalEvent(&model.Event{
-		Type:      "team_change",
+		Type:      model.EventTeamChange,
 		ActorID:   playerID(e.Player),
 		ActorName: playerName(e.Player),
 		OldSide:   oldSide,
@@ -909,7 +909,7 @@ func (s *state) detectTeamSwap() {
 			ctName = team.Name
 		}
 		s.addGlobalEvent(&model.Event{
-			Type:    "team_swap",
+			Type:    model.EventTeamSwap,
 			OldSide: model.SideT,
 			NewSide: model.SideCT,
 			Text:    fmt.Sprintf("%s now CT - %s now T", ctName, tName),
@@ -1026,7 +1026,7 @@ func (s *state) onKill(e events.Kill) {
 	}
 	vName := vp.Name
 	if !s.live {
-		ev := &model.Event{Type: "kill", VictimID: vp.ID, VictimName: vName}
+		ev := &model.Event{Type: model.EventKill, VictimID: vp.ID, VictimName: vName}
 		if e.Killer != nil {
 			if kp := s.ensurePlayer(e.Killer); kp != nil {
 				ev.ActorID, ev.ActorName = kp.ID, kp.Name
@@ -1044,7 +1044,7 @@ func (s *state) onKill(e events.Kill) {
 	}
 
 	ev := &model.Event{
-		Type:          "kill",
+		Type:          model.EventKill,
 		VictimID:      vp.ID,
 		VictimName:    vName,
 		Headshot:      e.IsHeadshot,
@@ -1066,7 +1066,7 @@ func (s *state) onKill(e events.Kill) {
 	vrs.Deaths++
 	vrs.Survived = false
 	s.current.hadDamage = true
-	if vrs.FirstDeath == false && !s.roundHasEvent("kill") {
+	if vrs.FirstDeath == false && !s.roundHasEvent(model.EventKill) {
 		vrs.FirstDeath = true
 	}
 
@@ -1099,7 +1099,7 @@ func (s *state) onKill(e events.Kill) {
 	if e.IsHeadshot {
 		krs.Headshots++
 	}
-	if !s.roundHasEvent("kill") {
+	if !s.roundHasEvent(model.EventKill) {
 		krs.FirstKill = true
 	}
 	if e.Assister != nil {
@@ -1264,12 +1264,12 @@ func (s *state) onBombDefused(e events.BombDefused) {
 			rs.Defuses++
 		}
 	}
-	s.addEvent(&model.Event{Type: "bomb_defuse", ActorID: p.ID, ActorName: p.Name, Site: string(e.Site)})
+	s.addEvent(&model.Event{Type: model.EventBombDefuse, ActorID: p.ID, ActorName: p.Name, Site: string(e.Site)})
 }
 
 func (s *state) onBombExplode(e events.BombExplode) {
 	s.syncTick()
-	s.addEvent(&model.Event{Type: "bomb_explode", Site: string(e.Site), Text: "The bomb has exploded"})
+	s.addEvent(&model.Event{Type: model.EventBombExplode, Site: string(e.Site), Text: "The bomb has exploded"})
 }
 
 func (s *state) onGrenade(e events.GrenadeProjectileThrow) {
@@ -1285,7 +1285,7 @@ func (s *state) onGrenade(e events.GrenadeProjectileThrow) {
 		return
 	}
 	name := e.Projectile.WeaponInstance.String()
-	s.addEvent(&model.Event{Type: "grenade", ActorID: p.ID, ActorName: p.Name, Grenade: name, Weapon: name})
+	s.addEvent(&model.Event{Type: model.EventGrenade, ActorID: p.ID, ActorName: p.Name, Grenade: name, Weapon: name})
 }
 
 func (s *state) recordWeaponDamage(playerID, weapon string, dmg int) {
@@ -1390,7 +1390,7 @@ func (s *state) awardMVP(rb *roundBuilder) {
 	if rb.mvpAnnounced != "" {
 		if p := s.m.PlayerByID(rb.mvpAnnounced); p != nil {
 			p.Stats.MVPs++
-			s.addEvent(&model.Event{Type: "mvp", ActorID: p.ID, ActorName: p.Name, Text: "Round MVP"})
+			s.addEvent(&model.Event{Type: model.EventMVP, ActorID: p.ID, ActorName: p.Name, Text: "Round MVP"})
 		}
 		return
 	}
@@ -1408,7 +1408,7 @@ func (s *state) awardMVP(rb *roundBuilder) {
 	if bestID != "" && best != nil && best.Kills > 0 {
 		if p := s.m.PlayerByID(bestID); p != nil {
 			p.Stats.MVPs++
-			s.addEvent(&model.Event{Type: "mvp", ActorID: p.ID, ActorName: p.Name, Text: "Round MVP"})
+			s.addEvent(&model.Event{Type: model.EventMVP, ActorID: p.ID, ActorName: p.Name, Text: "Round MVP"})
 		}
 	}
 }

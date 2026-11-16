@@ -200,7 +200,6 @@ type MetricView struct {
 	Label       string
 	Display     string
 	ScorePct    int
-	Samples     int
 	SampleLabel string
 	LowSample   bool
 	Tooltip     string
@@ -593,7 +592,6 @@ func metricView(mt model.AimMetric) MetricView {
 		Label:       mt.Label,
 		Display:     plainDashes(mt.Display),
 		ScorePct:    clampPct(mt.Score),
-		Samples:     mt.Samples,
 		SampleLabel: metricSampleLabel(mt.ID, mt.Samples),
 		LowSample:   mt.LowSample,
 		Tooltip:     plainDashes(mt.Tooltip),
@@ -613,10 +611,7 @@ func metricSampleLabel(id string, n int) string {
 	case "damage_speed", "reaction", "preaim":
 		noun = "engagements"
 	}
-	if n == 1 {
-		noun = strings.TrimSuffix(noun, "s")
-	}
-	return fmt.Sprintf("%d %s", n, noun)
+	return sampleCount(noun, n)
 }
 
 func sampleCount(noun string, n int) string {
@@ -702,9 +697,9 @@ func buildSearchIndex(v *View) []SearchEntry {
 		})
 	}
 	add("section", "Overview", "Match at a glance", "#overview")
+	add("section", "Watchlist", fmt.Sprintf("%d player(s)", len(v.Cheaters)), "#cheaters")
 	add("section", "Timeline", "Rounds and events", "#rounds")
 	add("section", "Players", "Stats and cheat analysis", "#players")
-	add("section", "Watchlist", fmt.Sprintf("%d player(s)", len(v.Cheaters)), "#cheaters")
 	for _, c := range v.Cheaters {
 		add("watchlist", c.Player.Player.Name, c.Cheat.Verdict+" - "+c.Cheat.LikelihoodPct,
 			"#cheater-"+c.Player.Player.Slug, c.Search)
@@ -1064,10 +1059,10 @@ func buildTimeline(m *model.Match) []*TimelineSection {
 		var rows []timelineEntry
 		hasRoundEnd := false
 		for _, e := range r.Events {
-			if e.Type == "round_start" {
+			if e.Type == model.EventRoundStart {
 				continue
 			}
-			if e.Type == "round_end" {
+			if e.Type == model.EventRoundEnd {
 				hasRoundEnd = true
 			}
 			rows = append(rows, timelineEntry{
@@ -1087,7 +1082,7 @@ func buildTimeline(m *model.Match) []*TimelineSection {
 		}
 		if !hasRoundEnd {
 			endEvent := &model.Event{
-				Type:   "round_end",
+				Type:   model.EventRoundEnd,
 				Offset: r.EndOffset - r.StartOffset,
 				Text:   r.Reason,
 				Score:  r.EndScore,
@@ -1219,15 +1214,8 @@ func buildEconomy(r *model.Round, m *model.Match) []EconomyView {
 // buildBuys groups the freeze-time inventory snapshot by team and player.
 // Older reports have no Bought data and simply render nothing.
 func buildBuys(r *model.Round, m *model.Match) []TeamBuysView {
-	teams := append([]*model.Team(nil), m.Teams...)
-	sort.SliceStable(teams, func(i, j int) bool {
-		if teams[i].StartSide != teams[j].StartSide {
-			return teams[i].StartSide < teams[j].StartSide
-		}
-		return teams[i].ID < teams[j].ID
-	})
-	out := make([]TeamBuysView, 0, len(teams))
-	for _, t := range teams {
+	out := make([]TeamBuysView, 0, len(m.Teams))
+	for _, t := range m.Teams {
 		tv := TeamBuysView{Name: displayTeamName(t), Side: string(t.StartSide), Class: teamSideClass(t.StartSide)}
 		for _, p := range m.Players {
 			if p.TeamID != t.ID {
@@ -1258,7 +1246,7 @@ func buildBuys(r *model.Round, m *model.Match) []TeamBuysView {
 func globalEventsWithFallback(m *model.Match) []*model.Event {
 	events := append([]*model.Event(nil), m.Events...)
 	for _, e := range events {
-		if e.Type == "team_swap" {
+		if e.Type == model.EventTeamSwap {
 			return events
 		}
 	}
@@ -1290,7 +1278,7 @@ func globalEventsWithFallback(m *model.Match) []*model.Event {
 			if offset < 0 {
 				offset = 0
 			}
-			events = append(events, &model.Event{Type: "team_swap", Offset: offset, Text: text})
+			events = append(events, &model.Event{Type: model.EventTeamSwap, Offset: offset, Text: text})
 		}
 		prev = cur
 	}
@@ -1373,29 +1361,29 @@ func rawMetric(ch model.CheatChannel) string {
 }
 
 var iconByType = map[string]string{
-	model.EventRoundStart:    "flag",
-	model.EventFreezeEnd:     "buy",
-	model.EventKill:          "kill",
-	model.EventTeamKill:      "warning",
-	model.EventSuicide:       "warning",
-	model.EventBombPlant:     "bomb",
-	model.EventBombDefuse:    "defuse",
-	model.EventBombExplode:   "explosion",
-	model.EventBombPickup:    "bomb",
-	model.EventBombDrop:      "bomb-drop",
-	model.EventGrenade:       "grenade",
-	model.EventGrenadeDamage: "grenade",
-	model.EventFlash:         "flash",
-	model.EventMVP:           "star",
-	model.EventRoundEnd:      "trophy",
-	model.EventPlayerConnect: "connect",
-	model.EventPlayerLeave:   "disconnect",
-	model.EventTeamChange:    "swap",
-	model.EventTeamSwap:      "swap",
-	model.EventHostagePickup: "hostage",
-	model.EventHostageDrop:   "hostage",
-	model.EventHostageRescue: "hostage",
-	model.EventHostageKilled: "hostage",
+	model.EventRoundStart:       "flag",
+	model.EventFreezeEnd:        "buy",
+	model.EventKill:             "kill",
+	model.EventTeamKill:         "warning",
+	model.EventSuicide:          "warning",
+	model.EventBombPlant:        "bomb",
+	model.EventBombDefuse:       "defuse",
+	model.EventBombExplode:      "explosion",
+	model.EventBombPickup:       "bomb",
+	model.EventBombDrop:         "bomb-drop",
+	model.EventGrenade:          "grenade",
+	model.EventGrenadeDamage:    "grenade",
+	model.EventFlash:            "flash",
+	model.EventMVP:              "star",
+	model.EventRoundEnd:         "trophy",
+	model.EventPlayerConnect:    "connect",
+	model.EventPlayerDisconnect: "disconnect",
+	model.EventTeamChange:       "swap",
+	model.EventTeamSwap:         "swap",
+	model.EventHostagePickup:    "hostage",
+	model.EventHostageDrop:      "hostage",
+	model.EventHostageRescue:    "hostage",
+	model.EventHostageKilled:    "hostage",
 }
 
 func buildEvent(e *model.Event, m *model.Match, base float64) EventView {
@@ -1517,7 +1505,7 @@ func buildEvent(e *model.Event, m *model.Match, base float64) EventView {
 	case model.EventPlayerConnect:
 		ev.Parts = append(ev.Parts, link(e.ActorID, actorName(e)))
 		ev.Parts = append(ev.Parts, EventPart{Text: " connected"})
-	case model.EventPlayerLeave:
+	case model.EventPlayerDisconnect:
 		ev.Parts = append(ev.Parts, link(e.ActorID, actorName(e)))
 		ev.Parts = append(ev.Parts, EventPart{Text: " disconnected"})
 	case model.EventTeamChange:
@@ -1627,7 +1615,7 @@ func eventClass(e *model.Event) string {
 		return "evt-mvp"
 	case model.EventRoundEnd:
 		return "evt-end"
-	case model.EventPlayerConnect, model.EventPlayerLeave, model.EventTeamChange:
+	case model.EventPlayerConnect, model.EventPlayerDisconnect, model.EventTeamChange:
 		return "evt-life"
 	case model.EventTeamSwap:
 		return "evt-swap"

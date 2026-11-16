@@ -769,6 +769,7 @@ table {
 }
 
 .disclaimer {
+  max-width: var(--measure);
   margin-top: var(--space-2);
   padding-top: 0.35rem;
   border-top: 1px dashed var(--line);
@@ -966,7 +967,7 @@ table {
 }
 
 .grade {
-  padding: 0 0.25rem;
+  padding: 0 0.3rem;
   background: var(--panel-3);
   color: var(--muted);
   font-size: var(--badge-fs);
@@ -1195,10 +1196,6 @@ table {
   gap: 0.3rem;
   color: var(--muted);
   font-size: var(--fs-xs);
-}
-
-.adjustment-list .badge {
-  margin-left: 0;
 }
 
 .adjust-detail {
@@ -1601,14 +1598,14 @@ select {
 }
 
 .tl-text {
-  display: flex;
   min-width: 0;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.15rem 0.25rem;
   color: var(--muted);
   font-size: var(--fs-sm);
   overflow-wrap: anywhere;
+}
+
+.tl-text .badge {
+  margin-left: 0.35rem;
 }
 
 .tl-text a {
@@ -1632,10 +1629,7 @@ select {
   stroke: var(--danger-text);
 }
 
-.evt-bomb .tl-node .ico,
-.evt-bomb_plant .tl-node .ico,
-.evt-bomb_defuse .tl-node .ico,
-.evt-bomb_explode .tl-node .ico {
+.evt-bomb .tl-node .ico {
   stroke: var(--warning-text);
 }
 
@@ -1686,7 +1680,6 @@ select {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  margin-left: 0.3rem;
   padding: var(--badge-pad);
   border: 1px solid var(--line);
   background: var(--bg-2);
@@ -1752,15 +1745,6 @@ select {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-1);
-}
-
-.badge-row .badge,
-.match-badges .badge,
-.team-aggregate .badge,
-.buy-list .badge,
-.player-sub .badge,
-.cheater-sub .badge {
-  margin-left: 0;
 }
 
 .side-dot {
@@ -2141,10 +2125,12 @@ select {
 }
 
 .zone {
-  padding: 0 0.25rem;
+  padding: var(--badge-pad);
+  border: 1px solid var(--neutral-border);
   background: var(--neutral-soft);
   color: var(--neutral-text);
-  font-size: var(--fs-2xs);
+  font-size: var(--badge-fs);
+  font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -2259,7 +2245,6 @@ select {
 }
 
 .cue-tag {
-  margin-left: 0;
   white-space: nowrap;
 }
 

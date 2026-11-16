@@ -63,9 +63,10 @@ Anchors: `#overview`, `#scoreboard`, `#cheaters`, `#rounds`, `#players`,
 - Stat tiles cover winner, top fragger, best aim, watchlist count and rounds.
 - Round history is full width. Cells are large enough to read and show at most
   eight rounds per row on desktop (six on tablet, four/three on phones).
-- The scoreboard lives inside Overview, full width. Winning team headers use
-  the success colour, losing headers the danger colour. A team aggregate row
-  shows K/D/A, ADR, HS% and aim rating; the table footer keeps the totals.
+- The scoreboard lives inside Overview, full width. The winning score and
+  `WIN` marker use the success colour, the losing score uses the danger colour.
+  A team aggregate row shows K/D/A, ADR, HS% and aim rating; the table footer
+  keeps the totals.
 - Team comparison was removed; its useful values now live in the scoreboard
   aggregate row.
 - Parser warnings stay visible at the end of the section.
