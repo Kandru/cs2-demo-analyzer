@@ -125,6 +125,7 @@ type DemoLink struct {
 type TeamView struct {
 	Team        *model.Team
 	DisplayName string
+	TeamName    string
 	Players     []*PlayerView
 	Stats       model.TeamStats
 	Win         bool
@@ -402,6 +403,23 @@ func displayTeamName(t *model.Team) string {
 	return name
 }
 
+// realTeamName returns the clan name only when it carries real information.
+// Parser/side fallbacks and legacy "Team A"/"Team B" values are omitted so the
+// hero can always show the side as its primary label.
+func realTeamName(t *model.Team) string {
+	if t == nil {
+		return ""
+	}
+	name := strings.TrimSpace(t.Name)
+	if name == "" || strings.EqualFold(name, "Team A") || strings.EqualFold(name, "Team B") {
+		return ""
+	}
+	if name == "CT" || name == "T" {
+		return ""
+	}
+	return name
+}
+
 func buildTeams(m *model.Match, players []*PlayerView) []*TeamView {
 	byID := map[int]model.TeamStats{}
 	if m.Summary != nil {
@@ -426,6 +444,7 @@ func buildTeams(m *model.Match, players []*PlayerView) []*TeamView {
 		tv := &TeamView{
 			Team:        t,
 			DisplayName: displayTeamName(t),
+			TeamName:    realTeamName(t),
 			Stats:       byID[t.ID],
 			Win:         t.ID == winner,
 			ScoreClass:  scoreClass,

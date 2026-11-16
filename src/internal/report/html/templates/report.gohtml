@@ -34,8 +34,8 @@
         </div>
         {{end}}
         <a class="hero-team {{lower .Side}} {{if .Win}}winner{{end}}" href="#scoreboard">
-          <span class="hero-team-name">{{.DisplayName}}</span>
-          <span class="hero-team-side"><i class="side-dot {{lower .Side}}" aria-hidden="true"></i>{{.Side}} start{{if .Win}} - winner{{end}}</span>
+          <span class="hero-team-name">{{.Side}}</span>
+          {{if .TeamName}}<span class="hero-team-sub">{{.TeamName}}</span>{{end}}
         </a>
         {{end}}
       </div>

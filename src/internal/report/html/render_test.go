@@ -193,7 +193,7 @@ func TestRenderContainsCoreSectionsAndEscapesNames(t *testing.T) {
 		t.Fatal(err)
 	}
 	page := buf.String()
-	for _, want := range []string{"DEMO ANALYZER", "Overview", "Watchlist", "Timeline", "Players", "Aim", "Cheat analysis", "Warmup", "de_mirage", "26.11.1", "When to look", "demo_gototick 120", "tick 120", "Round history", "Download demo", "match.dem", "12.0 MiB"} {
+	for _, want := range []string{"DEMO ANALYZER", "Overview", "Watchlist", "Timeline", "Players", "Aim", "Cheat analysis", "Warmup", "de_mirage", "26.11.1", "When to look", "demo_gototick 120", "tick 120", "Round history", "Download demo", "match.dem", "12.0 MiB", `class="hero-team-sub">Alpha</span>`, `class="hero-team-sub">Bravo</span>`} {
 		if !strings.Contains(page, want) {
 			t.Errorf("missing %q in rendered report", want)
 		}
@@ -463,7 +463,7 @@ func TestRenderNormalisesLegacyTeamNamesAndScores(t *testing.T) {
 			t.Errorf("missing %q in normalised report", want)
 		}
 	}
-	for _, unwanted := range []string{"Team A", "Team B", "match drawn", `hero-winner">Draw`} {
+	for _, unwanted := range []string{"Team A", "Team B", "match drawn", `hero-winner">Draw`, "T start", "CT start", " - winner"} {
 		if strings.Contains(page, unwanted) {
 			t.Errorf("legacy score/team text %q is still rendered", unwanted)
 		}

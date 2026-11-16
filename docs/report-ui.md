@@ -52,8 +52,9 @@ Anchors: `#overview`, `#scoreboard`, `#cheaters`, `#rounds`, `#players`,
 ## Hero
 
 - Map, mode, duration and round count on the left.
-- Team names and the score are right-aligned. If a team has no useful clan
-  name, the start side (`CT` or `T`) is shown instead of `Team A`/`Team B`.
+- Team side (`T` / `CT`) is the primary coloured label; a real clan name is
+  shown below it, otherwise the sub-label is omitted. There is no “start” or
+  “winner” text and no decorative side dot.
 - The winning score is green, the losing score is red, and a draw uses the
   neutral text colour. There is no separate verdict block.
 - The metadata strip contains only the optional demo download and the report
