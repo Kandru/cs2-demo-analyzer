@@ -56,6 +56,7 @@ available from the respective module caches/repositories.
 ## Vendored CSS: new.css
 
 - Source: <https://github.com/xz/new.css>
+- Commit: `375a937537159abd11c89a07137e53d2411b4487` (2026-11-10)
 - Location: `src/internal/report/html/assets/vendor/new.css`
 - License: MIT, copyright (c) 2020 Brendan Hersh
 - License text: `src/internal/report/html/assets/vendor/new.css.LICENSE`
