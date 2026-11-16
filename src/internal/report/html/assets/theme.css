@@ -52,9 +52,6 @@
 
   /* neutral team/spectator identity */
   --team-spec-fill: #7d858c;
-  --team-spec-text: #b8c0c6;
-  --team-spec-soft: rgba(125, 133, 140, 0.16);
-  --team-spec-border: rgba(125, 133, 140, 0.5);
 
   /* semantic status */
   --danger: #e06060;
@@ -74,8 +71,6 @@
 
   --info: #6fa8dc;
   --info-text: #9cc8ef;
-  --info-soft: rgba(111, 168, 220, 0.14);
-  --info-border: rgba(111, 168, 220, 0.5);
 
   --neutral: #8f979e;
   --neutral-text: #b7bec4;
@@ -111,8 +106,6 @@
   --fs-base: 0.92rem;
   --fs-md: 1rem;
   --fs-lg: 1.18rem;
-  --fs-xl: 1.5rem;
-  --fs-2xl: 2rem;
   --fs-3xl: clamp(2rem, 3vw, 3.4rem);
   --lh-tight: 1.15;
   --lh-base: 1.5;
@@ -124,8 +117,6 @@
   --space-4: 1rem;
   --space-5: 1.5rem;
   --space-6: 2rem;
-  --space-7: 3rem;
-  --space-8: 4rem;
   --radius: 0;
   --border-w: 2px;
   --tap: 2.75rem;
