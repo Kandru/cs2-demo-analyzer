@@ -152,13 +152,7 @@ func (p *Processor) indexEntries(dir string) ([]html.IndexEntry, error) {
 		}
 		meta := store.ReportMeta{}
 		if h, err := report.ReadHeader(full); err == nil {
-			meta = store.ReportMeta{
-				Map:        h.Map,
-				ServerName: h.ServerName,
-				Score:      h.Score,
-				HasScore:   h.HasScore,
-				PlayedAt:   h.PlayedAt,
-			}
+			meta = reportMeta(h)
 		} else if demoPath != "" {
 			if cached, ok := p.store.Entry(demoPath); ok {
 				meta = cached.Meta

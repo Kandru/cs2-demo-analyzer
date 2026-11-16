@@ -61,7 +61,7 @@ dense but never below 12 px in tables.
   the right, metadata strip below. No perspective grid, glow, or oversized art.
 - **Search** (JS enhancement): the top bar search filters player cards, player
   pills, cheat-watch cards and round panels by name, alias, team, SteamID,
-  map/round text and detector narrative, channel and cue labels. It reports live result
+  round text and detector narrative, channel and cue labels. It reports live result
   counts, opens matching round panels, clears with Escape, and focuses with `/`.
   Without JavaScript the field is hidden and all content stays visible.
 - **Anchors** account for the sticky top bar with a single `scroll-padding-top`

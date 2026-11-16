@@ -163,7 +163,7 @@ func (p *Processor) Process(ctx context.Context, path string) error {
 	}
 
 	p.store.MarkOK(path, info.Size(), info.ModTime(), hash, p.reportOptions(plan.HTMLPath, path).String(),
-		plan.HTMLPath, jsonPath, reportVersion(), reportMeta(m, info.ModTime()))
+		plan.HTMLPath, jsonPath, reportVersion(), reportMeta(header))
 	if indexed {
 		if err := p.writeIndex(filepath.Dir(plan.HTMLPath)); err != nil {
 			p.log.Warn("could not write index", "demo", path, "error", err)
@@ -228,20 +228,14 @@ func fillMatchMeta(h *report.Header, m *model.Match, fallback time.Time) {
 	}
 }
 
-func reportMeta(m *model.Match, fallback time.Time) store.ReportMeta {
-	meta := store.ReportMeta{
-		Map:        m.Map,
-		ServerName: m.ServerName,
-		PlayedAt:   m.FileTime,
+func reportMeta(h report.Header) store.ReportMeta {
+	return store.ReportMeta{
+		Map:        h.Map,
+		ServerName: h.ServerName,
+		Score:      h.Score,
+		HasScore:   h.HasScore,
+		PlayedAt:   h.PlayedAt,
 	}
-	if meta.PlayedAt.IsZero() {
-		meta.PlayedAt = fallback
-	}
-	if m.Summary != nil {
-		meta.Score = m.Summary.Score
-		meta.HasScore = true
-	}
-	return meta
 }
 
 func (p *Processor) recordError(path string, info os.FileInfo, err error) {

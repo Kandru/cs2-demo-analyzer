@@ -566,7 +566,7 @@ func buildCheaters(players []*PlayerView) []*CheaterView {
 			TopChannels: topChannels(pv.Cheat.Channels, 3),
 			TopMoments:  topMoments(pv.Moments, 10),
 			MomentCount: pv.MomentCount,
-			Search:      searchKey(pv.Search, pv.Cheat.Verdict),
+			Search:      pv.Search,
 		})
 	}
 	sort.SliceStable(out, func(i, j int) bool {

@@ -2,6 +2,7 @@ package app
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"log/slog"
 	"os"
@@ -111,8 +112,6 @@ func TestSkipRequiresEnabledJSON(t *testing.T) {
 
 	// JSON is optional: without --json the HTML alone is sufficient.
 	p.cfg.JSON = false
-	p = testProcessorWithConfig(p.cfg)
-	writeArtifacts(t, p, demo, info)
 	if !p.Skip(demo, info.Size(), info.ModTime(), false) {
 		t.Fatal("HTML-only report should be skipped when JSON is disabled")
 	}
@@ -146,7 +145,7 @@ func TestSkipCachedFailure(t *testing.T) {
 	}
 	info, _ := os.Stat(demo)
 	p := testProcessorWithConfig(config.Default())
-	p.store.MarkError(demo, info.Size(), info.ModTime(), errTest, "dev")
+	p.store.MarkError(demo, info.Size(), info.ModTime(), errors.New("test failure"), "dev")
 	if !p.Skip(demo, info.Size(), info.ModTime(), false) {
 		t.Fatal("cached failures are skipped even without a version stamp")
 	}
@@ -169,12 +168,6 @@ func TestSkipDisabledWithoutStableVersion(t *testing.T) {
 		t.Fatal("unversioned dev builds must always rebuild")
 	}
 }
-
-var errTest = &testError{}
-
-type testError struct{}
-
-func (*testError) Error() string { return "test failure" }
 
 func TestPlanAvoidsOverwritingAnotherDemosReport(t *testing.T) {
 	out := t.TempDir()
