@@ -595,7 +595,7 @@ func metricView(mt model.AimMetric) MetricView {
 	return MetricView{
 		ID:        mt.ID,
 		Label:     mt.Label,
-		Display:   mt.Display,
+		Display:   plainDashes(mt.Display),
 		Score:     mt.Score,
 		ScorePct:  clampPct(mt.Score),
 		Samples:   mt.Samples,
