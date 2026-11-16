@@ -87,7 +87,7 @@ type SnapAngleCollector struct {
 // NewSnapAngleCollector creates a new SnapAngleCollector
 func NewSnapAngleCollector() *SnapAngleCollector {
 	return &SnapAngleCollector{
-		BaseCollector:  NewBaseCollector("Snap Angle Analysis", Category("aiming")),
+		BaseCollector:  NewBaseCollector("Snap Angle Analysis"),
 		viewBuffers:    make(map[uint64]*RingBuffer),
 		snapVelocities: make(map[uint64][]float64),
 		currentTick:    0,

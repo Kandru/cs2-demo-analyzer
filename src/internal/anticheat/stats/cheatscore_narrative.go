@@ -63,10 +63,10 @@ func narrativeTier(raw, mild, strong, blatant float64, ascendingSuspicion bool) 
 }
 
 type narrativeChannel struct {
-	id       string
-	tier     int     // 0=skip, 1=mild, 2=strong, 3=blatant
-	raw      float64
-	sampleN  int64
+	id      string
+	tier    int // 0=skip, 1=mild, 2=strong, 3=blatant
+	raw     float64
+	sampleN int64
 }
 
 // buildCheatscoreNarrative reads a player's published anti_cheat metrics and

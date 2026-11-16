@@ -13,7 +13,7 @@ type HeadshotCollector struct {
 // NewHeadshotCollector creates a new HeadshotCollector
 func NewHeadshotCollector() *HeadshotCollector {
 	return &HeadshotCollector{
-		BaseCollector: NewBaseCollector("Headshot Statistics", Category("kills")),
+		BaseCollector: NewBaseCollector("Headshot Statistics"),
 	}
 }
 
@@ -40,11 +40,6 @@ func (hc *HeadshotCollector) Setup(parser demoinfocs.Parser, demoStats *DemoStat
 			playerStats.IncrementIntMetric(Category("kills"), Key("headshot_kills"))
 		}
 	})
-}
-
-// CollectFrame is not needed for this collector as we're using event handlers
-func (hc *HeadshotCollector) CollectFrame(parser demoinfocs.Parser, demoStats *DemoStats) {
-	// No per-frame processing needed, we use event handlers
 }
 
 // CollectFinalStats calculates headshot percentage

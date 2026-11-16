@@ -194,7 +194,7 @@ type sprayState struct {
 // NewRecoilControlCollector creates a new RecoilControlCollector
 func NewRecoilControlCollector() *RecoilControlCollector {
 	return &RecoilControlCollector{
-		BaseCollector:    NewBaseCollector("Recoil Control", Category("recoil")),
+		BaseCollector:    NewBaseCollector("Recoil Control"),
 		sprayStates:      make(map[uint64]*sprayState),
 		maxBurstGapMs:    220,   // ms between shots within a burst. Above AK's 100 ms cycle with comfortable margin for jitter; below the gap between intentional tap-fires (~300 ms+).
 		minBurstSize:     3,     // Minimum bullets to consider a valid burst
@@ -587,56 +587,6 @@ func interpretation(meanError float64, perfectThreshold, goodThreshold float64) 
 		return "Human range"
 	} else {
 		return "Wide spread"
-	}
-}
-
-// getWeaponName returns a readable name for the weapon
-func getWeaponName(weapon *common.Equipment) string {
-	if weapon == nil {
-		return "Unknown"
-	}
-
-	// Get display name from CS2 metadata if available
-	name := weapon.String()
-	if name != "" && name != "Unknown" {
-		return name
-	}
-
-	// Fallback to our own mapping
-	return weaponTypeToString(weapon.Type)
-}
-
-// weaponTypeToString converts weapon types to descriptive names
-func weaponTypeToString(weaponType common.EquipmentType) string {
-	switch weaponType {
-	case common.EqAK47:
-		return "ak47"
-	case common.EqM4A4:
-		return "m4a4"
-	case common.EqM4A1:
-		return "m4a1"
-	case common.EqFamas:
-		return "famas"
-	case common.EqGalil:
-		return "galil"
-	case common.EqMP7:
-		return "mp7"
-	case common.EqMP9:
-		return "mp9"
-	case common.EqP90:
-		return "p90"
-	case common.EqUMP:
-		return "ump"
-	case common.EqNegev:
-		return "negev"
-	case common.EqM249:
-		return "m249"
-	case common.EqSG556:
-		return "sg556"
-	case common.EqAUG:
-		return "aug"
-	default:
-		return "unknown"
 	}
 }
 

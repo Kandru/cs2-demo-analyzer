@@ -26,7 +26,7 @@ type SniperCollector struct {
 
 func NewSniperCollector() *SniperCollector {
 	return &SniperCollector{
-		BaseCollector: NewBaseCollector("Sniper Kills", sniperCategory),
+		BaseCollector: NewBaseCollector("Sniper Kills"),
 	}
 }
 

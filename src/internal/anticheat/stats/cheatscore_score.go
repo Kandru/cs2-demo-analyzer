@@ -57,18 +57,18 @@ func cheatscoreEvaluate(demoStats *DemoStats) {
 		score, sniperOverrides := applySniperOverrides(score, ps)
 
 		cheatscorePublish(ps, publishOptions{
-			channels:                channels,
-			combined:                combined,
-			wingmanBoosted:          wingmanApplied,
-			wingmanReason:           wingmanReason,
-			competitiveBoost:        competitiveApplied,
-			positionDiscount:        discount,
-			evidenceStacking:        stackApplied,
-			evidenceStackingCount:   stackCount,
-			coOccurrenceBoost:       coOccurApplied,
-			ttdSub100Floor:          floorApplied,
-			sniperOverrides:         sniperOverrides,
-			finalLikelihood:         score,
+			channels:              channels,
+			combined:              combined,
+			wingmanBoosted:        wingmanApplied,
+			wingmanReason:         wingmanReason,
+			competitiveBoost:      competitiveApplied,
+			positionDiscount:      discount,
+			evidenceStacking:      stackApplied,
+			evidenceStackingCount: stackCount,
+			coOccurrenceBoost:     coOccurApplied,
+			ttdSub100Floor:        floorApplied,
+			sniperOverrides:       sniperOverrides,
+			finalLikelihood:       score,
 		})
 	}
 }

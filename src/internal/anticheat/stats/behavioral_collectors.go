@@ -81,7 +81,7 @@ type BehavioralCollector struct {
 // NewBehavioralCollector creates a new BehavioralCollector.
 func NewBehavioralCollector() *BehavioralCollector {
 	return &BehavioralCollector{
-		BaseCollector:      NewBaseCollector("Behavioral Wallhack Signals", Category("behavioral")),
+		BaseCollector:      NewBaseCollector("Behavioral Wallhack Signals"),
 		history:            make(map[uint64][]playerSnapshot),
 		backKillTotal:      make(map[uint64]int),
 		backKillBack:       make(map[uint64]int),

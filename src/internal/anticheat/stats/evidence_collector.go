@@ -37,7 +37,7 @@ type EvidenceCollector struct {
 // NewEvidenceCollector creates an EvidenceCollector.
 func NewEvidenceCollector() *EvidenceCollector {
 	return &EvidenceCollector{
-		BaseCollector: NewBaseCollector("Evidence Moments", Category("evidence")),
+		BaseCollector: NewBaseCollector("Evidence Moments"),
 	}
 }
 

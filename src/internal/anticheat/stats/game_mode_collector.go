@@ -14,7 +14,7 @@ type GameModeCollector struct {
 // NewGameModeCollector creates a new GameModeCollector
 func NewGameModeCollector() *GameModeCollector {
 	return &GameModeCollector{
-		BaseCollector: NewBaseCollector("Game Mode", Category("game_info")),
+		BaseCollector: NewBaseCollector("Game Mode"),
 		roundCount:    0,
 	}
 }
@@ -25,11 +25,6 @@ func (gmc *GameModeCollector) Setup(parser demoinfocs.Parser, demoStats *DemoSta
 	parser.RegisterEventHandler(func(e events.RoundEnd) {
 		gmc.roundCount++
 	})
-}
-
-// CollectFrame is not needed for this collector as we're using event handlers
-func (gmc *GameModeCollector) CollectFrame(parser demoinfocs.Parser, demoStats *DemoStats) {
-	// No per-frame processing needed, we use event handlers
 }
 
 // CollectFinalStats calculates game mode and stores round count

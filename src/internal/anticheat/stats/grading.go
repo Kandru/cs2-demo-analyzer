@@ -111,7 +111,7 @@ type GradingCollector struct {
 
 func NewGradingCollector() *GradingCollector {
 	return &GradingCollector{
-		BaseCollector: NewBaseCollector("Grading", Category("rating")),
+		BaseCollector: NewBaseCollector("Grading"),
 	}
 }
 

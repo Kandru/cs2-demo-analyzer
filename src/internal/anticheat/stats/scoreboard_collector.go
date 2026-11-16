@@ -33,7 +33,7 @@ const scoreboardCategory = Category("scoreboard")
 
 func NewScoreboardCollector() *ScoreboardCollector {
 	return &ScoreboardCollector{
-		BaseCollector: NewBaseCollector("Scoreboard", scoreboardCategory),
+		BaseCollector: NewBaseCollector("Scoreboard"),
 		roundKills:    map[uint64]int{},
 	}
 }
@@ -187,7 +187,10 @@ func (sc *ScoreboardCollector) assignPositionFactors(demoStats *DemoStats) {
 				continue
 			}
 			sort.SliceStable(sids, func(i, j int) bool {
-				return snap[sids[i]].kills > snap[sids[j]].kills
+				if snap[sids[i]].kills != snap[sids[j]].kills {
+					return snap[sids[i]].kills > snap[sids[j]].kills
+				}
+				return sids[i] < sids[j]
 			})
 			for rank, sid := range sids {
 				frac := float64(rank) / float64(len(sids)-1)
@@ -256,11 +259,4 @@ func teamLabel(t common.Team) string {
 	default:
 		return ""
 	}
-}
-
-func addIntMetric(ps *PlayerStats, cat Category, k Key, n int64) {
-	existing, _ := ps.GetMetric(cat, k)
-	existing.IntValue += n
-	existing.Type = MetricInteger
-	ps.AddMetric(cat, k, existing)
 }

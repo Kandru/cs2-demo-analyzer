@@ -29,7 +29,7 @@ type heExplosion struct {
 
 func NewGrenadeCollector() *GrenadeCollector {
 	return &GrenadeCollector{
-		BaseCollector: NewBaseCollector("Grenades", grenadeCategory),
+		BaseCollector: NewBaseCollector("Grenades"),
 		heExplosions:  map[ulid.ULID]*heExplosion{},
 	}
 }

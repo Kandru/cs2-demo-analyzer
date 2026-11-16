@@ -115,7 +115,7 @@ func cheatscoreNormalizeLobby(perPlayer map[uint64][]Channel) {
 		muTrim := sum / float64(len(trimmed))
 
 		// Apply shrinkage in-place.
-		for sid, channels := range perPlayer {
+		for _, channels := range perPlayer {
 			for i, ch := range channels {
 				if ch.ID != id || !ch.HasData {
 					continue
@@ -124,7 +124,6 @@ func cheatscoreNormalizeLobby(perPlayer map[uint64][]Channel) {
 				channels[i].Score = adjusted
 				channels[i].Zone = zoneFor(adjusted)
 			}
-			perPlayer[sid] = channels
 		}
 	}
 }

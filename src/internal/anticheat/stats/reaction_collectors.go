@@ -74,7 +74,7 @@ type engagement struct {
 
 func NewReactionTimeCollector() *ReactionTimeCollector {
 	return &ReactionTimeCollector{
-		BaseCollector: NewBaseCollector("Reaction Time Analysis", Category("reaction")),
+		BaseCollector: NewBaseCollector("Reaction Time Analysis"),
 		engagements:   make(map[uint64]map[uint64]*engagement),
 		ttds:          make(map[uint64][]float64),
 	}
@@ -281,15 +281,6 @@ func (rtc *ReactionTimeCollector) CollectFinalStats(demoStats *DemoStats) {
 			Type:        MetricInteger,
 			IntValue:    int64(len(samples)),
 			Description: "Number of TTD samples collected",
-		})
-
-		// Cheat-score component, recalibrated for TTD:
-		//   0 at 400 ms (clean), 1 at 100 ms (implausible).
-		ttdScore := clamp01((400.0 - p10) / 300.0)
-		ps.AddMetric(Category("reaction"), Key("reaction_cheat_score"), Metric{
-			Type:        MetricFloat,
-			FloatValue:  ttdScore,
-			Description: "TTD-derived cheat score (0 at 400 ms P10, 1 at 100 ms P10 or lower)",
 		})
 	}
 }

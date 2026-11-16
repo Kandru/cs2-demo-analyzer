@@ -3,7 +3,6 @@ package analyzer
 import (
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 
 	"github.com/Kandru/cs2-demo-analyzer/internal/anticheat/stats"
@@ -11,125 +10,88 @@ import (
 	"github.com/markus-wa/demoinfocs-golang/v5/pkg/demoinfocs/msg"
 )
 
-// Analyzer represents a CS2 demo analyzer
+// Analyzer represents a CS2 demo analyzer.
 type Analyzer struct {
 	demoPath   string
 	collectors []stats.Collector
 }
 
-// Results represents the analysis results
+// Results represents the analysis results.
 type Results struct {
-	DemoStats  *stats.DemoStats
-	Categories []stats.Category
+	DemoStats *stats.DemoStats
 }
 
-// NewAnalyzer creates a new analyzer for the given demo file
+// NewAnalyzer creates a new analyzer for the given demo file.
+//
+// Collector order is significant:
+//  1. measurement collectors fill the raw per-player metrics,
+//  2. the cheat detector scores those metrics,
+//  3. the grading collector reads the final values.
 func NewAnalyzer(demoPath string) *Analyzer {
 	analyzer := &Analyzer{
-		demoPath:   demoPath,
-		collectors: []stats.Collector{},
+		demoPath: demoPath,
 	}
 
-	// Register default collectors
-	analyzer.RegisterCollector(stats.NewWeaponUsageCollector())
 	analyzer.RegisterCollector(stats.NewHeadshotCollector())
 	analyzer.RegisterCollector(stats.NewSnapAngleCollector())
 	analyzer.RegisterCollector(stats.NewReactionTimeCollector())
-	analyzer.RegisterCollector(stats.NewRecoilControlCollector()) // Add the new recoil control collector
-	analyzer.RegisterCollector(stats.NewGameModeCollector())      // Add the game mode collector
-	analyzer.RegisterCollector(stats.NewScoreboardCollector())    // CS2-style basic scoreboard stats
-	analyzer.RegisterCollector(stats.NewGrenadeCollector())       // Per-player grenade usage
-	analyzer.RegisterCollector(stats.NewSniperCollector())        // Sniper-specific anomaly tracking (must run before CheatDetector)
-	analyzer.RegisterCollector(stats.NewBehavioralCollector())    // Wallhack-targeted behavioral signals
-	analyzer.RegisterCollector(stats.NewEvidenceCollector())      // Timestamped review cues for the battlelog report
-	analyzer.RegisterCollector(stats.NewCheatDetector())          // CheatDetector should be last to use results from other collectors
-	analyzer.RegisterCollector(stats.NewGradingCollector())       // Grades come after everything else has run
+	analyzer.RegisterCollector(stats.NewRecoilControlCollector())
+	analyzer.RegisterCollector(stats.NewGameModeCollector())
+	analyzer.RegisterCollector(stats.NewScoreboardCollector())
+	analyzer.RegisterCollector(stats.NewGrenadeCollector())
+	analyzer.RegisterCollector(stats.NewSniperCollector())     // must run before CheatDetector
+	analyzer.RegisterCollector(stats.NewBehavioralCollector()) // wallhack-targeted signals
+	analyzer.RegisterCollector(stats.NewEvidenceCollector())   // timestamped review cues
+	analyzer.RegisterCollector(stats.NewCheatDetector())       // uses the measurements above
+	analyzer.RegisterCollector(stats.NewGradingCollector())    // runs last
 
 	return analyzer
 }
 
-// RegisterCollector adds a new statistics collector to the analyzer
+// RegisterCollector adds a statistics collector to the analyzer.
 func (a *Analyzer) RegisterCollector(collector stats.Collector) {
 	a.collectors = append(a.collectors, collector)
 }
 
-// Analyze performs the analysis of the demo file.
-func (a *Analyzer) Analyze() (Results, error) {
-	f, err := os.Open(a.demoPath)
-	if err != nil {
-		return Results{}, fmt.Errorf("failed to open demo file: %w", err)
-	}
-	defer f.Close()
-	return a.AnalyzeReader(f)
-}
-
-// AnalyzeReader performs the analysis from an arbitrary reader. It was added
-// for the battlelog integration so compressed demos can be decompressed
-// without a temporary file. Scoring behavior is unchanged.
+// AnalyzeReader performs the analysis from an arbitrary reader. It exists so
+// compressed demos can be analyzed without a temporary file.
 func (a *Analyzer) AnalyzeReader(rd io.Reader) (Results, error) {
 	parser := dem.NewParser(rd)
 	defer parser.Close()
 
-	// Initialize demo stats
 	demoStats := stats.NewDemoStats()
 	demoStats.DemoName = filepath.Base(a.demoPath)
 
-	// v5 removed ParseHeader(); subscribe to the demo file header net message instead.
+	// v5 removed ParseHeader(); subscribe to the demo file header net message.
 	parser.RegisterNetMessageHandler(func(m *msg.CDemoFileHeader) {
 		demoStats.MapName = m.GetMapName()
 	})
 
-	// Set up collectors
 	for _, collector := range a.collectors {
 		collector.Setup(parser, demoStats)
 	}
 
-	// Parse all frames
 	frameCount := 0
 	for {
-		// Parse the next frame
 		ok, err := parser.ParseNextFrame()
 		if err != nil {
 			return Results{}, fmt.Errorf("error parsing frame: %w", err)
 		}
-
-		// Check if we've reached the end of the demo
 		if !ok {
 			break
 		}
-
-		// Collect stats for this frame
 		for _, collector := range a.collectors {
 			collector.CollectFrame(parser, demoStats)
 		}
-
 		frameCount++
 	}
 
-	// Store total frames parsed
 	demoStats.TickCount = frameCount
 	demoStats.TickRate = parser.TickRate()
 
-	// Calculate final stats
 	for _, collector := range a.collectors {
 		collector.CollectFinalStats(demoStats)
 	}
 
-	// Collect categories from all collectors
-	categories := make([]stats.Category, 0)
-	categoriesSet := make(map[stats.Category]bool)
-
-	for _, collector := range a.collectors {
-		for _, category := range collector.Categories() {
-			if !categoriesSet[category] {
-				categories = append(categories, category)
-				categoriesSet[category] = true
-			}
-		}
-	}
-
-	return Results{
-		DemoStats:  demoStats,
-		Categories: categories,
-	}, nil
+	return Results{DemoStats: demoStats}, nil
 }

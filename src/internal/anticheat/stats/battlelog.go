@@ -66,8 +66,6 @@ type BattlelogPlayerReport struct {
 	Moments       []BattlelogMoment
 }
 
-const battlelogFlagThreshold = cheatscoreFlagThreshold
-
 // BattlelogReports converts the detector's DemoStats into per-player reports
 // keyed by SteamID64. The special SteamID 0 placeholder (demo-wide metrics) is
 // skipped.
@@ -83,7 +81,7 @@ func BattlelogReports(ds *DemoStats) map[uint64]*BattlelogPlayerReport {
 		rep := &BattlelogPlayerReport{
 			SteamID64:     sid,
 			Name:          ps.Player.Name,
-			FlagThreshold: battlelogFlagThreshold,
+			FlagThreshold: cheatscoreFlagThreshold,
 		}
 		if m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key("cheat_likelihood")); ok {
 			rep.Likelihood = m.FloatValue
@@ -188,21 +186,6 @@ func battlelogChannels(ps *PlayerStats) []BattlelogChannel {
 		if m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key(s.id+"_score")); ok {
 			ch.Score = m.FloatValue
 			ch.HasData = true
-		} else if s.id == "hs" {
-			if m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key("hs_score")); ok {
-				ch.Score = m.FloatValue
-				ch.HasData = true
-			}
-		} else if s.id == "reaction" {
-			if m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key("reaction_score")); ok {
-				ch.Score = m.FloatValue
-				ch.HasData = true
-			}
-		} else if s.id == "recoil" {
-			if m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key("recoil_score")); ok {
-				ch.Score = m.FloatValue
-				ch.HasData = true
-			}
 		}
 		if m, ok := ps.GetMetric(cheatscoreCategoryAntiCheat, Key(s.id+"_confidence")); ok {
 			ch.Confidence = m.FloatValue
@@ -249,20 +232,5 @@ func battlelogAdjustments(ps *PlayerStats) []BattlelogAdjustment {
 			out = append(out, BattlelogAdjustment{Label: "Sniper anomaly override", Detail: string(key)})
 		}
 	}
-	return out
-}
-
-// SortBattlelogReports orders reports by likelihood descending (stable by name).
-func SortBattlelogReports(reports map[uint64]*BattlelogPlayerReport) []*BattlelogPlayerReport {
-	out := make([]*BattlelogPlayerReport, 0, len(reports))
-	for _, r := range reports {
-		out = append(out, r)
-	}
-	sort.Slice(out, func(i, j int) bool {
-		if out[i].Likelihood != out[j].Likelihood {
-			return out[i].Likelihood > out[j].Likelihood
-		}
-		return out[i].Name < out[j].Name
-	})
 	return out
 }

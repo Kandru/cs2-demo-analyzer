@@ -28,20 +28,8 @@ type publishOptions struct {
 	finalLikelihood float64 // [0, 100] after all overrides + boosts
 }
 
-// channelLegacyKey maps a channel ID to the legacy anti_cheat key under which
-// its Score is published. Channels not in this map don't get a *_score key —
-// they publish under <id>_score generically. This preserves backward
-// compatibility for hs_score, snap_score, reaction_score, recoil_score.
-var channelLegacyKey = map[string]string{
-	"hs":       "hs_score",
-	"snap":     "snap_score",
-	"reaction": "reaction_score", // ttd_p10
-	"recoil":   "recoil_score",
-}
-
 // cheatscorePublish writes all anti_cheat metrics for one player. Each
-// channel emits three keys (<id>_score, <id>_confidence, <id>_zone) plus the
-// legacy alias if one exists.
+// channel emits three keys (<id>_score, <id>_confidence, <id>_zone).
 func cheatscorePublish(ps *PlayerStats, opt publishOptions) {
 	ps.AddMetric(cheatscoreCategoryAntiCheat, Key("cheat_likelihood"), Metric{
 		Type:        MetricPercentage,
@@ -54,37 +42,19 @@ func cheatscorePublish(ps *PlayerStats, opt publishOptions) {
 	// the table layout stays consistent.
 	for _, ch := range opt.channels {
 		baseID := ch.ID
-		score := ch.Score
-		conf := ch.Confidence
-		zone := ch.Zone
-
-		// Legacy alias (hs/snap/reaction/recoil keep their old names too).
-		if legacyKey, ok := channelLegacyKey[baseID]; ok {
-			ps.AddMetric(cheatscoreCategoryAntiCheat, Key(legacyKey), Metric{
-				Type:        MetricFloat,
-				FloatValue:  score,
-				Description: fmt.Sprintf("%s cheat score component (0-1)", baseID),
-			})
-		}
-
-		// Generic <id>_score for non-legacy channels and as the canonical key
-		// for the new ones.
-		if _, hasLegacy := channelLegacyKey[baseID]; !hasLegacy {
-			ps.AddMetric(cheatscoreCategoryAntiCheat, Key(baseID+"_score"), Metric{
-				Type:        MetricFloat,
-				FloatValue:  score,
-				Description: fmt.Sprintf("%s cheat score component (0-1)", baseID),
-			})
-		}
-
+		ps.AddMetric(cheatscoreCategoryAntiCheat, Key(baseID+"_score"), Metric{
+			Type:        MetricFloat,
+			FloatValue:  ch.Score,
+			Description: fmt.Sprintf("%s cheat score component (0-1)", baseID),
+		})
 		ps.AddMetric(cheatscoreCategoryAntiCheat, Key(baseID+"_confidence"), Metric{
 			Type:        MetricFloat,
-			FloatValue:  conf,
+			FloatValue:  ch.Confidence,
 			Description: fmt.Sprintf("Confidence in %s reading (0-1)", baseID),
 		})
 		ps.AddMetric(cheatscoreCategoryAntiCheat, Key(baseID+"_zone"), Metric{
 			Type:        MetricString,
-			StringValue: zone.String(),
+			StringValue: ch.Zone.String(),
 			Description: fmt.Sprintf("Interpretation band for %s", baseID),
 		})
 	}
@@ -136,7 +106,7 @@ func cheatscorePublish(ps *PlayerStats, opt publishOptions) {
 		ps.AddMetric(cheatscoreCategoryAntiCheat, Key("ttd_sub100_high_floor"), Metric{
 			Type:        MetricString,
 			StringValue: "Yes",
-			Description: "Score floored at 55% — sub-100ms TTD rate ≥25% with ≥3 samples",
+			Description: "Score floored at 55% — sub-100ms TTD rate ≥25% on ≥20 samples with ≥5 sub-100ms events",
 		})
 	}
 

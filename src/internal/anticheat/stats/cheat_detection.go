@@ -13,7 +13,7 @@ type CheatDetector struct {
 
 func NewCheatDetector() *CheatDetector {
 	return &CheatDetector{
-		BaseCollector: NewBaseCollector("Cheat Detection", Category("anti_cheat")),
+		BaseCollector: NewBaseCollector("Cheat Detection"),
 	}
 }
 

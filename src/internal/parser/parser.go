@@ -18,6 +18,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/debug"
+	"sort"
 	"strings"
 	"time"
 
@@ -740,7 +741,7 @@ func (s *state) teamIDForNewPlayer(p *common.Player) int {
 		}
 		best, n := 0, 0
 		for id, c := range counts {
-			if c > n {
+			if c > n || (c == n && id < best) {
 				best, n = id, c
 			}
 		}
@@ -1274,7 +1275,8 @@ func (s *state) awardMVP(rb *roundBuilder) {
 		if rs == nil {
 			continue
 		}
-		if best == nil || rs.Kills > best.Kills || (rs.Kills == best.Kills && rs.Deaths < best.Deaths) {
+		if best == nil || rs.Kills > best.Kills || (rs.Kills == best.Kills && rs.Deaths < best.Deaths) ||
+			(rs.Kills == best.Kills && rs.Deaths == best.Deaths && id < bestID) {
 			best, bestID = rs, id
 		}
 	}
@@ -1320,6 +1322,11 @@ func (s *state) finalize() {
 	s.m.ID = matchID(s.m.DemoName, s.m.Map, s.m.FileTime)
 
 	s.m.Players = sortPlayers(s.m.Players)
+	// PlayerIDs is a set for consumers; creation order depends on the parser's
+	// map-backed participant iteration, so normalise it for reproducible JSON.
+	for _, t := range s.m.Teams {
+		sort.Strings(t.PlayerIDs)
+	}
 
 	// Ensure score reflects the last official round.
 	var score [2]int
