@@ -2719,8 +2719,8 @@ select {
 
 @media print {
   body {
-    background: var(--text);
-    color: var(--inverse);
+    background: var(--print-bg);
+    color: var(--print-text);
   }
 
   .topbar,
@@ -2737,13 +2737,38 @@ select {
   .subpanel,
   .stat-tile,
   .index-card,
-  .tl-section {
+  .tl-section,
+  .tl-head,
+  .team-head,
+  .score-table th,
+  .score-table td,
+  .mini-table th,
+  .mini-table td,
+  .econ,
+  .aim-tile,
+  .channel-item,
+  .cue,
+  .stat-strip > div {
     break-inside: avoid;
-    border-color: var(--dim);
+    border-color: var(--print-line) !important;
+    background: var(--print-bg) !important;
+    box-shadow: none !important;
+    color: var(--print-text) !important;
   }
 
   a {
-    color: var(--inverse);
+    color: var(--print-link) !important;
+  }
+
+  .muted,
+  .dim,
+  .tl-time,
+  .tl-head-time,
+  .channel-vals,
+  .aim-sample,
+  .stat-label,
+  .stat-sub {
+    color: var(--print-muted);
   }
 }
 

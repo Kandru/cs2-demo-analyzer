@@ -152,6 +152,11 @@ team colour.
 | `--bevel-shadow` | `rgba(0, 0, 0, 0.55)` | outer shadow |
 | `--focus` | `#f0dd86` | focus outline |
 | `--focus-ring` | `rgba(240, 221, 134, 0.55)` | focus halo |
+| `--print-bg` | `#ffffff` | print page and panel background |
+| `--print-text` | `#111111` | print body text |
+| `--print-muted` | `#555555` | print secondary text |
+| `--print-line` | `#cccccc` | print rules and borders |
+| `--print-link` | `#0645ad` | print links |
 
 ### Typography, spacing and layout
 

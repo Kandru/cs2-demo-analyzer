@@ -96,6 +96,13 @@
   --focus: #f0dd86;
   --focus-ring: rgba(240, 221, 134, 0.55);
 
+  /* print surfaces */
+  --print-bg: #ffffff;
+  --print-text: #111111;
+  --print-muted: #555555;
+  --print-line: #cccccc;
+  --print-link: #0645ad;
+
   /* typography */
   --font-ui: "Segoe UI", Tahoma, Verdana, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
